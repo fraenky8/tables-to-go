@@ -41,7 +41,7 @@ var (
 	host           string
 	port           string
 	outputFilePath string
-	outputFormat   string
+	outputFormat   string // TODO implement
 	prefix         string
 	suffix         string
 	packageName    string
@@ -64,11 +64,13 @@ type Column struct {
 
 type Database interface {
 	GetTables() (tables []*Table, err error)
-	//TODO PrepareGetColumnsOfTableStmt() (err error)
+	PrepareGetColumnsOfTableStmt() (err error)
 	GetColumnsOfTable(table *Table) (err error)
 }
 
-type PostgreDatabase string
+type PostgreDatabase struct {
+	GetColumnsOfTableStmt *sqlx.Stmt
+}
 
 func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 
@@ -90,9 +92,9 @@ func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 	return tables, err
 }
 
-func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
+func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
-	err = db.Select(&table.Columns, `
+	pg.GetColumnsOfTableStmt, err = db.Preparex(`
 		SELECT
 		  ordinal_position,
 		  column_name,
@@ -105,7 +107,14 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 		WHERE table_name = $1
 		AND table_schema = $2
 		ORDER BY ordinal_position
-	`, table.TableName, schema)
+	`)
+
+	return err
+}
+
+func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
+
+	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, schema)
 
 	if verbose {
 		if err != nil {
@@ -117,7 +126,10 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 	return err
 }
 
-type MySQLDatabase string
+// TODO
+type MySQLDatabase struct {
+	GetColumnsOfTableStmt *sqlx.Stmt
+}
 
 func main() {
 
@@ -249,6 +261,8 @@ func run(db Database) (err error) {
 		fmt.Printf("> count of tables: %v\r\n", len(tables))
 	}
 
+	db.PrepareGetColumnsOfTableStmt()
+
 	for _, table := range tables {
 
 		if verbose {
@@ -299,7 +313,7 @@ func createStructOfTable(table *Table) (err error) {
 	}
 
 	// create file
-	tableName := camelCaseString(table.TableName)
+	tableName := camelCaseString(table.TableName) // TODO add underscore
 	fileName := prefix + tableName + suffix + ".go"
 	fileDto, err := os.Create(outputFilePath + fileName)
 
@@ -385,8 +399,13 @@ func mapDbColumnTypeToGoType(dbtype string, isNullable string) (gotype string, i
 
 func camelCaseString(s string) (cc string) {
 	splitted := strings.Split(s, "_")
+
+	if len(splitted) == 1 {
+		return strings.Title(s)
+	}
+
 	for _, part := range splitted {
-		cc += strings.Title(part)
+		cc += strings.Title(strings.ToLower(part))
 	}
 	return cc
 }
