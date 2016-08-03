@@ -120,7 +120,7 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 type MySQLDatabase string
 
 func main() {
-	
+
 	prepareCmdArgs()
 
 	if help {
@@ -212,8 +212,19 @@ func verifyOutputPath() (err error) {
 	return err
 }
 
+func prepareDataSourceName() (dataSourceName string) {
+	switch dbType {
+	case "mysql":
+		// TODO implement!
+		fmt.Println("not implemented yet")
+	default: // pg
+		dataSourceName = fmt.Sprintf("host=%v user=%v dbname=%v password=%v sslmode=disable", host, user, dbName, pswd)
+	}
+	return dataSourceName
+}
+
 func connect() (err error) {
-	db, err = sqlx.Connect("postgres", fmt.Sprintf("host=%v user=%v dbname=%v password=%v sslmode=disable", host, user, dbName, pswd))
+	db, err = sqlx.Connect(dbTypeToDriverMap[dbType], prepareDataSourceName())
 	if err != nil {
 		usingPswd := "no"
 		if pswd != "" {
