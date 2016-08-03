@@ -7,36 +7,44 @@ import (
 
 	"errors"
 
+	"bytes"
+	"go/format"
+	"os"
+	"strings"
+
+	"path/filepath"
+
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 var (
-	db  *sqlx.DB
-	err error
+	db *sqlx.DB
+
+	supportedDbTypes       = []string{"pg", "mysql"}
+	supportedOutputFormats = []string{"c", "u"}
+
+	dbTypeToDriverMap = map[string]string{
+		"pg":    "postgres",
+		"mysql": "mysql",
+	}
 
 	// command line args
-	help   bool
-	dbType string
-	user   string
-	pswd   string
-	dbName string
-	schema string
-	host   string
-	port   string
-	//output         string
-	//outputFilePath string
-	//outputFormat   string
-	//prefix         string
-	//suffix         string
-	//packageName    string
-
-	//output         = flag.String("o", "file", "output, currently supported: file (default), stdout")
-	//outputFilePath = flag.String("of", "./output", "output file path, default ./output")
-	//outputFormat   = flag.String("format", "c", "camelCase (c) or under_scored (u), default c")
-	//prefix         = flag.String("pre", "", "prefix for file- and struct name")
-	//suffix         = flag.String("suf", "", "suffix for file- and struct name")
-	//packageName    = flag.String("pn", "dto", "package name, default dto")
+	help           bool
+	verbose        bool
+	dbType         string
+	user           string
+	pswd           string
+	dbName         string
+	schema         string
+	host           string
+	port           string
+	outputFilePath string
+	outputFormat   string
+	prefix         string
+	suffix         string
+	packageName    string
 )
 
 type Table struct {
@@ -55,28 +63,36 @@ type Column struct {
 }
 
 type Database interface {
-	GetTables() (tables []Table, err error)
-	GetColumnsOfTable(tableName string) (columns []Column, err error)
+	GetTables() (tables []*Table, err error)
+	//TODO PrepareGetColumnsOfTableStmt() (err error)
+	GetColumnsOfTable(table *Table) (err error)
 }
 
 type PostgreDatabase string
 
-func (pg *PostgreDatabase) GetTables() (tables []Table, err error) {
+func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 
 	err = db.Select(&tables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
-		AND table_schema = ?
+		AND table_schema = $1
 		ORDER BY table_name
 	`, schema)
+
+	if verbose {
+		if err != nil {
+			fmt.Println("> Error at GetTables()")
+			fmt.Printf("> schema: %q\r\n", schema)
+		}
+	}
 
 	return tables, err
 }
 
-func (pg *PostgreDatabase) GetColumnsOfTable(tableName string) (columns []Column, err error) {
+func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 
-	err = db.Select(&columns, `
+	err = db.Select(&table.Columns, `
 		SELECT
 		  ordinal_position,
 		  column_name,
@@ -86,25 +102,35 @@ func (pg *PostgreDatabase) GetColumnsOfTable(tableName string) (columns []Column
 		  character_maximum_length,
 		  numeric_precision
 		FROM information_schema.columns
-		WHERE table_name = ?
-		AND table_schema = ?
+		WHERE table_name = $1
+		AND table_schema = $2
 		ORDER BY ordinal_position
-	`, tableName, schema)
+	`, table.TableName, schema)
 
-	return columns, err
+	if verbose {
+		if err != nil {
+			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.TableName)
+			fmt.Printf("> schema: %q\r\n", schema)
+		}
+	}
+
+	return err
 }
 
 type MySQLDatabase string
 
 func main() {
-
-	// mysecretpassword
-
+	
 	prepareCmdArgs()
 
-	err = handleCmdArgs()
-	if err != nil {
+	if help {
 		flag.Usage()
+		return
+	}
+
+	err := handleCmdArgs()
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -115,14 +141,27 @@ func main() {
 	}
 	defer db.Close()
 
-	// TODO lets go!
-	fmt.Println("let's go!")
+	var database Database
 
+	switch dbType {
+	case "mysql":
+		// TODO implement!
+		fmt.Println("not implemented yet")
+	default: // pg
+		database = new(PostgreDatabase)
+	}
+
+	err = run(database)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func prepareCmdArgs() {
 	flag.BoolVar(&help, "?", false, "shows help and usage")
-	flag.StringVar(&dbType, "t", "pg", "type of database to use, currently supported: pg, mysql") // TODO make map of supported db types -> can also be used in handleCMdArgs
+	flag.BoolVar(&verbose, "v", false, "verbose output")
+	flag.StringVar(&dbType, "t", "pg", fmt.Sprintf("type of database to use, currently supported: %v", supportedDbTypes))
 	flag.StringVar(&user, "u", "postgres", "user to connect to the database, default for Postgres 'postgres'")
 	flag.StringVar(&pswd, "p", "", "password of user")
 	flag.StringVar(&dbName, "d", "postgres", "database name, default for Postgres 'postgres'")
@@ -130,16 +169,45 @@ func prepareCmdArgs() {
 	flag.StringVar(&host, "h", "127.0.0.1", "host of database, if not specified, it will be 127.0.0.1/localhost")
 	flag.StringVar(&port, "port", "5432", "port of database host, if not specified, it will be the default ports for the supported databases")
 
+	flag.StringVar(&outputFilePath, "of", "./output", "output file path, default ./output")
+	flag.StringVar(&outputFormat, "format", "c", "camelCase (c) or under_scored (u), default c")
+	flag.StringVar(&prefix, "pre", "", "prefix for file- and struct names")
+	flag.StringVar(&suffix, "suf", "", "suffix for file- and struct names")
+	flag.StringVar(&packageName, "pn", "dto", "package name, default dto")
+
 	flag.Parse()
 }
 
 func handleCmdArgs() (err error) {
 
-	if help {
-		return errors.New("help called")
+	if !stringInSlice(dbType, supportedDbTypes) {
+		return errors.New(fmt.Sprintf("type of database %q not supported! %v", dbType, supportedDbTypes))
 	}
 
+	if !stringInSlice(outputFormat, supportedOutputFormats) {
+		return errors.New(fmt.Sprintf("output format %q not supported! %v", outputFormat, supportedOutputFormats))
+	}
 
+	if err = verifyOutputPath(); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func verifyOutputPath() (err error) {
+
+	info, err := os.Stat(outputFilePath)
+
+	if os.IsNotExist(err) {
+		return errors.New(fmt.Sprintf("output file path %q does not exists!", outputFilePath))
+	}
+
+	if !info.Mode().IsDir() {
+		return errors.New(fmt.Sprintf("output file path %q is not a directory!", outputFilePath))
+	}
+
+	outputFilePath, err = filepath.Abs(outputFilePath + "/")
 
 	return err
 }
@@ -154,4 +222,169 @@ func connect() (err error) {
 		return errors.New(fmt.Sprintf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed!", dbType, user, dbName, host, port, usingPswd))
 	}
 	return db.Ping()
+}
+
+func run(db Database) (err error) {
+
+	fmt.Printf("running for %q...\r\n", dbType)
+
+	tables, err := db.GetTables()
+
+	if err != nil {
+		return err
+	}
+
+	if verbose {
+		fmt.Printf("> count of tables: %v\r\n", len(tables))
+	}
+
+	for _, table := range tables {
+
+		if verbose {
+			fmt.Printf("> processing table %q\r\n", table.TableName)
+		}
+
+		err = db.GetColumnsOfTable(table)
+
+		if err != nil {
+			return err
+		}
+
+		err = createStructOfTable(table)
+
+		if err != nil {
+			if verbose {
+				fmt.Printf(">Error at createStructOfTable(%v)\r\n", table.TableName)
+			}
+			return err
+		}
+	}
+
+	fmt.Println("done!")
+
+	return err
+}
+
+func createStructOfTable(table *Table) (err error) {
+
+	var buffer, colBuffer bytes.Buffer
+	var isNullable bool
+	timeIndicator := 0
+
+	for _, column := range table.Columns {
+
+		colName := camelCaseString(column.ColumnName)
+		colType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
+
+		colBuffer.WriteString("\t" + colName + " " + colType + " `db:\"" + column.ColumnName + "\"`\n")
+
+		// collect some info for later use
+		if column.IsNullable == "YES" {
+			isNullable = true
+		}
+		if isTime {
+			timeIndicator++
+		}
+	}
+
+	// create file
+	tableName := camelCaseString(table.TableName)
+	fileName := prefix + tableName + suffix + ".go"
+	fileDto, err := os.Create(outputFilePath + fileName)
+
+	if err != nil {
+		return err
+	}
+
+	// write head infos
+	buffer.WriteString("package " + packageName + "\n\n")
+
+	// do imports based on collected info in for-loop
+	if isNullable || timeIndicator > 0 {
+		buffer.WriteString("import (\n")
+		if isNullable {
+			buffer.WriteString("\t\"database/sql\"\n")
+		}
+		if timeIndicator > 0 {
+			if isNullable {
+				buffer.WriteString("\t\n\"github.com/lib/pq\"\n")
+			} else {
+				buffer.WriteString("\t\"time\"\n")
+			}
+		}
+		buffer.WriteString(")\n\n")
+	}
+
+	// write struct with fields
+	buffer.WriteString("type " + tableName + " struct {\n")
+	buffer.WriteString(colBuffer.String())
+	buffer.WriteString("}")
+
+	// format it
+	b, _ := format.Source(buffer.Bytes())
+
+	// and save it in file
+	fileDto.Write(b)
+	fileDto.Sync()
+	fileDto.Close()
+
+	return err
+}
+
+func mapDbColumnTypeToGoType(dbtype string, isNullable string) (gotype string, isTime bool) {
+
+	// TODO add more types !
+	// http://www.postgresql.org/docs/9.5/static/datatype.html
+
+	isTime = false
+
+	switch dbtype {
+	case "integer", "bigint", "bigserial", "smallint", "smallserial", "serial":
+		gotype = "int"
+		if isNullable == "YES" {
+			gotype = "sql.NullInt64"
+		}
+	case "character varying", "character", "text":
+		gotype = "string"
+		if isNullable == "YES" {
+			gotype = "sql.NullString"
+		}
+	case "double precision", "numeric", "real":
+		gotype = "float64"
+		if isNullable == "YES" {
+			gotype = "sql.NullFloat64"
+		}
+	case "boolean":
+		gotype = "bool"
+		if isNullable == "YES" {
+			gotype = "sql.NullBool"
+		}
+	case "time", "timestamp", "time with time zone", "timestamp with time zone", "time without time zone", "timestamp without time zone":
+		gotype = "time.Time"
+		if isNullable == "YES" {
+			gotype = "pq.NullTime"
+		}
+		isTime = true
+	default:
+		gotype = "sql.NullString"
+	}
+
+	return gotype, isTime
+}
+
+func camelCaseString(s string) (cc string) {
+	splitted := strings.Split(s, "_")
+	for _, part := range splitted {
+		cc += strings.Title(part)
+	}
+	return cc
+}
+
+func stringInSlice(needle string, haystack []string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }

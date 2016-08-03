@@ -9,6 +9,7 @@
 _obj
 _test
 .idea
+output
 
 # Architecture specific extensions/prefixes
 *.[568vq]

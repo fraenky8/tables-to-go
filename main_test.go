@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFooBar(t *testing.T) {
-	assert.True(t, true)
+func TestVerifyOutputPath(t *testing.T) {
+
+
 }
