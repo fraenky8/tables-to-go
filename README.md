@@ -1,26 +1,26 @@
-## Tables-to-Go
+# Tables-to-Go
 > convert your tables to structs easily
 
 A small and helpful tool which helps during developing with a changing database schema.
 
 **Tables change, run the tool, get your structs! Easy!**
 
-### Installing
+## Installing
 
-```shell
+```
 go get github.com/fraenky8/tables-to-go
 ```
 
-### Getting started
+## Getting started
 
-```shell
+```
 go run main.go -v -of ../path/to/my/models
 ```
 
 This grabs all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
 Flag `-v` is verbose mode, `-of` is the output file path in which the structs are created.
 
-### Features
+## Features
 
 * convert your tables easily to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
@@ -34,7 +34,7 @@ Flag `-v` is verbose mode, `-of` is the output file path in which the structs ar
   * date/time: timestamp, date, datetime, year, time with time zone, timestamp with time zone, time without time zone, timestamp without time zone
   * others: boolean
 
-### Examples
+## Examples
 
 Assuming you have the following table definition:
 
@@ -49,7 +49,7 @@ CREATE TABLE some_user_info  (
 
 Run the following command:
 
-```shell
+```
 go run main.go
 ```
 
@@ -72,25 +72,25 @@ type SomeUserInfo struct {
 
 Running on remote database server (eg. Mysql@Docker)
 
-```shell
+```
 go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
 ```
 
 PostgreSQL exmple with different default schema but default database `postgres`:
 
-```shell
+```
 go run main.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 Note: since database type `pg` is default, so following command will be equivalent:
 
-```shell
+```
 go run main.go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 You can also specify the package or prefix and suffix.
 
-```shell
+```
 go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
 ```
 
@@ -115,7 +115,7 @@ type ModelSomeUserInfoModel struct {
 
 Print usage with `-?` or `-help`
 
-```shell
+```
 go run main.go -help
   -?    shows help and usage
   -d string
@@ -147,11 +147,11 @@ go run main.go -help
   -v    verbose output
 ```
 
-### Contributing
+## Contributing
 
 If you find any issues or missing a feature, feel free to contribute or make suggestions! 
 You can fork the repository and use a feature branch too. Feel free to send me a pull request.
 
-### Licensing
+## Licensing
 
 The code in this project is licensed under MIT license.
