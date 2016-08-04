@@ -47,9 +47,9 @@ var (
 	port           string
 	outputFilePath string
 	outputFormat   string // TODO implement
+	packageName    string
 	prefix         string
 	suffix         string
-	packageName    string
 )
 
 type Table struct {
@@ -67,6 +67,7 @@ type Column struct {
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
 }
 
+// TODO refactor without code duplications
 type Database interface {
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)
@@ -265,6 +266,10 @@ func handleCmdArgs() (err error) {
 		port = dbDefaultPorts[dbType]
 	}
 
+	if packageName == "" {
+		return errors.New("name of package can not be empty!")
+	}
+
 	return err
 }
 
@@ -377,7 +382,8 @@ func createStructOfTable(table *Table) (err error) {
 	if outputFormat == "c" {
 		tableName = camelCaseString(tableName)
 	}
-	fileName := prefix + tableName + suffix + ".go"
+	tableName = prefix + tableName + suffix
+	fileName := tableName + ".go"
 	outFile, err := os.Create(outputFilePath + fileName)
 
 	if err != nil {
