@@ -261,7 +261,7 @@ func handleCmdArgs() (err error) {
 		return err
 	}
 
-	if port == ""   {
+	if port == "" {
 		port = dbDefaultPorts[dbType]
 	}
 
@@ -373,7 +373,10 @@ func createStructOfTable(table *Table) (err error) {
 	}
 
 	// create file
-	tableName := camelCaseString(table.TableName) // TODO add underscore
+	tableName := table.TableName
+	if outputFormat == "c" {
+		tableName = camelCaseString(tableName)
+	}
 	fileName := prefix + tableName + suffix + ".go"
 	outFile, err := os.Create(outputFilePath + fileName)
 
