@@ -230,20 +230,21 @@ func main() {
 
 func prepareCmdArgs() {
 	flag.BoolVar(&help, "?", false, "shows help and usage")
+	flag.BoolVar(&help, "help", false, "shows help and usage")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.StringVar(&dbType, "t", "pg", fmt.Sprintf("type of database to use, currently supported: %v", supportedDbTypes))
-	flag.StringVar(&user, "u", "postgres", "user to connect to the database, default for Postgres 'postgres'")
+	flag.StringVar(&user, "u", "postgres", "user to connect to the database")
 	flag.StringVar(&pswd, "p", "", "password of user")
-	flag.StringVar(&dbName, "d", "postgres", "database name, default for Postgres 'postgres'")
-	flag.StringVar(&schema, "s", "public", "schema name, default for Postgres 'public'")
-	flag.StringVar(&host, "h", "127.0.0.1", "host of database, if not specified, it will be 127.0.0.1/localhost")
+	flag.StringVar(&dbName, "d", "postgres", "database name")
+	flag.StringVar(&schema, "s", "public", "schema name")
+	flag.StringVar(&host, "h", "127.0.0.1", "host of database")
 	flag.StringVar(&port, "port", "", "port of database host, if not specified, it will be the default ports for the supported databases")
 
-	flag.StringVar(&outputFilePath, "of", "./output", "output file path, default ./output")
-	flag.StringVar(&outputFormat, "format", "c", "camelCase (c) or original (o), default c")
+	flag.StringVar(&outputFilePath, "of", "./output", "output file path")
+	flag.StringVar(&outputFormat, "format", "c", "camelCase (c) or original (o)")
 	flag.StringVar(&prefix, "pre", "", "prefix for file- and struct names")
 	flag.StringVar(&suffix, "suf", "", "suffix for file- and struct names")
-	flag.StringVar(&packageName, "pn", "dto", "package name, default dto")
+	flag.StringVar(&packageName, "pn", "dto", "package name")
 
 	flag.Parse()
 }
@@ -378,11 +379,10 @@ func createStructOfTable(table *Table) (err error) {
 	}
 
 	// create file
-	tableName := table.TableName
+	tableName := prefix + table.TableName + suffix
 	if outputFormat == "c" {
 		tableName = camelCaseString(tableName)
 	}
-	tableName = prefix + tableName + suffix
 	fileName := tableName + ".go"
 	outFile, err := os.Create(outputFilePath + fileName)
 
@@ -440,22 +440,17 @@ func mapDbColumnTypeToGoType(dbDataType string, isNullable string) (goType strin
 		if isNullable == "YES" {
 			goType = "sql.NullInt64"
 		}
-	case "character varying", "character", "text",
-		"char", "varchar", "binary", "varbinary", "blob":
-		goType = "string"
-		if isNullable == "YES" {
-			goType = "sql.NullString"
-		}
 	case "double precision", "numeric", "decimal", "real",
 		"float", "double":
 		goType = "float64"
 		if isNullable == "YES" {
 			goType = "sql.NullFloat64"
 		}
-	case "boolean":
-		goType = "bool"
+	case "character varying", "character", "text",
+		"char", "varchar", "binary", "varbinary", "blob":
+		goType = "string"
 		if isNullable == "YES" {
-			goType = "sql.NullBool"
+			goType = "sql.NullString"
 		}
 	case "time", "timestamp", "time with time zone", "timestamp with time zone", "time without time zone", "timestamp without time zone",
 		"date", "datetime", "year":
@@ -464,6 +459,11 @@ func mapDbColumnTypeToGoType(dbDataType string, isNullable string) (goType strin
 			goType = "pq.NullTime"
 		}
 		isTime = true
+	case "boolean":
+		goType = "bool"
+		if isNullable == "YES" {
+			goType = "sql.NullBool"
+		}
 	default:
 		goType = "sql.NullString"
 	}
