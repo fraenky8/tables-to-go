@@ -23,11 +23,16 @@ var (
 	db *sqlx.DB
 
 	supportedDbTypes       = []string{"pg", "mysql"}
-	supportedOutputFormats = []string{"c", "u"}
+	supportedOutputFormats = []string{"c", "o"}
 
 	dbTypeToDriverMap = map[string]string{
 		"pg":    "postgres",
 		"mysql": "mysql",
+	}
+
+	dbDefaultPorts = map[string]string{
+		"pg":    "5432",
+		"mysql": "3306",
 	}
 
 	// command line args
@@ -126,9 +131,62 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 	return err
 }
 
-// TODO
 type MySQLDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
+}
+
+func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
+
+	err = db.Select(&tables, `
+		SELECT table_name
+		FROM information_schema.tables
+		WHERE table_type = 'BASE TABLE'
+		AND table_schema = ?
+		ORDER BY table_name
+	`, dbName)
+
+	if verbose {
+		if err != nil {
+			fmt.Println("> Error at GetTables()")
+			fmt.Printf("> schema: %q\r\n", dbName)
+		}
+	}
+
+	return tables, err
+}
+
+func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
+
+	mysql.GetColumnsOfTableStmt, err = db.Preparex(`
+		SELECT
+		  ordinal_position,
+		  column_name,
+		  data_type,
+		  column_default,
+		  is_nullable,
+		  character_maximum_length,
+		  numeric_precision
+		FROM information_schema.columns
+		WHERE table_name = ?
+		AND table_schema = ?
+		ORDER BY ordinal_position
+	`)
+
+	return err
+}
+
+func (mysql *MySQLDatabase) GetColumnsOfTable(table *Table) (err error) {
+
+	mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, dbName)
+
+	if verbose {
+		if err != nil {
+			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.TableName)
+			fmt.Printf("> schema: %q\r\n", schema)
+		}
+	}
+
+	return err
 }
 
 func main() {
@@ -157,8 +215,7 @@ func main() {
 
 	switch dbType {
 	case "mysql":
-		// TODO implement!
-		fmt.Println("not implemented yet")
+		database = new(MySQLDatabase)
 	default: // pg
 		database = new(PostgreDatabase)
 	}
@@ -179,10 +236,10 @@ func prepareCmdArgs() {
 	flag.StringVar(&dbName, "d", "postgres", "database name, default for Postgres 'postgres'")
 	flag.StringVar(&schema, "s", "public", "schema name, default for Postgres 'public'")
 	flag.StringVar(&host, "h", "127.0.0.1", "host of database, if not specified, it will be 127.0.0.1/localhost")
-	flag.StringVar(&port, "port", "5432", "port of database host, if not specified, it will be the default ports for the supported databases")
+	flag.StringVar(&port, "port", "", "port of database host, if not specified, it will be the default ports for the supported databases")
 
 	flag.StringVar(&outputFilePath, "of", "./output", "output file path, default ./output")
-	flag.StringVar(&outputFormat, "format", "c", "camelCase (c) or under_scored (u), default c")
+	flag.StringVar(&outputFormat, "format", "c", "camelCase (c) or original (o), default c")
 	flag.StringVar(&prefix, "pre", "", "prefix for file- and struct names")
 	flag.StringVar(&suffix, "suf", "", "suffix for file- and struct names")
 	flag.StringVar(&packageName, "pn", "dto", "package name, default dto")
@@ -202,6 +259,10 @@ func handleCmdArgs() (err error) {
 
 	if err = verifyOutputPath(); err != nil {
 		return err
+	}
+
+	if port == ""   {
+		port = dbDefaultPorts[dbType]
 	}
 
 	return err
@@ -227,10 +288,9 @@ func verifyOutputPath() (err error) {
 func prepareDataSourceName() (dataSourceName string) {
 	switch dbType {
 	case "mysql":
-		// TODO implement!
-		fmt.Println("not implemented yet")
+		dataSourceName = fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", user, pswd, host, port, dbName)
 	default: // pg
-		dataSourceName = fmt.Sprintf("host=%v user=%v dbname=%v password=%v sslmode=disable", host, user, dbName, pswd)
+		dataSourceName = fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", host, port, user, dbName, pswd)
 	}
 	return dataSourceName
 }
@@ -315,7 +375,7 @@ func createStructOfTable(table *Table) (err error) {
 	// create file
 	tableName := camelCaseString(table.TableName) // TODO add underscore
 	fileName := prefix + tableName + suffix + ".go"
-	fileDto, err := os.Create(outputFilePath + fileName)
+	outFile, err := os.Create(outputFilePath + fileName)
 
 	if err != nil {
 		return err
@@ -349,52 +409,57 @@ func createStructOfTable(table *Table) (err error) {
 	b, _ := format.Source(buffer.Bytes())
 
 	// and save it in file
-	fileDto.Write(b)
-	fileDto.Sync()
-	fileDto.Close()
+	outFile.Write(b)
+	outFile.Sync()
+	outFile.Close()
 
 	return err
 }
 
-func mapDbColumnTypeToGoType(dbtype string, isNullable string) (gotype string, isTime bool) {
-
-	// TODO add more types !
-	// http://www.postgresql.org/docs/9.5/static/datatype.html
+func mapDbColumnTypeToGoType(dbDataType string, isNullable string) (goType string, isTime bool) {
 
 	isTime = false
 
-	switch dbtype {
-	case "integer", "bigint", "bigserial", "smallint", "smallserial", "serial":
-		gotype = "int"
+	// first row: postgresql datatypes  // TODO bitstrings, enum, other special types
+	// second row: additional mysql datatypes not covered by first row // TODO bit, enums, set
+	// and so on
+
+	switch dbDataType {
+	case "integer", "bigint", "bigserial", "smallint", "smallserial", "serial",
+		"int", "tinyint", "mediumint":
+		goType = "int"
 		if isNullable == "YES" {
-			gotype = "sql.NullInt64"
+			goType = "sql.NullInt64"
 		}
-	case "character varying", "character", "text":
-		gotype = "string"
+	case "character varying", "character", "text",
+		"char", "varchar", "binary", "varbinary", "blob":
+		goType = "string"
 		if isNullable == "YES" {
-			gotype = "sql.NullString"
+			goType = "sql.NullString"
 		}
-	case "double precision", "numeric", "real":
-		gotype = "float64"
+	case "double precision", "numeric", "decimal", "real",
+		"float", "double":
+		goType = "float64"
 		if isNullable == "YES" {
-			gotype = "sql.NullFloat64"
+			goType = "sql.NullFloat64"
 		}
 	case "boolean":
-		gotype = "bool"
+		goType = "bool"
 		if isNullable == "YES" {
-			gotype = "sql.NullBool"
+			goType = "sql.NullBool"
 		}
-	case "time", "timestamp", "time with time zone", "timestamp with time zone", "time without time zone", "timestamp without time zone":
-		gotype = "time.Time"
+	case "time", "timestamp", "time with time zone", "timestamp with time zone", "time without time zone", "timestamp without time zone",
+		"date", "datetime", "year":
+		goType = "time.Time"
 		if isNullable == "YES" {
-			gotype = "pq.NullTime"
+			goType = "pq.NullTime"
 		}
 		isTime = true
 	default:
-		gotype = "sql.NullString"
+		goType = "sql.NullString"
 	}
 
-	return gotype, isTime
+	return goType, isTime
 }
 
 func camelCaseString(s string) (cc string) {
