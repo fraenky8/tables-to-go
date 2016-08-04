@@ -46,7 +46,7 @@ var (
 	host           string
 	port           string
 	outputFilePath string
-	outputFormat   string // TODO implement
+	outputFormat   string
 	packageName    string
 	prefix         string
 	suffix         string
