@@ -36,18 +36,18 @@ Flag `-v` is verbose mode, `-of` is the output file path in which the structs ar
 
 ## Examples
 
-Assuming you have the following table definition:
+Assuming you have the following table definition (PostgreSQL):
 
 ```sql
 CREATE TABLE some_user_info  (
-  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL NOT NULL PRIMARY KEY,
   first_name VARCHAR(20),
   last_name  VARCHAR(20) NOT NULL,
   height DECIMAL
 );
 ```
 
-Run the following command:
+Run the following command (default local PostgreSQL instance):
 
 ```
 go run main.go
@@ -82,7 +82,7 @@ PostgreSQL exmple with different default schema but default database `postgres`:
 go run main.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
-Note: since database type `pg` is default, so following command will be equivalent:
+Note: since database type `pg` is default, following command will be equivalent:
 
 ```
 go run main.go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword

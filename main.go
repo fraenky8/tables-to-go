@@ -1,18 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
-
-	"errors"
-
-	"bytes"
 	"go/format"
 	"os"
-	"strings"
-
 	"path/filepath"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -356,6 +353,7 @@ func run(db Database) (err error) {
 	return err
 }
 
+// TODO refactor to clean code
 func createStructOfTable(table *Table) (err error) {
 
 	var buffer, colBuffer bytes.Buffer
@@ -364,7 +362,10 @@ func createStructOfTable(table *Table) (err error) {
 
 	for _, column := range table.Columns {
 
-		colName := camelCaseString(column.ColumnName)
+		colName := strings.Title(column.ColumnName)
+		if outputFormat == "c" {
+			colName = camelCaseString(colName)
+		}
 		colType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
 
 		colBuffer.WriteString("\t" + colName + " " + colType + " `db:\"" + column.ColumnName + "\"`\n")
@@ -379,7 +380,7 @@ func createStructOfTable(table *Table) (err error) {
 	}
 
 	// create file
-	tableName := prefix + table.TableName + suffix
+	tableName := strings.Title(prefix + table.TableName + suffix)
 	if outputFormat == "c" {
 		tableName = camelCaseString(tableName)
 	}
@@ -415,10 +416,10 @@ func createStructOfTable(table *Table) (err error) {
 	buffer.WriteString("}")
 
 	// format it
-	b, _ := format.Source(buffer.Bytes())
+	bytes, _ := format.Source(buffer.Bytes())
 
 	// and save it in file
-	outFile.Write(b)
+	outFile.Write(bytes)
 	outFile.Sync()
 	outFile.Close()
 
