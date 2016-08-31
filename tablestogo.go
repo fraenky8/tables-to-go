@@ -47,6 +47,10 @@ var (
 	packageName    string
 	prefix         string
 	suffix         string
+
+	isMastermindStructable         bool
+	isMastermindStructableOnly     bool
+	isMastermindStructableRecorder bool
 )
 
 type Table struct {
@@ -62,6 +66,8 @@ type Column struct {
 	IsNullable             string         `db:"is_nullable"`
 	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	ColumnKey              string         `db:"column_key"` // mysql specific
+	Extra                  string         `db:"extra"`      // mysql specific
 }
 
 // TODO refactor without code duplications
@@ -163,7 +169,9 @@ func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 		  column_default,
 		  is_nullable,
 		  character_maximum_length,
-		  numeric_precision
+		  numeric_precision,
+		  column_key,
+		  extra
 		FROM information_schema.columns
 		WHERE table_name = ?
 		AND table_schema = ?
@@ -242,6 +250,10 @@ func prepareCmdArgs() {
 	flag.StringVar(&prefix, "pre", "", "prefix for file- and struct names")
 	flag.StringVar(&suffix, "suf", "", "suffix for file- and struct names")
 	flag.StringVar(&packageName, "pn", "dto", "package name")
+
+	flag.BoolVar(&isMastermindStructable, "st", false, "generate struct for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&isMastermindStructableOnly, "sto", false, "generate struct ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&isMastermindStructableRecorder, "str", false, "generate a structable.Recorder (requires -st or -sto flag)")
 
 	flag.Parse()
 }
@@ -359,6 +371,7 @@ func createStructOfTable(table *Table) (err error) {
 	var buffer, colBuffer bytes.Buffer
 	var isNullable bool
 	timeIndicator := 0
+	mastermindStructableAnnotation := ""
 
 	for _, column := range table.Columns {
 
@@ -368,7 +381,22 @@ func createStructOfTable(table *Table) (err error) {
 		}
 		colType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
 
-		colBuffer.WriteString("\t" + colName + " " + colType + " `db:\"" + column.ColumnName + "\"`\n")
+		if isMastermindStructable || isMastermindStructableOnly {
+
+			isPk := ""
+			if strings.Contains(column.ColumnDefault.String, "nextval") || // pg
+				(strings.Contains(column.ColumnKey, "PRI") && strings.Contains(column.Extra, "auto_increment")) { //mysql
+				isPk = `,PRIMARY_KEY,SERIAL,AUTO_INCREMENT`
+			}
+
+			mastermindStructableAnnotation = ` stbl:"` + column.ColumnName + isPk + `"`
+		}
+
+		if isMastermindStructableOnly {
+			colBuffer.WriteString("\t" + colName + " " + colType + " `" + mastermindStructableAnnotation + "`\n")
+		} else {
+			colBuffer.WriteString("\t" + colName + " " + colType + " `db:\"" + column.ColumnName + "\"" + mastermindStructableAnnotation + "`\n")
+		}
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -377,6 +405,10 @@ func createStructOfTable(table *Table) (err error) {
 		if isTime {
 			timeIndicator++
 		}
+	}
+
+	if isMastermindStructableRecorder && (isMastermindStructable || isMastermindStructableOnly) {
+		colBuffer.WriteString("\t\nstructable.Recorder\n")
 	}
 
 	// create file
@@ -394,12 +426,14 @@ func createStructOfTable(table *Table) (err error) {
 	// write head infos
 	buffer.WriteString("package " + packageName + "\n\n")
 
-	// do imports based on collected info in for-loop
-	if isNullable || timeIndicator > 0 {
+	// do imports
+	if isNullable || timeIndicator > 0 || isMastermindStructable || isMastermindStructableOnly {
 		buffer.WriteString("import (\n")
+
 		if isNullable {
 			buffer.WriteString("\t\"database/sql\"\n")
 		}
+
 		if timeIndicator > 0 {
 			if isNullable {
 				buffer.WriteString("\t\n\"github.com/lib/pq\"\n")
@@ -407,6 +441,11 @@ func createStructOfTable(table *Table) (err error) {
 				buffer.WriteString("\t\"time\"\n")
 			}
 		}
+
+		if isMastermindStructableRecorder && (isMastermindStructable || isMastermindStructableOnly) {
+			buffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+		}
+
 		buffer.WriteString(")\n\n")
 	}
 
@@ -416,10 +455,10 @@ func createStructOfTable(table *Table) (err error) {
 	buffer.WriteString("}")
 
 	// format it
-	bytes, _ := format.Source(buffer.Bytes())
+	formatedFile, _ := format.Source(buffer.Bytes())
 
 	// and save it in file
-	outFile.Write(bytes)
+	outFile.Write(formatedFile)
 	outFile.Sync()
 	outFile.Close()
 
