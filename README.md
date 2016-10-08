@@ -1,5 +1,5 @@
 # Tables-to-Go
-> convert your tables to structs easily
+> convert your database tables to structs easily
 
 A small and helpful tool which helps during developing with a changing database schema.
 

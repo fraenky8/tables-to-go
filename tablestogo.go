@@ -336,7 +336,11 @@ func run(db Database) (err error) {
 		fmt.Printf("> count of tables: %v\r\n", len(tables))
 	}
 
-	db.PrepareGetColumnsOfTableStmt()
+	err = db.PrepareGetColumnsOfTableStmt()
+
+	if err != nil {
+		return err
+	}
 
 	for _, table := range tables {
 
