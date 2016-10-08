@@ -1,4 +1,4 @@
-package main
+package tablestogo
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ func TestCamelCaseString(t *testing.T) {
 	}
 
 	for _, tt := range Cases {
-		actual := camelCaseString(tt.input)
+		actual := CamelCaseString(tt.input)
 		if actual != tt.expected {
 			t.Errorf("camelCaseString(%q): expected %q, actual %q", tt.input, tt.expected, actual)
 		}

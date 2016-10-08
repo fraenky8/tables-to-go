@@ -14,7 +14,7 @@ go get github.com/fraenky8/tables-to-go
 ## Getting started
 
 ```
-go run tablestogo.go -v -of ../path/to/my/models
+go run main.go -v -of ../path/to/my/models
 ```
 
 This grabs all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
@@ -58,7 +58,7 @@ CREATE TABLE some_user_info  (
 Run the following command (default local PostgreSQL instance):
 
 ```
-go run tablestogo.go
+go run main.go
 ```
 
 The following file `SomeUserInfo.go` with default package `dto` (data transfer object) will be created:
@@ -81,25 +81,25 @@ type SomeUserInfo struct {
 Running on remote database server (eg. Mysql@Docker)
 
 ```
-go run tablestogo.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
+go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
 ```
 
 PostgreSQL exmple with different default schema but default database `postgres`:
 
 ```
-go run tablestogo.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+go run main.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 Note: since database type `pg` is default, following command will be equivalent:
 
 ```
-go run tablestogo.go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+go run main.go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 You can also specify the package or prefix and suffix.
 
 ```
-go run tablestogo.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
+go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
 ```
 
 With same table given above, following file with Name `ModelSomeUserInfoModel.go` will be created:
@@ -124,7 +124,7 @@ type ModelSomeUserInfoModel struct {
 Print usage with `-?` or `-help`
 
 ```
-go run tablestogo.go -help
+go run main.go -help
     -?    shows help and usage
     -d string
           database name (default "postgres")
