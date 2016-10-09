@@ -36,6 +36,34 @@ type Column struct {
 	Extra                  string         `db:"extra"`      // mysql specific
 }
 
+type Tagger interface {
+	GenerateTag(column Column) string
+}
+
+type DbTag string
+type StblTag string
+type SqlTag string
+
+func (t *DbTag) GenerateTag(column Column) string {
+	return `db:"` + column.ColumnName + `"`
+}
+
+func (t *StblTag) GenerateTag(column Column) string {
+
+	isPk := ""
+	if strings.Contains(column.ColumnDefault.String, "nextval") || // pg
+		(strings.Contains(column.ColumnKey, "PRI") && strings.Contains(column.Extra, "auto_increment")) { //mysql
+		isPk = `,PRIMARY_KEY,SERIAL,AUTO_INCREMENT`
+	}
+
+	return `stbl:"` + column.ColumnName + isPk + `"`
+}
+
+// TODO
+func (t *SqlTag) GenerateTag(column Column) string {
+	return `sql:"` + column.ColumnName + `"`
+}
+
 var (
 	// holds the db instance
 	db *sqlx.DB
@@ -54,6 +82,12 @@ var (
 	}
 
 	settings *Settings
+
+	taggers = map[uint64]Tagger{
+		1: new(DbTag),
+		2: new(StblTag),
+		4: new(SqlTag),
+	}
 )
 
 // stores the supported settings / command line arguments
@@ -72,30 +106,43 @@ type Settings struct {
 	Prefix         string
 	Suffix         string
 
-	IsMastermindStructable         bool
-	IsMastermindStructableOnly     bool
+	TagsNoDb bool
+
+	TagsMastermindStructable       bool
+	TagsMastermindStructableOnly   bool
 	IsMastermindStructableRecorder bool
+
+	TagsGorm bool
+
+	effectiveTags uint64
 }
 
 // constructor for settings with default values
 func NewSettings() *Settings {
 	return &Settings{
-		Verbose:                        false,
-		DbType:                         "pg",
-		User:                           "postgres",
-		Pswd:                           "",
-		DbName:                         "postgres",
-		Schema:                         "public",
-		Host:                           "127.0.0.1",
-		Port:                           "5432",
-		OutputFilePath:                 "./output",
-		OutputFormat:                   "c",
-		PackageName:                    "dto",
-		Prefix:                         "",
-		Suffix:                         "",
-		IsMastermindStructable:         false,
-		IsMastermindStructableOnly:     false,
+		Verbose:        false,
+		DbType:         "pg",
+		User:           "postgres",
+		Pswd:           "",
+		DbName:         "postgres",
+		Schema:         "public",
+		Host:           "127.0.0.1",
+		Port:           "5432",
+		OutputFilePath: "./output",
+		OutputFormat:   "c",
+		PackageName:    "dto",
+		Prefix:         "",
+		Suffix:         "",
+
+		TagsNoDb: false,
+
+		TagsMastermindStructable:       false,
+		TagsMastermindStructableOnly:   false,
 		IsMastermindStructableRecorder: false,
+
+		TagsGorm: false,
+
+		effectiveTags: 1,
 	}
 }
 
@@ -107,6 +154,8 @@ func Run(s *Settings) (err error) {
 		return err
 	}
 	settings = s
+
+	createEffectiveTags()
 
 	err = connect()
 	if err != nil {
@@ -184,8 +233,29 @@ func prepareOutputPath(ofp string) (outputFilePath string, err error) {
 	return outputFilePath, err
 }
 
+func createEffectiveTags() {
+	if settings.TagsNoDb {
+		settings.effectiveTags = 0
+	}
+	if settings.TagsMastermindStructable {
+		settings.effectiveTags |= 2
+	}
+	if settings.TagsMastermindStructableOnly {
+		if !settings.TagsNoDb {
+			settings.effectiveTags -= 1
+		}
+		if settings.TagsMastermindStructable {
+			settings.effectiveTags -= 2
+		}
+		settings.effectiveTags |= 4
+	}
+	if settings.TagsGorm {
+		settings.effectiveTags |= 8
+	}
+}
+
 func connect() (err error) {
-	db, err = sqlx.Connect(DbTypeToDriverMap[settings.DbType], prepareDataSourceName())
+	db, err = sqlx.Connect(DbTypeToDriverMap[settings.DbType], createDataSourceName())
 	if err != nil {
 		usingPswd := "no"
 		if settings.Pswd != "" {
@@ -198,7 +268,7 @@ func connect() (err error) {
 	return db.Ping()
 }
 
-func prepareDataSourceName() (dataSourceName string) {
+func createDataSourceName() (dataSourceName string) {
 	switch settings.DbType {
 	case "mysql":
 		dataSourceName = fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
@@ -241,11 +311,6 @@ func run(db Database) (err error) {
 			return err
 		}
 
-		// TODO
-		// rename
-		// create struct of columns -> colum names + []annotations -> foreach annotation (db;mastermind,gorm,...) build them
-		// -> strategy pattern / decorator
-		// write file
 		err = createStructOfTable(table)
 
 		if err != nil {
@@ -261,38 +326,21 @@ func run(db Database) (err error) {
 	return err
 }
 
-// TODO refactor to clean code
 func createStructOfTable(table *Table) (err error) {
 
-	var buffer, colBuffer bytes.Buffer
+	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
 	timeIndicator := 0
-	mastermindStructableAnnotation := ""
 
 	for _, column := range table.Columns {
 
-		colName := strings.Title(column.ColumnName)
+		columnName := strings.Title(column.ColumnName)
 		if settings.OutputFormat == "c" {
-			colName = CamelCaseString(colName)
+			columnName = CamelCaseString(columnName)
 		}
-		colType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
+		columnType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
 
-		if settings.IsMastermindStructable || settings.IsMastermindStructableOnly {
-
-			isPk := ""
-			if strings.Contains(column.ColumnDefault.String, "nextval") || // pg
-				(strings.Contains(column.ColumnKey, "PRI") && strings.Contains(column.Extra, "auto_increment")) { //mysql
-				isPk = `,PRIMARY_KEY,SERIAL,AUTO_INCREMENT`
-			}
-
-			mastermindStructableAnnotation = ` stbl:"` + column.ColumnName + isPk + `"`
-		}
-
-		if settings.IsMastermindStructableOnly {
-			colBuffer.WriteString("\t" + colName + " " + colType + " `" + mastermindStructableAnnotation + "`\n")
-		} else {
-			colBuffer.WriteString("\t" + colName + " " + colType + " `db:\"" + column.ColumnName + "\"" + mastermindStructableAnnotation + "`\n")
-		}
+		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(column) + "\n")
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -303,8 +351,8 @@ func createStructOfTable(table *Table) (err error) {
 		}
 	}
 
-	if settings.IsMastermindStructableRecorder && (settings.IsMastermindStructable || settings.IsMastermindStructableOnly) {
-		colBuffer.WriteString("\t\nstructable.Recorder\n")
+	if settings.IsMastermindStructableRecorder {
+		structFieldsBuffer.WriteString("\t\nstructable.Recorder\n")
 	}
 
 	// create file
@@ -312,46 +360,46 @@ func createStructOfTable(table *Table) (err error) {
 	if settings.OutputFormat == "c" {
 		tableName = CamelCaseString(tableName)
 	}
-	fileName := tableName + ".go"
-	outFile, err := os.Create(settings.OutputFilePath + fileName)
+
+	outFile, err := os.Create(settings.OutputFilePath + tableName + ".go")
 
 	if err != nil {
 		return err
 	}
 
-	// write head infos
-	buffer.WriteString("package " + settings.PackageName + "\n\n")
+	// write header infos
+	fileContentBuffer.WriteString("package " + settings.PackageName + "\n\n")
 
 	// do imports
-	if isNullable || timeIndicator > 0 || settings.IsMastermindStructable || settings.IsMastermindStructableOnly {
-		buffer.WriteString("import (\n")
+	if isNullable || timeIndicator > 0 || settings.IsMastermindStructableRecorder {
+		fileContentBuffer.WriteString("import (\n")
 
 		if isNullable {
-			buffer.WriteString("\t\"database/sql\"\n")
+			fileContentBuffer.WriteString("\t\"database/sql\"\n")
 		}
 
 		if timeIndicator > 0 {
 			if isNullable {
-				buffer.WriteString("\t\n\"github.com/lib/pq\"\n")
+				fileContentBuffer.WriteString("\t\n\"github.com/lib/pq\"\n")
 			} else {
-				buffer.WriteString("\t\"time\"\n")
+				fileContentBuffer.WriteString("\t\"time\"\n")
 			}
 		}
 
-		if settings.IsMastermindStructableRecorder && (settings.IsMastermindStructable || settings.IsMastermindStructableOnly) {
-			buffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+		if settings.IsMastermindStructableRecorder {
+			fileContentBuffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 		}
 
-		buffer.WriteString(")\n\n")
+		fileContentBuffer.WriteString(")\n\n")
 	}
 
 	// write struct with fields
-	buffer.WriteString("type " + tableName + " struct {\n")
-	buffer.WriteString(colBuffer.String())
-	buffer.WriteString("}")
+	fileContentBuffer.WriteString("type " + tableName + " struct {\n")
+	fileContentBuffer.WriteString(structFieldsBuffer.String())
+	fileContentBuffer.WriteString("}")
 
 	// format it
-	formatedFile, _ := format.Source(buffer.Bytes())
+	formatedFile, _ := format.Source(fileContentBuffer.Bytes())
 
 	// and save it in file
 	outFile.Write(formatedFile)
@@ -359,6 +407,23 @@ func createStructOfTable(table *Table) (err error) {
 	outFile.Close()
 
 	return err
+}
+
+func generateTags(column Column) (tags string) {
+	var t uint64
+	for t = 1; t <= settings.effectiveTags; t *= 2 {
+		if shouldTag(t) {
+			tags += taggers[t].GenerateTag(column) + " "
+		}
+	}
+	if len(tags) > 0 {
+		tags = " `" + strings.TrimSpace(tags) + "`"
+	}
+	return tags
+}
+
+func shouldTag(t uint64) bool {
+	return settings.effectiveTags&t > 0
 }
 
 func mapDbColumnTypeToGoType(dbDataType string, isNullable string) (goType string, isTime bool) {
