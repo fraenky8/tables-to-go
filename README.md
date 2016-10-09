@@ -127,40 +127,43 @@ Print usage with `-?` or `-help`
 
 ```
 go run main.go -help
-    -?    shows help and usage
-    -d string
-          database name (default "postgres")
-    -format string
-          camelCase (c) or original (o) (default "c")
-    -h string
-          host of database (default "127.0.0.1")
-    -help
-          shows help and usage
-    -of string
-          output file path (default "./output")
-    -p string
-          password of user
-    -pn string
-          package name (default "dto")
-    -port string
-          port of database host, if not specified, it will be the default ports for the supported databases
-    -pre string
-          prefix for file- and struct names
-    -s string
-          schema name (default "public")
-    -st
-          generate struct for use in Masterminds/structable (https://github.com/Masterminds/structable)
-    -sto
-          generate struct ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
-    -str
-          generate a structable.Recorder (requires -st or -sto flag)
-    -suf string
-          suffix for file- and struct names
-    -t string
-          type of database to use, currently supported: [pg mysql] (default "pg")
-    -u string
-          user to connect to the database (default "postgres")
-    -v    verbose output
+  -?    shows help and usage
+  -d string
+        database name (default "postgres")
+  -format string
+        camelCase (c) or original (o) (default "c")
+  -h string
+        host of database (default "127.0.0.1")
+  -help
+        shows help and usage
+  -of string
+        output file path (default "./output")
+  -p string
+        password of user
+  -pn string
+        package name (default "dto")
+  -port string
+        port of database host, if not specified, it will be the default ports for the supported databases (default "5432")
+  -pre string
+        prefix for file- and struct names
+  -s string
+        schema name (default "public")
+  -structable-recorder
+        generate a structable.Recorder field
+  -suf string
+        suffix for file- and struct names
+  -t string
+        type of database to use, currently supported: [pg mysql] (default "pg")
+  -tags-no-db db
+        do not create db-tags
+  -tags-structable
+        generate struct for use in Masterminds/structable (https://github.com/Masterminds/structable)
+  -tags-structable-only
+        generate struct ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+  -u string
+        user to connect to the database (default "postgres")
+  -v    verbose output
+
 ```
 
 ## Contributing
