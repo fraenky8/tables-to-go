@@ -1,46 +1,32 @@
 package tablestogo
 
 import (
-	"database/sql"
-
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
 
-type Table struct {
-	TableName string `db:"table_name"`
-	Columns   []Column
-}
-
-type Column struct {
-	OrdinalPosition        int            `db:"ordinal_position"`
-	ColumnName             string         `db:"column_name"`
-	DataType               string         `db:"data_type"`
-	ColumnDefault          sql.NullString `db:"column_default"`
-	IsNullable             string         `db:"is_nullable"`
-	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
-	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	ColumnKey              string         `db:"column_key"` // mysql specific
-	Extra                  string         `db:"extra"`      // mysql specific
-}
-
+// database interface for the concrete databases
 type Database interface {
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)
 	GetColumnsOfTable(table *Table) (err error)
 }
 
+// a generic database - like a parent/base class of all other concrete databases
 type GeneralDatabase struct {
 	db                    *sqlx.DB
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*Settings
 }
 
+// concrete database support for PostgreSQL
+// PostgreSQL satisfy the database interface
 type PostgreDatabase struct {
 	*GeneralDatabase
 }
 
+// gets all tables for a given schema
 func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 
 	err = db.Select(&tables, `
@@ -61,6 +47,7 @@ func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 	return tables, err
 }
 
+// prepares the statement for retrieving the columns of a specific table in a given schema
 func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
 	pg.GetColumnsOfTableStmt, err = db.Preparex(`
@@ -81,6 +68,7 @@ func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 	return err
 }
 
+// executes the statement for retrieving the columns of a specific table in a given schema
 func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 
 	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, pg.Schema)
@@ -95,10 +83,13 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 	return err
 }
 
+// concrete database support for MySQL
+// MySQL satisfy the database interface
 type MySQLDatabase struct {
 	*GeneralDatabase
 }
 
+// gets all tables for a given database by name
 func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 
 	err = db.Select(&tables, `
@@ -119,6 +110,7 @@ func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 	return tables, err
 }
 
+// prepares the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
 	mysql.GetColumnsOfTableStmt, err = db.Preparex(`
@@ -141,6 +133,7 @@ func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 	return err
 }
 
+// executes the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) GetColumnsOfTable(table *Table) (err error) {
 
 	mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, mysql.DbName)

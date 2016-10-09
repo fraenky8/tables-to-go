@@ -1,3 +1,4 @@
+// main file
 package main
 
 import (
@@ -6,39 +7,28 @@ import (
 
 	"github.com/fraenky8/tables-to-go/src"
 )
-
+// supported command line args
 type CmdArgs struct {
-	// command line args
 	Help bool
 	*tablestogo.Settings
 }
 
-var (
-	cmdArgs *CmdArgs
-)
-
+// main function to run the transformations
 func main() {
 
-	cmdArgs = prepareCmdArgs()
+	cmdArgs := prepareCmdArgs()
 
 	if cmdArgs.Help {
 		flag.Usage()
 		return
 	}
 
-	err := tablestogo.VerifySettings(cmdArgs.Settings)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	err = tablestogo.Run(cmdArgs.Settings)
-
-	if err != nil {
+	if err := tablestogo.Run(cmdArgs.Settings); err != nil {
 		fmt.Println(err)
 	}
 }
 
+// helper function to handle and prepare the command line arguments with default values
 func prepareCmdArgs() (cmdArgs *CmdArgs) {
 
 	cmdArgs = &CmdArgs{

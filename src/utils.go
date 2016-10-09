@@ -2,7 +2,7 @@ package tablestogo
 
 import "strings"
 
-// checks if need (string) is in haystack ([]string)
+// checks if needle (string) is in haystack ([]string)
 func IsStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {

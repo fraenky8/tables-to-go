@@ -10,12 +10,34 @@ import (
 	"bytes"
 	"strings"
 
+	"database/sql"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
+// a table has a name and a set (slice) of columns
+type Table struct {
+	TableName string `db:"table_name"`
+	Columns   []Column
+}
+
+// stores information about a column
+type Column struct {
+	OrdinalPosition        int            `db:"ordinal_position"`
+	ColumnName             string         `db:"column_name"`
+	DataType               string         `db:"data_type"`
+	ColumnDefault          sql.NullString `db:"column_default"`
+	IsNullable             string         `db:"is_nullable"`
+	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
+	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	ColumnKey              string         `db:"column_key"` // mysql specific
+	Extra                  string         `db:"extra"`      // mysql specific
+}
+
 var (
+	// holds the db instance
 	db *sqlx.DB
 
 	SupportedDbTypes       = []string{"pg", "mysql"}
@@ -34,6 +56,7 @@ var (
 	settings *Settings
 )
 
+// stores the supported settings / command line arguments
 type Settings struct {
 	Verbose        bool
 	DbType         string
@@ -54,6 +77,7 @@ type Settings struct {
 	IsMastermindStructableRecorder bool
 }
 
+// constructor for settings with default values
 func NewSettings() *Settings {
 	return &Settings{
 		Verbose:                        false,
@@ -75,6 +99,7 @@ func NewSettings() *Settings {
 	}
 }
 
+// main function to run the conversions
 func Run(s *Settings) (err error) {
 
 	err = VerifySettings(s)
@@ -109,6 +134,7 @@ func Run(s *Settings) (err error) {
 	return run(database)
 }
 
+// verifies the settings and checks the given output paths
 func VerifySettings(settings *Settings) (err error) {
 
 	if !IsStringInSlice(settings.DbType, SupportedDbTypes) {
@@ -215,6 +241,11 @@ func run(db Database) (err error) {
 			return err
 		}
 
+		// TODO
+		// rename
+		// create struct of columns -> colum names + []annotations -> foreach annotation (db;mastermind,gorm,...) build them
+		// -> strategy pattern / decorator
+		// write file
 		err = createStructOfTable(table)
 
 		if err != nil {

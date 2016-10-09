@@ -5,6 +5,8 @@ A small and helpful tool which helps during developing with a changing database 
 
 **Tables change, run the tool, get your structs! Easy!**
 
+[![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
+
 ## Installing
 
 ```

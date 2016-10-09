@@ -25,3 +25,19 @@ func TestCamelCaseString(t *testing.T) {
 	}
 
 }
+
+func TestIsStringInSliceTrue(t *testing.T) {
+	needle := "hello"
+	haystack := []string{"hello", "world"}
+	if !IsStringInSlice(needle, haystack) {
+		t.Errorf("IsStringInSlice(%q): expected %q, actual %q", needle, true, false)
+	}
+}
+
+func TestIsStringInSliceFalse(t *testing.T) {
+	needle := "cruel"
+	haystack := []string{"hello", "world"}
+	if IsStringInSlice(needle, haystack) {
+		t.Errorf("IsStringInSlice(%q): expected %q, actual %q", needle, false, true)
+	}
+}
