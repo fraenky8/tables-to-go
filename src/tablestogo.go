@@ -188,7 +188,7 @@ func Run(s *Settings) (err error) {
 	if err != nil {
 		return err
 	}
-	//defer db.Close()
+	defer db.Close()
 
 	return run()
 }
