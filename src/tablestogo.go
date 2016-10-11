@@ -38,17 +38,20 @@ type Column struct {
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
+// interface for types of struct-tages
 type Tagger interface {
 	GenerateTag(column Column) string
 }
 
+// standard "db"-tag
 type DbTag string
-type StblTag string
-type SqlTag string
 
 func (t *DbTag) GenerateTag(column Column) string {
 	return `db:"` + column.ColumnName + `"`
 }
+
+// Masterminds/structable "stbl"-tag
+type StblTag string
 
 func (t *StblTag) GenerateTag(column Column) string {
 
@@ -65,7 +68,9 @@ func (t *StblTag) GenerateTag(column Column) string {
 	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
 }
 
-// TODO
+// TODO "sql"-tag for usage in gorm and other ORM libs
+type SqlTag string
+// not supported as command line flag yet
 func (t *SqlTag) GenerateTag(column Column) string {
 	return `sql:"` + column.ColumnName + `"`
 }
@@ -93,6 +98,8 @@ var (
 		"mysql": "3306",
 	}
 
+	// map of Tagger used
+	// key is a ascending sequence of i*2 to determine easily which tags to generate later
 	taggers = map[uint64]Tagger{
 		1: new(DbTag),
 		2: new(StblTag),
