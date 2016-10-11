@@ -17,6 +17,102 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var (
+	// holds the db instance
+	db *sqlx.DB
+
+	// used concrete database, one of the supported types below
+	database Database
+
+	// the global applied settings
+	settings *Settings
+
+	SupportedDbTypes       = []string{"pg", "mysql"}
+	SupportedOutputFormats = []string{"c", "o"}
+
+	DbTypeToDriverMap = map[string]string{
+		"pg":    "postgres",
+		"mysql": "mysql",
+	}
+
+	DbDefaultPorts = map[string]string{
+		"pg":    "5432",
+		"mysql": "3306",
+	}
+
+	// map of Tagger used
+	// key is a ascending sequence of i*2 to determine easily which tags to generate later
+	taggers = map[int]Tagger{
+		1: new(DbTag),
+		2: new(StblTag),
+		4: new(SqlTag),
+	}
+)
+
+// stores the supported settings / command line arguments
+type Settings struct {
+	Verbose        bool
+	DbType         string
+	User           string
+	Pswd           string
+	DbName         string
+	Schema         string
+	Host           string
+	Port           string
+	OutputFilePath string
+	OutputFormat   string
+	PackageName    string
+	Prefix         string
+	Suffix         string
+
+	TagsNoDb bool
+
+	TagsMastermindStructable       bool
+	TagsMastermindStructableOnly   bool
+	IsMastermindStructableRecorder bool
+
+	// TODO not implemented yet
+	TagsGorm bool
+
+	// experimental
+	TagsSql     bool
+	TagsSqlOnly bool
+
+	effectiveTags int
+}
+
+// constructor for settings with default values
+func NewSettings() *Settings {
+	return &Settings{
+		Verbose:        false,
+		DbType:         "pg",
+		User:           "postgres",
+		Pswd:           "",
+		DbName:         "postgres",
+		Schema:         "public",
+		Host:           "127.0.0.1",
+		Port:           "", // left blank -> is automatically determined if not set
+		OutputFilePath: "./output",
+		OutputFormat:   "c",
+		PackageName:    "dto",
+		Prefix:         "",
+		Suffix:         "",
+
+		TagsNoDb: false,
+
+		TagsMastermindStructable:       false,
+		TagsMastermindStructableOnly:   false,
+		IsMastermindStructableRecorder: false,
+
+		TagsGorm: false,
+
+		TagsSql:     false,
+		TagsSqlOnly: false,
+
+		effectiveTags: 1,
+	}
+}
+
 // a table has a name and a set (slice) of columns
 type Table struct {
 	TableName string `db:"table_name"`
@@ -32,6 +128,7 @@ type Column struct {
 	IsNullable             string         `db:"is_nullable"`
 	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
 	ColumnKey              string         `db:"column_key"`      // mysql specific
 	Extra                  string         `db:"extra"`           // mysql specific
 	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
@@ -68,99 +165,31 @@ func (t *StblTag) GenerateTag(column Column) string {
 	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
 }
 
-// TODO "sql"-tag for usage in gorm and other ORM libs
+// experimental "sql"-tag
 type SqlTag string
-// not supported as command line flag yet
+
 func (t *SqlTag) GenerateTag(column Column) string {
-	return `sql:"` + column.ColumnName + `"`
-}
 
-var (
-	// holds the db instance
-	db *sqlx.DB
-
-	// used concrete database, one of the supported types below
-	database Database
-
-	// the global applied settings
-	settings *Settings
-
-	SupportedDbTypes       = []string{"pg", "mysql"}
-	SupportedOutputFormats = []string{"c", "o"}
-
-	DbTypeToDriverMap = map[string]string{
-		"pg":    "postgres",
-		"mysql": "mysql",
+	colType := ""
+	characterMaximumLength := ""
+	if database.IsString(column) && column.CharacterMaximumLength.Valid {
+		characterMaximumLength = fmt.Sprintf("(%v)", column.CharacterMaximumLength.Int64)
 	}
 
-	DbDefaultPorts = map[string]string{
-		"pg":    "5432",
-		"mysql": "3306",
+	colType = fmt.Sprintf("type:%v%v;", column.DataType, characterMaximumLength)
+
+	isNullable := ""
+	if !database.IsNullable(column) {
+		isNullable = "not null;"
 	}
 
-	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine easily which tags to generate later
-	taggers = map[uint64]Tagger{
-		1: new(DbTag),
-		2: new(StblTag),
-		4: new(SqlTag),
-	}
-)
+	// TODO size:###
+	// TODO unique, key, index, ...
 
-// stores the supported settings / command line arguments
-type Settings struct {
-	Verbose        bool
-	DbType         string
-	User           string
-	Pswd           string
-	DbName         string
-	Schema         string
-	Host           string
-	Port           string
-	OutputFilePath string
-	OutputFormat   string
-	PackageName    string
-	Prefix         string
-	Suffix         string
+	tag := colType + isNullable
+	tag = strings.TrimSuffix(tag, ";")
 
-	TagsNoDb bool
-
-	TagsMastermindStructable       bool
-	TagsMastermindStructableOnly   bool
-	IsMastermindStructableRecorder bool
-
-	TagsGorm bool
-
-	effectiveTags uint64
-}
-
-// constructor for settings with default values
-func NewSettings() *Settings {
-	return &Settings{
-		Verbose:        false,
-		DbType:         "pg",
-		User:           "postgres",
-		Pswd:           "",
-		DbName:         "postgres",
-		Schema:         "public",
-		Host:           "127.0.0.1",
-		Port:           "", // left blank -> is automatically determined if not set
-		OutputFilePath: "./output",
-		OutputFormat:   "c",
-		PackageName:    "dto",
-		Prefix:         "",
-		Suffix:         "",
-
-		TagsNoDb: false,
-
-		TagsMastermindStructable:       false,
-		TagsMastermindStructableOnly:   false,
-		IsMastermindStructableRecorder: false,
-
-		TagsGorm: false,
-
-		effectiveTags: 1,
-	}
+	return `sql:"` + tag + `"`
 }
 
 // main function to run the conversions
@@ -258,17 +287,17 @@ func createEffectiveTags() {
 		settings.effectiveTags |= 2
 	}
 	if settings.TagsMastermindStructableOnly {
-		if !settings.TagsNoDb {
-			settings.effectiveTags -= 1
-		}
-		if settings.TagsMastermindStructable {
-			settings.effectiveTags -= 2
-		}
+		settings.effectiveTags = 0
+		settings.effectiveTags |= 2
+	}
+	if settings.TagsSql {
 		settings.effectiveTags |= 4
 	}
-	if settings.TagsGorm {
-		settings.effectiveTags |= 8
+	if settings.TagsSqlOnly {
+		settings.effectiveTags = 0
+		settings.effectiveTags |= 4
 	}
+	// last tag-"ONLY" wins if multiple specified
 }
 
 func connect() (err error) {
@@ -353,7 +382,7 @@ func createStructOfTable(table *Table) (err error) {
 		if settings.OutputFormat == "c" {
 			columnName = CamelCaseString(columnName)
 		}
-		columnType, isTime := mapDbColumnTypeToGoType(column.DataType, column.IsNullable)
+		columnType, isTime := mapDbColumnTypeToGoType(column)
 
 		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(column) + "\n")
 
@@ -425,8 +454,7 @@ func createStructOfTable(table *Table) (err error) {
 }
 
 func generateTags(column Column) (tags string) {
-	var t uint64
-	for t = 1; t <= settings.effectiveTags; t *= 2 {
+	for t := 1; t <= settings.effectiveTags; t *= 2 {
 		if shouldTag(t) {
 			tags += taggers[t].GenerateTag(column) + " "
 		}
@@ -437,51 +465,47 @@ func generateTags(column Column) (tags string) {
 	return tags
 }
 
-func shouldTag(t uint64) bool {
+func shouldTag(t int) bool {
 	return settings.effectiveTags&t > 0
 }
 
-func mapDbColumnTypeToGoType(dbDataType string, isNullable string) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(column Column) (goType string, isTime bool) {
 
 	isTime = false
 
-	// first row: postgresql datatypes  // TODO bitstrings, enum, other special types
-	// second row: additional mysql datatypes not covered by first row // TODO bit, enums, set
-	// and so on
-
-	switch dbDataType {
-	case "integer", "bigint", "bigserial", "smallint", "smallserial", "serial",
-		"int", "tinyint", "mediumint":
-		goType = "int"
-		if isNullable == "YES" {
-			goType = "sql.NullInt64"
-		}
-	case "double precision", "numeric", "decimal", "real",
-		"float", "double":
-		goType = "float64"
-		if isNullable == "YES" {
-			goType = "sql.NullFloat64"
-		}
-	case "character varying", "character", "text",
-		"char", "varchar", "binary", "varbinary", "blob":
+	if database.IsString(column) || database.IsText(column) {
 		goType = "string"
-		if isNullable == "YES" {
+		if database.IsNullable(column) {
 			goType = "sql.NullString"
 		}
-	case "time", "timestamp", "time with time zone", "timestamp with time zone", "time without time zone", "timestamp without time zone",
-		"date", "datetime", "year":
+	} else if database.IsInteger(column) {
+		goType = "int"
+		if database.IsNullable(column) {
+			goType = "sql.NullInt64"
+		}
+	} else if database.IsFloat(column) {
+		goType = "float64"
+		if database.IsNullable(column) {
+			goType = "sql.NullFloat64"
+		}
+	} else if database.IsTemporal(column) {
 		goType = "time.Time"
-		if isNullable == "YES" {
+		if database.IsNullable(column) {
 			goType = "pq.NullTime"
 		}
 		isTime = true
-	case "boolean":
-		goType = "bool"
-		if isNullable == "YES" {
-			goType = "sql.NullBool"
+	} else {
+
+		// TODO handle special data types
+		switch column.DataType {
+		case "boolean":
+			goType = "bool"
+			if database.IsNullable(column) {
+				goType = "sql.NullBool"
+			}
+		default:
+			goType = "sql.NullString"
 		}
-	default:
-		goType = "sql.NullString"
 	}
 
 	return goType, isTime

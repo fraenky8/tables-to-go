@@ -34,7 +34,6 @@
 //          Height    sql.NullFloat64 `db:"height"`
 //      }
 //
-//
 // Commandline Flags
 //
 //       go run main.go -help
@@ -137,6 +136,9 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.BoolVar(&cmdArgs.TagsMastermindStructable, "tags-structable", cmdArgs.TagsMastermindStructable, "generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)")
 	flag.BoolVar(&cmdArgs.TagsMastermindStructableOnly, "tags-structable-only", cmdArgs.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
 	flag.BoolVar(&cmdArgs.IsMastermindStructableRecorder, "structable-recorder", cmdArgs.IsMastermindStructableRecorder, "generate a structable.Recorder field")
+
+	flag.BoolVar(&cmdArgs.TagsSql, "experimental-tags-sql", cmdArgs.TagsSql, "generate struct with sql-tags")
+	flag.BoolVar(&cmdArgs.TagsSqlOnly, "experimental-tags-sql-only", cmdArgs.TagsSqlOnly, "generate struct with ONLY sql-tags")
 
 	flag.Parse()
 
