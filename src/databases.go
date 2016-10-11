@@ -3,6 +3,8 @@ package tablestogo
 import (
 	"fmt"
 
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -11,6 +13,9 @@ type Database interface {
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)
 	GetColumnsOfTable(table *Table) (err error)
+	IsPrimaryKey(column Column) bool
+	IsAutoIncrement(column Column) bool
+	CreateDataSourceName(settings *Settings) string
 }
 
 // a generic database - like a parent/base class of all other concrete databases
@@ -52,17 +57,25 @@ func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
 	pg.GetColumnsOfTableStmt, err = db.Preparex(`
 		SELECT
-		  ordinal_position,
-		  column_name,
-		  data_type,
-		  column_default,
-		  is_nullable,
-		  character_maximum_length,
-		  numeric_precision
-		FROM information_schema.columns
-		WHERE table_name = $1
-		AND table_schema = $2
-		ORDER BY ordinal_position
+			ic.ordinal_position,
+			ic.column_name,
+			ic.data_type,
+			ic.column_default,
+			ic.is_nullable,
+			ic.character_maximum_length,
+			ic.numeric_precision,
+			itc.constraint_name,
+			itc.constraint_type
+		FROM information_schema.columns AS ic
+			LEFT JOIN information_schema.key_column_usage AS ikcu ON ic.table_name = ikcu.table_name
+			AND ic.table_schema = ikcu.table_schema
+			AND ic.column_name = ikcu.column_name
+			LEFT JOIN information_schema.table_constraints AS itc ON ic.table_name = itc.table_name
+			AND ic.table_schema = itc.table_schema
+			AND ikcu.constraint_name = itc.constraint_name
+		WHERE ic.table_name = $1
+		AND ic.table_schema = $2
+		ORDER BY ic.ordinal_position
 	`)
 
 	return err
@@ -81,6 +94,22 @@ func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 	}
 
 	return err
+}
+
+// checks if column belongs to primary key
+func (pg *PostgreDatabase) IsPrimaryKey(column Column) bool {
+	return strings.Contains(column.ConstraintType.String, "PRIMARY KEY")
+}
+
+// checks if column is a serial column
+func (pg *PostgreDatabase) IsAutoIncrement(column Column) bool {
+	return strings.Contains(column.ColumnDefault.String, "nextval")
+}
+
+// creates the DSN String to connect to this database
+func (pg *PostgreDatabase) CreateDataSourceName(settings *Settings) string {
+	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
+		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }
 
 // concrete database support for MySQL
@@ -147,4 +176,20 @@ func (mysql *MySQLDatabase) GetColumnsOfTable(table *Table) (err error) {
 	}
 
 	return err
+}
+
+// checks if column belongs to primary key
+func (mysql *MySQLDatabase) IsPrimaryKey(column Column) bool {
+	return strings.Contains(column.ColumnKey, "PRI")
+}
+
+// checks if column is a auto_increment column
+func (mysql *MySQLDatabase) IsAutoIncrement(column Column) bool {
+	return strings.Contains(column.Extra, "auto_increment")
+}
+
+// creates the DSN String to connect to this database
+func (mysql *MySQLDatabase) CreateDataSourceName(settings *Settings) string {
+	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
+		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }

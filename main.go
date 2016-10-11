@@ -53,10 +53,10 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.StringVar(&cmdArgs.Suffix, "suf", cmdArgs.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&cmdArgs.PackageName, "pn", cmdArgs.PackageName, "package name")
 
-	flag.BoolVar(&cmdArgs.TagsNoDb, "tags-no-db", cmdArgs.TagsNoDb, "do not create `db`-tags")
+	flag.BoolVar(&cmdArgs.TagsNoDb, "tags-no-db", cmdArgs.TagsNoDb, "do not create db-tags")
 
-	flag.BoolVar(&cmdArgs.TagsMastermindStructable, "tags-structable", cmdArgs.TagsMastermindStructable, "generate struct for use in Masterminds/structable (https://github.com/Masterminds/structable)")
-	flag.BoolVar(&cmdArgs.TagsMastermindStructableOnly, "tags-structable-only", cmdArgs.TagsMastermindStructableOnly, "generate struct ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&cmdArgs.TagsMastermindStructable, "tags-structable", cmdArgs.TagsMastermindStructable, "generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&cmdArgs.TagsMastermindStructableOnly, "tags-structable-only", cmdArgs.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
 	flag.BoolVar(&cmdArgs.IsMastermindStructableRecorder, "structable-recorder", cmdArgs.IsMastermindStructableRecorder, "generate a structable.Recorder field")
 
 	flag.Parse()

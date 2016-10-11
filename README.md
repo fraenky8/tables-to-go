@@ -86,7 +86,7 @@ Running on remote database server (eg. Mysql@Docker)
 go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
 ```
 
-PostgreSQL exmple with different default schema but default database `postgres`:
+PostgreSQL example with different default schema but default database `postgres`:
 
 ```
 go run main.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
@@ -143,7 +143,7 @@ go run main.go -help
   -pn string
         package name (default "dto")
   -port string
-        port of database host, if not specified, it will be the default ports for the supported databases (default "5432")
+        port of database host, if not specified, it will be the default ports for the supported databases
   -pre string
         prefix for file- and struct names
   -s string
@@ -154,16 +154,15 @@ go run main.go -help
         suffix for file- and struct names
   -t string
         type of database to use, currently supported: [pg mysql] (default "pg")
-  -tags-no-db db
+  -tags-no-db
         do not create db-tags
   -tags-structable
-        generate struct for use in Masterminds/structable (https://github.com/Masterminds/structable)
+        generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
   -tags-structable-only
-        generate struct ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+        generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
   -u string
         user to connect to the database (default "postgres")
   -v    verbose output
-
 ```
 
 ## Contributing

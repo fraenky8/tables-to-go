@@ -32,8 +32,10 @@ type Column struct {
 	IsNullable             string         `db:"is_nullable"`
 	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	ColumnKey              string         `db:"column_key"` // mysql specific
-	Extra                  string         `db:"extra"`      // mysql specific
+	ColumnKey              string         `db:"column_key"`      // mysql specific
+	Extra                  string         `db:"extra"`           // mysql specific
+	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
+	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
 type Tagger interface {
@@ -51,12 +53,16 @@ func (t *DbTag) GenerateTag(column Column) string {
 func (t *StblTag) GenerateTag(column Column) string {
 
 	isPk := ""
-	if strings.Contains(column.ColumnDefault.String, "nextval") || // pg
-		(strings.Contains(column.ColumnKey, "PRI") && strings.Contains(column.Extra, "auto_increment")) { //mysql
-		isPk = `,PRIMARY_KEY,SERIAL,AUTO_INCREMENT`
+	if database.IsPrimaryKey(column) {
+		isPk = ",PRIMARY_KEY"
 	}
 
-	return `stbl:"` + column.ColumnName + isPk + `"`
+	isAutoIncrement := ""
+	if database.IsAutoIncrement(column) {
+		isAutoIncrement = ",SERIAL,AUTO_INCREMENT"
+	}
+
+	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
 }
 
 // TODO
@@ -67,6 +73,12 @@ func (t *SqlTag) GenerateTag(column Column) string {
 var (
 	// holds the db instance
 	db *sqlx.DB
+
+	// used concrete database, one of the supported types below
+	database Database
+
+	// the global applied settings
+	settings *Settings
 
 	SupportedDbTypes       = []string{"pg", "mysql"}
 	SupportedOutputFormats = []string{"c", "o"}
@@ -80,8 +92,6 @@ var (
 		"pg":    "5432",
 		"mysql": "3306",
 	}
-
-	settings *Settings
 
 	taggers = map[uint64]Tagger{
 		1: new(DbTag),
@@ -127,7 +137,7 @@ func NewSettings() *Settings {
 		DbName:         "postgres",
 		Schema:         "public",
 		Host:           "127.0.0.1",
-		Port:           "5432",
+		Port:           "", // left blank -> is automatically determined if not set
 		OutputFilePath: "./output",
 		OutputFormat:   "c",
 		PackageName:    "dto",
@@ -157,13 +167,6 @@ func Run(s *Settings) (err error) {
 
 	createEffectiveTags()
 
-	err = connect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	var database Database
 	generalDatabase := &GeneralDatabase{
 		db:       db,
 		Settings: s,
@@ -180,7 +183,14 @@ func Run(s *Settings) (err error) {
 		}
 	}
 
-	return run(database)
+	// connection must be appear here, database must exists at this point
+	err = connect()
+	if err != nil {
+		return err
+	}
+	//defer db.Close()
+
+	return run()
 }
 
 // verifies the settings and checks the given output paths
@@ -255,7 +265,7 @@ func createEffectiveTags() {
 }
 
 func connect() (err error) {
-	db, err = sqlx.Connect(DbTypeToDriverMap[settings.DbType], createDataSourceName())
+	db, err = sqlx.Connect(DbTypeToDriverMap[settings.DbType], database.CreateDataSourceName(settings))
 	if err != nil {
 		usingPswd := "no"
 		if settings.Pswd != "" {
@@ -268,22 +278,11 @@ func connect() (err error) {
 	return db.Ping()
 }
 
-func createDataSourceName() (dataSourceName string) {
-	switch settings.DbType {
-	case "mysql":
-		dataSourceName = fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
-	default: // pg
-		dataSourceName = fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
-			settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
-	}
-	return dataSourceName
-}
-
-func run(db Database) (err error) {
+func run() (err error) {
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
-	tables, err := db.GetTables()
+	tables, err := database.GetTables()
 
 	if err != nil {
 		return err
@@ -293,7 +292,7 @@ func run(db Database) (err error) {
 		fmt.Printf("> count of tables: %v\r\n", len(tables))
 	}
 
-	err = db.PrepareGetColumnsOfTableStmt()
+	err = database.PrepareGetColumnsOfTableStmt()
 
 	if err != nil {
 		return err
@@ -305,10 +304,14 @@ func run(db Database) (err error) {
 			fmt.Printf("> processing table %q\r\n", table.TableName)
 		}
 
-		err = db.GetColumnsOfTable(table)
+		err = database.GetColumnsOfTable(table)
 
 		if err != nil {
 			return err
+		}
+
+		if settings.Verbose {
+			fmt.Printf("\t> count of columns: %v\r\n", len(table.Columns))
 		}
 
 		err = createStructOfTable(table)
@@ -333,6 +336,11 @@ func createStructOfTable(table *Table) (err error) {
 	timeIndicator := 0
 
 	for _, column := range table.Columns {
+
+		// TODO add verbosity levels
+		//if settings.Verbose {
+		//	fmt.Printf("\t> %v\r\n", column.ColumnName)
+		//}
 
 		columnName := strings.Title(column.ColumnName)
 		if settings.OutputFormat == "c" {
