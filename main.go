@@ -86,7 +86,7 @@ import (
 	"github.com/fraenky8/tables-to-go/src"
 )
 
-// supported command line args
+// CmdArgs represents the supported command line args
 type CmdArgs struct {
 	Help bool
 	*tablestogo.Settings

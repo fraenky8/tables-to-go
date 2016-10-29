@@ -30,7 +30,7 @@ func TestIsStringInSliceTrue(t *testing.T) {
 	needle := "hello"
 	haystack := []string{"hello", "world"}
 	if !IsStringInSlice(needle, haystack) {
-		t.Errorf("IsStringInSlice(%q): expected %q, actual %q", needle, true, false)
+		t.Errorf("IsStringInSlice(%v): expected %v, actual %v", needle, true, false)
 	}
 }
 
@@ -38,6 +38,6 @@ func TestIsStringInSliceFalse(t *testing.T) {
 	needle := "cruel"
 	haystack := []string{"hello", "world"}
 	if IsStringInSlice(needle, haystack) {
-		t.Errorf("IsStringInSlice(%q): expected %q, actual %q", needle, false, true)
+		t.Errorf("IsStringInSlice(%v): expected %v, actual %v", needle, false, true)
 	}
 }
