@@ -2,7 +2,7 @@ package tablestogo
 
 import "github.com/jmoiron/sqlx"
 
-// database interface for the concrete databases
+// Database interface for the concrete databases
 type Database interface {
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)
@@ -32,13 +32,14 @@ type Database interface {
 	// TODO mysql: bit, enums, set
 }
 
-// a generic database - like a parent/base class of all other concrete databases
+// GeneralDatabase represents a generic database - like a parent/base class of all other concrete databases
 type GeneralDatabase struct {
 	db                    *sqlx.DB
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*Settings
 }
 
+// IsNullable returns true if column is a nullable one
 func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
 }

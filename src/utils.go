@@ -2,7 +2,7 @@ package tablestogo
 
 import "strings"
 
-// checks if needle (string) is in haystack ([]string)
+// IsStringInSlice checks if needle (string) is in haystack ([]string)
 func IsStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {
@@ -12,7 +12,7 @@ func IsStringInSlice(needle string, haystack []string) bool {
 	return false
 }
 
-// converts snake_case_string to SnakeCaseString (CamelCase)
+// CamelCaseString converts snake_case_string to SnakeCaseString (CamelCase)
 func CamelCaseString(s string) (cc string) {
 	splitted := strings.Split(s, "_")
 

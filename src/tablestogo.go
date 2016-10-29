@@ -12,8 +12,10 @@ import (
 
 	"database/sql"
 
+	// mysql database driver
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	// postgres database driver
 	_ "github.com/lib/pq"
 )
 
@@ -27,14 +29,18 @@ var (
 	// the global applied settings
 	settings *Settings
 
-	SupportedDbTypes       = []string{"pg", "mysql"}
+	// SupportedDbTypes represents the supported databases
+	SupportedDbTypes = []string{"pg", "mysql"}
+	// SupportedOutputFormats represents the supported output formats
 	SupportedOutputFormats = []string{"c", "o"}
 
+	// DbTypeToDriverMap maps the database type to the driver names
 	DbTypeToDriverMap = map[string]string{
 		"pg":    "postgres",
 		"mysql": "mysql",
 	}
 
+	// DbDefaultPorts maps the database type to the default ports
 	DbDefaultPorts = map[string]string{
 		"pg":    "5432",
 		"mysql": "3306",
@@ -45,11 +51,11 @@ var (
 	taggers = map[int]Tagger{
 		1: new(DbTag),
 		2: new(StblTag),
-		4: new(SqlTag),
+		4: new(SQLTag),
 	}
 )
 
-// stores the supported settings / command line arguments
+// Settings stores the supported settings / command line arguments
 type Settings struct {
 	Verbose        bool
 	DbType         string
@@ -75,13 +81,13 @@ type Settings struct {
 	TagsGorm bool
 
 	// experimental
-	TagsSql     bool
-	TagsSqlOnly bool
+	TagsSQL     bool
+	TagsSQLOnly bool
 
 	effectiveTags int
 }
 
-// constructor for settings with default values
+// NewSettings constructs settings with default values
 func NewSettings() *Settings {
 	return &Settings{
 		Verbose:        false,
@@ -106,20 +112,20 @@ func NewSettings() *Settings {
 
 		TagsGorm: false,
 
-		TagsSql:     false,
-		TagsSqlOnly: false,
+		TagsSQL:     false,
+		TagsSQLOnly: false,
 
 		effectiveTags: 1,
 	}
 }
 
-// a table has a name and a set (slice) of columns
+// Table has a name and a set (slice) of columns
 type Table struct {
 	TableName string `db:"table_name"`
 	Columns   []Column
 }
 
-// stores information about a column
+// Column stores information about a column
 type Column struct {
 	OrdinalPosition        int            `db:"ordinal_position"`
 	ColumnName             string         `db:"column_name"`
@@ -135,21 +141,23 @@ type Column struct {
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
-// interface for types of struct-tages
+// Tagger interface for types of struct-tages
 type Tagger interface {
 	GenerateTag(column Column) string
 }
 
-// standard "db"-tag
+// DbTag is the standard "db"-tag
 type DbTag string
 
+// GenerateTag for DbTag to satisfy the Tagger interface
 func (t *DbTag) GenerateTag(column Column) string {
 	return `db:"` + column.ColumnName + `"`
 }
 
-// Masterminds/structable "stbl"-tag
+// StblTag represents the Masterminds/structable "stbl"-tag
 type StblTag string
 
+// GenerateTag for StblTag to satisfy the Tagger interface
 func (t *StblTag) GenerateTag(column Column) string {
 
 	isPk := ""
@@ -165,10 +173,11 @@ func (t *StblTag) GenerateTag(column Column) string {
 	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
 }
 
-// experimental "sql"-tag
-type SqlTag string
+// SQLTag is the experimental "sql"-tag
+type SQLTag string
 
-func (t *SqlTag) GenerateTag(column Column) string {
+// GenerateTag for SQLTag to satisfy the Tagger interface
+func (t *SQLTag) GenerateTag(column Column) string {
 
 	colType := ""
 	characterMaximumLength := ""
@@ -192,7 +201,7 @@ func (t *SqlTag) GenerateTag(column Column) string {
 	return `sql:"` + tag + `"`
 }
 
-// main function to run the conversions
+// Run is the main function to run the conversions
 func Run(s *Settings) (err error) {
 
 	err = VerifySettings(s)
@@ -229,15 +238,15 @@ func Run(s *Settings) (err error) {
 	return run()
 }
 
-// verifies the settings and checks the given output paths
+// VerifySettings verifies the settings and checks the given output paths
 func VerifySettings(settings *Settings) (err error) {
 
 	if !IsStringInSlice(settings.DbType, SupportedDbTypes) {
-		return errors.New(fmt.Sprintf("type of database %q not supported! %v", settings.DbType, SupportedDbTypes))
+		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, SupportedDbTypes)
 	}
 
 	if !IsStringInSlice(settings.OutputFormat, SupportedOutputFormats) {
-		return errors.New(fmt.Sprintf("output format %q not supported! %v", settings.OutputFormat, SupportedOutputFormats))
+		return fmt.Errorf("output format %q not supported! %v", settings.OutputFormat, SupportedOutputFormats)
 	}
 
 	if err = verifyOutputPath(settings.OutputFilePath); err != nil {
@@ -253,7 +262,7 @@ func VerifySettings(settings *Settings) (err error) {
 	}
 
 	if settings.PackageName == "" {
-		return errors.New("name of package can not be empty!")
+		return errors.New("name of package can not be empty")
 	}
 
 	return err
@@ -264,11 +273,11 @@ func verifyOutputPath(outputFilePath string) (err error) {
 	info, err := os.Stat(outputFilePath)
 
 	if os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("output file path %q does not exists!", outputFilePath))
+		return fmt.Errorf("output file path %q does not exists", outputFilePath)
 	}
 
 	if !info.Mode().IsDir() {
-		return errors.New(fmt.Sprintf("output file path %q is not a directory!", outputFilePath))
+		return fmt.Errorf("output file path %q is not a directory", outputFilePath)
 	}
 
 	return err
@@ -290,10 +299,10 @@ func createEffectiveTags() {
 		settings.effectiveTags = 0
 		settings.effectiveTags |= 2
 	}
-	if settings.TagsSql {
+	if settings.TagsSQL {
 		settings.effectiveTags |= 4
 	}
-	if settings.TagsSqlOnly {
+	if settings.TagsSQLOnly {
 		settings.effectiveTags = 0
 		settings.effectiveTags |= 4
 	}
@@ -307,9 +316,8 @@ func connect() (err error) {
 		if settings.Pswd != "" {
 			usingPswd = "yes"
 		}
-		return errors.New(
-			fmt.Sprintf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
-				settings.DbType, settings.User, settings.DbName, settings.Host, settings.Port, usingPswd, err))
+		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
+			settings.DbType, settings.User, settings.DbName, settings.Host, settings.Port, usingPswd, err)
 	}
 	return db.Ping()
 }
