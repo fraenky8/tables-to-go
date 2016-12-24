@@ -3,7 +3,7 @@
 
 A small and helpful tool which helps during developing with a changing database schema.
 
-**Tables change, run the tool, get your structs! Easy!**
+**Tables change, run the tool, get your structs!**
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go) [![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
 
@@ -16,11 +16,11 @@ go get github.com/fraenky8/tables-to-go
 ## Getting started
 
 ```
-go run main.go -v -of ../path/to/my/models
+%GOPATH%/bin/tables-to-go -v -of ../path/to/my/models
 ```
 
-This grabs all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
-Flag `-v` is verbose mode, `-of` is the output file path in which the structs are created.
+This gets all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
+Flag `-v` is verbose mode, `-of` is the output file path in which the structs are created. (default: current working directory)
 
 ## Features
 
@@ -60,7 +60,7 @@ CREATE TABLE some_user_info  (
 Run the following command (default local PostgreSQL instance):
 
 ```
-go run main.go
+%GOPATH%/bin/tables-to-go
 ```
 
 The following file `SomeUserInfo.go` with default package `dto` (data transfer object) will be created:
@@ -83,25 +83,25 @@ type SomeUserInfo struct {
 Running on remote database server (eg. Mysql@Docker)
 
 ```
-go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
+%GOPATH%/bin/tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
 ```
 
 PostgreSQL example with different default schema but default database `postgres`:
 
 ```
-go run main.go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+%GOPATH%/bin/tables-to-go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 Note: since database type `pg` is default, following command will be equivalent:
 
 ```
-go run main.go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+%GOPATH%/bin/tables-to-go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 You can also specify the package or prefix and suffix.
 
 ```
-go run main.go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
+%GOPATH%/bin/tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
 ```
 
 With same table given above, following file with Name `ModelSomeUserInfoModel.go` will be created:
@@ -126,7 +126,7 @@ type ModelSomeUserInfoModel struct {
 Print usage with `-?` or `-help`
 
 ```
-go run main.go -help
+%GOPATH%/bin/tables-to-go -help
   -?    shows help and usage
   -d string
         database name (default "postgres")
@@ -137,7 +137,7 @@ go run main.go -help
   -help
         shows help and usage
   -of string
-        output file path (default "./output")
+        output file path (default "current working directory")
   -p string
         password of user
   -pn string

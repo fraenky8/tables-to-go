@@ -89,6 +89,12 @@ type Settings struct {
 
 // NewSettings constructs settings with default values
 func NewSettings() *Settings {
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		dir = "."
+	}
+
 	return &Settings{
 		Verbose:        false,
 		DbType:         "pg",
@@ -98,7 +104,7 @@ func NewSettings() *Settings {
 		Schema:         "public",
 		Host:           "127.0.0.1",
 		Port:           "", // left blank -> is automatically determined if not set
-		OutputFilePath: "./output",
+		OutputFilePath: dir,
 		OutputFormat:   "c",
 		PackageName:    "dto",
 		Prefix:         "",

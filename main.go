@@ -125,7 +125,7 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.StringVar(&cmdArgs.Host, "h", cmdArgs.Host, "host of database")
 	flag.StringVar(&cmdArgs.Port, "port", cmdArgs.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
 
-	flag.StringVar(&cmdArgs.OutputFilePath, "of", cmdArgs.OutputFilePath, "output file path")
+	flag.StringVar(&cmdArgs.OutputFilePath, "of", cmdArgs.OutputFilePath, "output file path, default is current working directory")
 	flag.StringVar(&cmdArgs.OutputFormat, "format", cmdArgs.OutputFormat, "camelCase (c) or original (o)")
 	flag.StringVar(&cmdArgs.Prefix, "pre", cmdArgs.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&cmdArgs.Suffix, "suf", cmdArgs.Suffix, "suffix for file- and struct names")
@@ -137,8 +137,8 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.BoolVar(&cmdArgs.TagsMastermindStructableOnly, "tags-structable-only", cmdArgs.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
 	flag.BoolVar(&cmdArgs.IsMastermindStructableRecorder, "structable-recorder", cmdArgs.IsMastermindStructableRecorder, "generate a structable.Recorder field")
 
-	flag.BoolVar(&cmdArgs.TagsSql, "experimental-tags-sql", cmdArgs.TagsSql, "generate struct with sql-tags")
-	flag.BoolVar(&cmdArgs.TagsSqlOnly, "experimental-tags-sql-only", cmdArgs.TagsSqlOnly, "generate struct with ONLY sql-tags")
+	flag.BoolVar(&cmdArgs.TagsSQL, "experimental-tags-sql", cmdArgs.TagsSQL, "generate struct with sql-tags")
+	flag.BoolVar(&cmdArgs.TagsSQLOnly, "experimental-tags-sql-only", cmdArgs.TagsSQLOnly, "generate struct with ONLY sql-tags")
 
 	flag.Parse()
 
