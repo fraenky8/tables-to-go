@@ -1,31 +1,24 @@
 package tablestogo
 
 import (
+	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"go/format"
 	"os"
 	"path/filepath"
-
-	"bytes"
 	"strings"
-
-	"database/sql"
 
 	// mysql database driver
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+
 	// postgres database driver
 	_ "github.com/lib/pq"
 )
 
 var (
-	// holds the db instance
-	db *sqlx.DB
-
-	// used concrete database, one of the supported types below
-	database Database
-
 	// the global applied settings
 	settings *Settings
 
@@ -34,14 +27,14 @@ var (
 	// SupportedOutputFormats represents the supported output formats
 	SupportedOutputFormats = []string{"c", "o"}
 
-	// DbTypeToDriverMap maps the database type to the driver names
-	DbTypeToDriverMap = map[string]string{
+	// dbTypeToDriverMap maps the database type to the driver names
+	dbTypeToDriverMap = map[string]string{
 		"pg":    "postgres",
 		"mysql": "mysql",
 	}
 
-	// DbDefaultPorts maps the database type to the default ports
-	DbDefaultPorts = map[string]string{
+	// dbDefaultPorts maps the database type to the default ports
+	dbDefaultPorts = map[string]string{
 		"pg":    "5432",
 		"mysql": "3306",
 	}
@@ -149,14 +142,14 @@ type Column struct {
 
 // Tagger interface for types of struct-tages
 type Tagger interface {
-	GenerateTag(column Column) string
+	GenerateTag(db Database, column Column) string
 }
 
 // DbTag is the standard "db"-tag
 type DbTag string
 
 // GenerateTag for DbTag to satisfy the Tagger interface
-func (t *DbTag) GenerateTag(column Column) string {
+func (t *DbTag) GenerateTag(db Database, column Column) string {
 	return `db:"` + column.ColumnName + `"`
 }
 
@@ -164,15 +157,15 @@ func (t *DbTag) GenerateTag(column Column) string {
 type StblTag string
 
 // GenerateTag for StblTag to satisfy the Tagger interface
-func (t *StblTag) GenerateTag(column Column) string {
+func (t *StblTag) GenerateTag(db Database, column Column) string {
 
 	isPk := ""
-	if database.IsPrimaryKey(column) {
+	if db.IsPrimaryKey(column) {
 		isPk = ",PRIMARY_KEY"
 	}
 
 	isAutoIncrement := ""
-	if database.IsAutoIncrement(column) {
+	if db.IsAutoIncrement(column) {
 		isAutoIncrement = ",SERIAL,AUTO_INCREMENT"
 	}
 
@@ -183,18 +176,18 @@ func (t *StblTag) GenerateTag(column Column) string {
 type SQLTag string
 
 // GenerateTag for SQLTag to satisfy the Tagger interface
-func (t *SQLTag) GenerateTag(column Column) string {
+func (t *SQLTag) GenerateTag(db Database, column Column) string {
 
 	colType := ""
 	characterMaximumLength := ""
-	if database.IsString(column) && column.CharacterMaximumLength.Valid {
+	if db.IsString(column) && column.CharacterMaximumLength.Valid {
 		characterMaximumLength = fmt.Sprintf("(%v)", column.CharacterMaximumLength.Int64)
 	}
 
 	colType = fmt.Sprintf("type:%v%v;", column.DataType, characterMaximumLength)
 
 	isNullable := ""
-	if !database.IsNullable(column) {
+	if !db.IsNullable(column) {
 		isNullable = "not null;"
 	}
 
@@ -219,9 +212,10 @@ func Run(s *Settings) (err error) {
 	createEffectiveTags()
 
 	generalDatabase := &GeneralDatabase{
-		db:       db,
 		Settings: s,
 	}
+
+	var database Database
 
 	switch s.DbType {
 	case "mysql":
@@ -235,13 +229,13 @@ func Run(s *Settings) (err error) {
 	}
 
 	// connection must be appear here, database must exists at this point
-	err = connect()
+	err = connect(generalDatabase, database.CreateDataSourceName(s))
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer generalDatabase.Db.Close()
 
-	return run()
+	return run(database)
 }
 
 // VerifySettings verifies the settings and checks the given output paths
@@ -264,7 +258,7 @@ func VerifySettings(settings *Settings) (err error) {
 	}
 
 	if settings.Port == "" {
-		settings.Port = DbDefaultPorts[settings.DbType]
+		settings.Port = dbDefaultPorts[settings.DbType]
 	}
 
 	if settings.PackageName == "" {
@@ -315,8 +309,8 @@ func createEffectiveTags() {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func connect() (err error) {
-	db, err = sqlx.Connect(DbTypeToDriverMap[settings.DbType], database.CreateDataSourceName(settings))
+func connect(gdb *GeneralDatabase, dsn string) (err error) {
+	gdb.Db, err = sqlx.Connect(dbTypeToDriverMap[settings.DbType], dsn)
 	if err != nil {
 		usingPswd := "no"
 		if settings.Pswd != "" {
@@ -325,10 +319,10 @@ func connect() (err error) {
 		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
 			settings.DbType, settings.User, settings.DbName, settings.Host, settings.Port, usingPswd, err)
 	}
-	return db.Ping()
+	return gdb.Db.Ping()
 }
 
-func run() (err error) {
+func run(database Database) (err error) {
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
@@ -364,7 +358,7 @@ func run() (err error) {
 			fmt.Printf("\t> count of columns: %v\r\n", len(table.Columns))
 		}
 
-		err = createStructOfTable(table)
+		err = createStructOfTable(database, table)
 
 		if err != nil {
 			if settings.Verbose {
@@ -379,7 +373,7 @@ func run() (err error) {
 	return err
 }
 
-func createStructOfTable(table *Table) (err error) {
+func createStructOfTable(database Database, table *Table) (err error) {
 
 	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
@@ -396,9 +390,9 @@ func createStructOfTable(table *Table) (err error) {
 		if settings.OutputFormat == "c" {
 			columnName = CamelCaseString(columnName)
 		}
-		columnType, isTime := mapDbColumnTypeToGoType(column)
+		columnType, isTime := mapDbColumnTypeToGoType(database, column)
 
-		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(column) + "\n")
+		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(database, column) + "\n")
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -467,10 +461,10 @@ func createStructOfTable(table *Table) (err error) {
 	return err
 }
 
-func generateTags(column Column) (tags string) {
+func generateTags(database Database, column Column) (tags string) {
 	for t := 1; t <= settings.effectiveTags; t *= 2 {
 		if shouldTag(t) {
-			tags += taggers[t].GenerateTag(column) + " "
+			tags += taggers[t].GenerateTag(database, column) + " "
 		}
 	}
 	if len(tags) > 0 {
@@ -483,7 +477,7 @@ func shouldTag(t int) bool {
 	return settings.effectiveTags&t > 0
 }
 
-func mapDbColumnTypeToGoType(column Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(database Database, column Column) (goType string, isTime bool) {
 
 	isTime = false
 

@@ -9,6 +9,7 @@
 _obj
 _test
 .idea
+.vscode
 output
 
 # Architecture specific extensions/prefixes

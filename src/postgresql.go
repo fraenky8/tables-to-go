@@ -13,7 +13,7 @@ type PostgreDatabase struct {
 // GetTables gets all tables for a given schema by name
 func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 
-	err = db.Select(&tables, `
+	err = pg.Db.Select(&tables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -34,7 +34,7 @@ func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the columns of a specific table for a given database
 func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
-	pg.GetColumnsOfTableStmt, err = db.Preparex(`
+	pg.GetColumnsOfTableStmt, err = pg.Db.Preparex(`
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,

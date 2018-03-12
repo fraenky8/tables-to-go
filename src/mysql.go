@@ -13,7 +13,7 @@ type MySQLDatabase struct {
 // GetTables gets all tables for a given database by name
 func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 
-	err = db.Select(&tables, `
+	err = mysql.Db.Select(&tables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -34,7 +34,7 @@ func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
-	mysql.GetColumnsOfTableStmt, err = db.Preparex(`
+	mysql.GetColumnsOfTableStmt, err = mysql.Db.Preparex(`
 		SELECT
 		  ordinal_position,
 		  column_name,
