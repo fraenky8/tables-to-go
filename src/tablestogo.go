@@ -3,11 +3,9 @@ package tablestogo
 import (
 	"bytes"
 	"database/sql"
-	"errors"
 	"fmt"
 	"go/format"
 	"os"
-	"path/filepath"
 	"strings"
 
 	// mysql database driver
@@ -19,24 +17,10 @@ import (
 )
 
 var (
-	// the global applied settings
-	settings *Settings
-
-	// SupportedDbTypes represents the supported databases
-	SupportedDbTypes = []string{"pg", "mysql"}
-	// SupportedOutputFormats represents the supported output formats
-	SupportedOutputFormats = []string{"c", "o"}
-
 	// dbTypeToDriverMap maps the database type to the driver names
 	dbTypeToDriverMap = map[string]string{
 		"pg":    "postgres",
 		"mysql": "mysql",
-	}
-
-	// dbDefaultPorts maps the database type to the default ports
-	dbDefaultPorts = map[string]string{
-		"pg":    "5432",
-		"mysql": "3306",
 	}
 
 	// map of Tagger used
@@ -47,76 +31,6 @@ var (
 		4: new(SQLTag),
 	}
 )
-
-// Settings stores the supported settings / command line arguments
-type Settings struct {
-	Verbose        bool
-	DbType         string
-	User           string
-	Pswd           string
-	DbName         string
-	Schema         string
-	Host           string
-	Port           string
-	OutputFilePath string
-	OutputFormat   string
-	PackageName    string
-	Prefix         string
-	Suffix         string
-
-	TagsNoDb bool
-
-	TagsMastermindStructable       bool
-	TagsMastermindStructableOnly   bool
-	IsMastermindStructableRecorder bool
-
-	// TODO not implemented yet
-	TagsGorm bool
-
-	// experimental
-	TagsSQL     bool
-	TagsSQLOnly bool
-
-	effectiveTags int
-}
-
-// NewSettings constructs settings with default values
-func NewSettings() *Settings {
-
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		dir = "."
-	}
-
-	return &Settings{
-		Verbose:        false,
-		DbType:         "pg",
-		User:           "postgres",
-		Pswd:           "",
-		DbName:         "postgres",
-		Schema:         "public",
-		Host:           "127.0.0.1",
-		Port:           "", // left blank -> is automatically determined if not set
-		OutputFilePath: dir,
-		OutputFormat:   "c",
-		PackageName:    "dto",
-		Prefix:         "",
-		Suffix:         "",
-
-		TagsNoDb: false,
-
-		TagsMastermindStructable:       false,
-		TagsMastermindStructableOnly:   false,
-		IsMastermindStructableRecorder: false,
-
-		TagsGorm: false,
-
-		TagsSQL:     false,
-		TagsSQLOnly: false,
-
-		effectiveTags: 1,
-	}
-}
 
 // Table has a name and a set (slice) of columns
 type Table struct {
@@ -201,94 +115,44 @@ func (t *SQLTag) GenerateTag(db Database, column Column) string {
 }
 
 // Run is the main function to run the conversions
-func Run(s *Settings) (err error) {
+func Run(settings *Settings) (err error) {
 
-	err = VerifySettings(s)
+	createEffectiveTags(settings)
+
+	database := makeDatabase(settings)
+
+	err = connect(settings, database)
 	if err != nil {
 		return err
 	}
-	settings = s
-
-	createEffectiveTags()
-
-	generalDatabase := &GeneralDatabase{
-		Settings: s,
-	}
-
-	var database Database
-
-	switch s.DbType {
-	case "mysql":
-		database = &MySQLDatabase{
-			GeneralDatabase: generalDatabase,
-		}
-	default: // pg
-		database = &PostgreDatabase{
-			GeneralDatabase: generalDatabase,
-		}
-	}
-
-	// connection must be appear here, database must exists at this point
-	err = connect(generalDatabase, database.CreateDataSourceName(s))
-	if err != nil {
-		return err
-	}
-	defer generalDatabase.Db.Close()
+	defer database.Db.Close()
 
 	return run(database)
 }
 
-// VerifySettings verifies the settings and checks the given output paths
-func VerifySettings(settings *Settings) (err error) {
+// factory function
+func makeDatabase(settings *Settings) *GeneralDatabase {
 
-	if !IsStringInSlice(settings.DbType, SupportedDbTypes) {
-		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, SupportedDbTypes)
+	database := &GeneralDatabase{
+		settings: settings,
 	}
 
-	if !IsStringInSlice(settings.OutputFormat, SupportedOutputFormats) {
-		return fmt.Errorf("output format %q not supported! %v", settings.OutputFormat, SupportedOutputFormats)
+	// FIXME ugly!?!?!?! cyclic dependency !!??
+	switch settings.DbType {
+	case "mysql":
+		mysql := &MySQLDatabase{}
+		database.Database = mysql
+		mysql.GeneralDatabase = database
+	default: // pg
+		pg := &PostgreDatabase{}
+		database.Database = pg
+		pg.GeneralDatabase = database
 	}
 
-	if err = verifyOutputPath(settings.OutputFilePath); err != nil {
-		return err
-	}
-
-	if settings.OutputFilePath, err = prepareOutputPath(settings.OutputFilePath); err != nil {
-		return err
-	}
-
-	if settings.Port == "" {
-		settings.Port = dbDefaultPorts[settings.DbType]
-	}
-
-	if settings.PackageName == "" {
-		return errors.New("name of package can not be empty")
-	}
-
-	return err
+	return database
 }
 
-func verifyOutputPath(outputFilePath string) (err error) {
-
-	info, err := os.Stat(outputFilePath)
-
-	if os.IsNotExist(err) {
-		return fmt.Errorf("output file path %q does not exists", outputFilePath)
-	}
-
-	if !info.Mode().IsDir() {
-		return fmt.Errorf("output file path %q is not a directory", outputFilePath)
-	}
-
-	return err
-}
-
-func prepareOutputPath(ofp string) (outputFilePath string, err error) {
-	outputFilePath, err = filepath.Abs(ofp + "/")
-	return outputFilePath, err
-}
-
-func createEffectiveTags() {
+func createEffectiveTags(settings *Settings) {
 	if settings.TagsNoDb {
 		settings.effectiveTags = 0
 	}
@@ -309,8 +173,8 @@ func createEffectiveTags() {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func connect(gdb *GeneralDatabase, dsn string) (err error) {
-	gdb.Db, err = sqlx.Connect(dbTypeToDriverMap[settings.DbType], dsn)
+func connect(settings *Settings, database *GeneralDatabase) (err error) {
+	database.Db, err = sqlx.Connect(dbTypeToDriverMap[settings.DbType], database.CreateDataSourceName(settings))
 	if err != nil {
 		usingPswd := "no"
 		if settings.Pswd != "" {
@@ -319,12 +183,12 @@ func connect(gdb *GeneralDatabase, dsn string) (err error) {
 		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
 			settings.DbType, settings.User, settings.DbName, settings.Host, settings.Port, usingPswd, err)
 	}
-	return gdb.Db.Ping()
+	return database.Db.Ping()
 }
 
-func run(database Database) (err error) {
+func run(database *GeneralDatabase) (err error) {
 
-	fmt.Printf("running for %q...\r\n", settings.DbType)
+	fmt.Printf("running for %q...\r\n", database.settings.DbType)
 
 	tables, err := database.GetTables()
 
@@ -332,8 +196,8 @@ func run(database Database) (err error) {
 		return err
 	}
 
-	if settings.Verbose {
-		fmt.Printf("> count of tables: %v\r\n", len(tables))
+	if database.settings.Verbose {
+		fmt.Printf("> number of tables: %v\r\n", len(tables))
 	}
 
 	err = database.PrepareGetColumnsOfTableStmt()
@@ -344,7 +208,7 @@ func run(database Database) (err error) {
 
 	for _, table := range tables {
 
-		if settings.Verbose {
+		if database.settings.Verbose {
 			fmt.Printf("> processing table %q\r\n", table.TableName)
 		}
 
@@ -354,14 +218,14 @@ func run(database Database) (err error) {
 			return err
 		}
 
-		if settings.Verbose {
-			fmt.Printf("\t> count of columns: %v\r\n", len(table.Columns))
+		if database.settings.Verbose {
+			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
 		err = createStructOfTable(database, table)
 
 		if err != nil {
-			if settings.Verbose {
+			if database.settings.Verbose {
 				fmt.Printf(">Error at createStructOfTable(%v)\r\n", table.TableName)
 			}
 			return err
@@ -373,7 +237,7 @@ func run(database Database) (err error) {
 	return err
 }
 
-func createStructOfTable(database Database, table *Table) (err error) {
+func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
 
 	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
@@ -387,7 +251,7 @@ func createStructOfTable(database Database, table *Table) (err error) {
 		//}
 
 		columnName := strings.Title(column.ColumnName)
-		if settings.OutputFormat == "c" {
+		if database.settings.OutputFormat == "c" {
 			columnName = CamelCaseString(columnName)
 		}
 		columnType, isTime := mapDbColumnTypeToGoType(database, column)
@@ -403,27 +267,27 @@ func createStructOfTable(database Database, table *Table) (err error) {
 		}
 	}
 
-	if settings.IsMastermindStructableRecorder {
+	if database.settings.IsMastermindStructableRecorder {
 		structFieldsBuffer.WriteString("\t\nstructable.Recorder\n")
 	}
 
 	// create file
-	tableName := strings.Title(settings.Prefix + table.TableName + settings.Suffix)
-	if settings.OutputFormat == "c" {
+	tableName := strings.Title(database.settings.Prefix + table.TableName + database.settings.Suffix)
+	if database.settings.OutputFormat == "c" {
 		tableName = CamelCaseString(tableName)
 	}
 
-	outFile, err := os.Create(settings.OutputFilePath + tableName + ".go")
+	outFile, err := os.Create(database.settings.OutputFilePath + tableName + ".go")
 
 	if err != nil {
 		return err
 	}
 
 	// write header infos
-	fileContentBuffer.WriteString("package " + settings.PackageName + "\n\n")
+	fileContentBuffer.WriteString("package " + database.settings.PackageName + "\n\n")
 
 	// do imports
-	if isNullable || timeIndicator > 0 || settings.IsMastermindStructableRecorder {
+	if isNullable || timeIndicator > 0 || database.settings.IsMastermindStructableRecorder {
 		fileContentBuffer.WriteString("import (\n")
 
 		if isNullable {
@@ -438,7 +302,7 @@ func createStructOfTable(database Database, table *Table) (err error) {
 			}
 		}
 
-		if settings.IsMastermindStructableRecorder {
+		if database.settings.IsMastermindStructableRecorder {
 			fileContentBuffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 		}
 
@@ -461,9 +325,9 @@ func createStructOfTable(database Database, table *Table) (err error) {
 	return err
 }
 
-func generateTags(database Database, column Column) (tags string) {
-	for t := 1; t <= settings.effectiveTags; t *= 2 {
-		if shouldTag(t) {
+func generateTags(database *GeneralDatabase, column Column) (tags string) {
+	for t := 1; t <= database.settings.effectiveTags; t *= 2 {
+		if shouldTag(database, t) {
 			tags += taggers[t].GenerateTag(database, column) + " "
 		}
 	}
@@ -473,8 +337,8 @@ func generateTags(database Database, column Column) (tags string) {
 	return tags
 }
 
-func shouldTag(t int) bool {
-	return settings.effectiveTags&t > 0
+func shouldTag(database *GeneralDatabase, t int) bool {
+	return database.settings.effectiveTags&t > 0
 }
 
 func mapDbColumnTypeToGoType(database Database, column Column) (goType string, isTime bool) {

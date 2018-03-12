@@ -82,6 +82,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/fraenky8/tables-to-go/src"
 )
@@ -102,8 +103,14 @@ func main() {
 		return
 	}
 
+	if err := tablestogo.VerifySettings(cmdArgs.Settings); err != nil {
+		fmt.Printf("settings verification error: %v", err)
+		os.Exit(1)
+	}
+
 	if err := tablestogo.Run(cmdArgs.Settings); err != nil {
-		fmt.Println(err)
+		fmt.Printf("run error %v", err)
+		os.Exit(1)
 	}
 }
 

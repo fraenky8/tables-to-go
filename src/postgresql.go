@@ -19,12 +19,12 @@ func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = $1
 		ORDER BY table_name
-	`, pg.Schema)
+	`, pg.settings.Schema)
 
-	if pg.Verbose {
+	if pg.settings.Verbose {
 		if err != nil {
 			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> schema: %q\r\n", pg.Schema)
+			fmt.Printf("> schema: %q\r\n", pg.settings.Schema)
 		}
 	}
 
@@ -64,12 +64,12 @@ func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table in a given schema
 func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 
-	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, pg.Schema)
+	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, pg.settings.Schema)
 
-	if pg.Verbose {
+	if pg.settings.Verbose {
 		if err != nil {
 			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.TableName)
-			fmt.Printf("> schema: %q\r\n", pg.Schema)
+			fmt.Printf("> schema: %q\r\n", pg.settings.Schema)
 		}
 	}
 

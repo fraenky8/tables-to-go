@@ -34,9 +34,10 @@ type Database interface {
 
 // GeneralDatabase represents a generic database - like a parent/base class of all other concrete databases
 type GeneralDatabase struct {
+	Database
 	Db                    *sqlx.DB
 	GetColumnsOfTableStmt *sqlx.Stmt
-	*Settings
+	settings              *Settings
 }
 
 // IsNullable returns true if column is a nullable one

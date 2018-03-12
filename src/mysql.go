@@ -19,12 +19,12 @@ func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = ?
 		ORDER BY table_name
-	`, mysql.DbName)
+	`, mysql.settings.DbName)
 
-	if mysql.Verbose {
+	if mysql.settings.Verbose {
 		if err != nil {
 			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> schema: %q\r\n", mysql.DbName)
+			fmt.Printf("> schema: %q\r\n", mysql.settings.DbName)
 		}
 	}
 
@@ -58,13 +58,13 @@ func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) GetColumnsOfTable(table *Table) (err error) {
 
-	mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, mysql.DbName)
+	mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, mysql.settings.DbName)
 
-	if mysql.Verbose {
+	if mysql.settings.Verbose {
 		if err != nil {
 			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.TableName)
-			fmt.Printf("> schema: %q\r\n", mysql.Schema)
-			fmt.Printf("> dbName: %q\r\n", mysql.DbName)
+			fmt.Printf("> schema: %q\r\n", mysql.settings.Schema)
+			fmt.Printf("> dbName: %q\r\n", mysql.settings.DbName)
 		}
 	}
 
