@@ -32,7 +32,7 @@ type Database interface {
 	// TODO mysql: bit, enums, set
 }
 
-// GeneralDatabase represents a generic database - like a parent/base class of all other concrete databases
+// GeneralDatabase represents a base "class" database - for all other concrete databases
 type GeneralDatabase struct {
 	Database
 	Db                    *sqlx.DB
