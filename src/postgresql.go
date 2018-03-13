@@ -5,15 +5,19 @@ import (
 	"strings"
 )
 
-// PostgreDatabase satisfy the database interface
+// PostgreDatabase implemenmts the Database interface with help of GeneralDatabase
 type PostgreDatabase struct {
 	*GeneralDatabase
+}
+
+func (pg *PostgreDatabase) Connect() error {
+	return pg.connect(pg.DSN(pg.settings))
 }
 
 // GetTables gets all tables for a given schema by name
 func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 
-	err = pg.Db.Select(&tables, `
+	err = pg.db.Select(&tables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -34,7 +38,7 @@ func (pg *PostgreDatabase) GetTables() (tables []*Table, err error) {
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the columns of a specific table for a given database
 func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
-	pg.GetColumnsOfTableStmt, err = pg.Db.Preparex(`
+	pg.getColumnsOfTableStmt, err = pg.db.Preparex(`
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
@@ -64,7 +68,7 @@ func (pg *PostgreDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table in a given schema
 func (pg *PostgreDatabase) GetColumnsOfTable(table *Table) (err error) {
 
-	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, pg.settings.Schema)
+	pg.getColumnsOfTableStmt.Select(&table.Columns, table.TableName, pg.settings.Schema)
 
 	if pg.settings.Verbose {
 		if err != nil {
@@ -86,8 +90,8 @@ func (pg *PostgreDatabase) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.ColumnDefault.String, "nextval")
 }
 
-// CreateDataSourceName creates the DSN String to connect to this database
-func (pg *PostgreDatabase) CreateDataSourceName(settings *Settings) string {
+// DSN creates the DSN String to connect to this database
+func (pg *PostgreDatabase) DSN(settings *Settings) string {
 	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
 		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }

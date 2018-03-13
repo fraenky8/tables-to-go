@@ -10,8 +10,6 @@ import (
 
 	// mysql database driver
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-
 	// postgres database driver
 	_ "github.com/lib/pq"
 )
@@ -119,37 +117,14 @@ func Run(settings *Settings) (err error) {
 
 	createEffectiveTags(settings)
 
-	database := makeDatabase(settings)
+	database := NewDatabase(settings)
 
-	err = connect(settings, database)
-	if err != nil {
+	if err = database.Connect(); err != nil {
 		return err
 	}
-	defer database.Db.Close()
+	defer database.Close()
 
-	return run(database)
-}
-
-// factory function
-func makeDatabase(settings *Settings) *GeneralDatabase {
-
-	database := &GeneralDatabase{
-		settings: settings,
-	}
-
-	// FIXME ugly!?!?!?! cyclic dependency !!??
-	switch settings.DbType {
-	case "mysql":
-		mysql := &MySQLDatabase{}
-		database.Database = mysql
-		mysql.GeneralDatabase = database
-	default: // pg
-		pg := &PostgreDatabase{}
-		database.Database = pg
-		pg.GeneralDatabase = database
-	}
-
-	return database
+	return run(settings, database)
 }
 
 func createEffectiveTags(settings *Settings) {
@@ -173,59 +148,39 @@ func createEffectiveTags(settings *Settings) {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func connect(settings *Settings, database *GeneralDatabase) (err error) {
-	database.Db, err = sqlx.Connect(dbTypeToDriverMap[settings.DbType], database.CreateDataSourceName(settings))
-	if err != nil {
-		usingPswd := "no"
-		if settings.Pswd != "" {
-			usingPswd = "yes"
-		}
-		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
-			settings.DbType, settings.User, settings.DbName, settings.Host, settings.Port, usingPswd, err)
-	}
-	return database.Db.Ping()
-}
+func run(settings *Settings, database Database) (err error) {
 
-func run(database *GeneralDatabase) (err error) {
-
-	fmt.Printf("running for %q...\r\n", database.settings.DbType)
+	fmt.Printf("running for %q...\r\n", settings.DbType)
 
 	tables, err := database.GetTables()
-
 	if err != nil {
 		return err
 	}
 
-	if database.settings.Verbose {
+	if settings.Verbose {
 		fmt.Printf("> number of tables: %v\r\n", len(tables))
 	}
 
-	err = database.PrepareGetColumnsOfTableStmt()
-
-	if err != nil {
+	if err = database.PrepareGetColumnsOfTableStmt(); err != nil {
 		return err
 	}
 
 	for _, table := range tables {
 
-		if database.settings.Verbose {
+		if settings.Verbose {
 			fmt.Printf("> processing table %q\r\n", table.TableName)
 		}
 
-		err = database.GetColumnsOfTable(table)
-
-		if err != nil {
+		if err = database.GetColumnsOfTable(table); err != nil {
 			return err
 		}
 
-		if database.settings.Verbose {
+		if settings.Verbose {
 			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
-		err = createStructOfTable(database, table)
-
-		if err != nil {
-			if database.settings.Verbose {
+		if err = createStructOfTable(settings, database, table); err != nil {
+			if settings.Verbose {
 				fmt.Printf(">Error at createStructOfTable(%v)\r\n", table.TableName)
 			}
 			return err
@@ -237,7 +192,7 @@ func run(database *GeneralDatabase) (err error) {
 	return err
 }
 
-func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
+func createStructOfTable(settings *Settings, database Database, table *Table) (err error) {
 
 	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
@@ -251,12 +206,12 @@ func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
 		//}
 
 		columnName := strings.Title(column.ColumnName)
-		if database.settings.OutputFormat == "c" {
+		if settings.OutputFormat == "c" {
 			columnName = CamelCaseString(columnName)
 		}
 		columnType, isTime := mapDbColumnTypeToGoType(database, column)
 
-		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(database, column) + "\n")
+		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(settings, database, column) + "\n")
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -267,27 +222,27 @@ func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
 		}
 	}
 
-	if database.settings.IsMastermindStructableRecorder {
+	if settings.IsMastermindStructableRecorder {
 		structFieldsBuffer.WriteString("\t\nstructable.Recorder\n")
 	}
 
 	// create file
-	tableName := strings.Title(database.settings.Prefix + table.TableName + database.settings.Suffix)
-	if database.settings.OutputFormat == "c" {
+	tableName := strings.Title(settings.Prefix + table.TableName + settings.Suffix)
+	if settings.OutputFormat == "c" {
 		tableName = CamelCaseString(tableName)
 	}
 
-	outFile, err := os.Create(database.settings.OutputFilePath + tableName + ".go")
+	outFile, err := os.Create(settings.OutputFilePath + tableName + ".go")
 
 	if err != nil {
 		return err
 	}
 
 	// write header infos
-	fileContentBuffer.WriteString("package " + database.settings.PackageName + "\n\n")
+	fileContentBuffer.WriteString("package " + settings.PackageName + "\n\n")
 
 	// do imports
-	if isNullable || timeIndicator > 0 || database.settings.IsMastermindStructableRecorder {
+	if isNullable || timeIndicator > 0 || settings.IsMastermindStructableRecorder {
 		fileContentBuffer.WriteString("import (\n")
 
 		if isNullable {
@@ -302,7 +257,7 @@ func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
 			}
 		}
 
-		if database.settings.IsMastermindStructableRecorder {
+		if settings.IsMastermindStructableRecorder {
 			fileContentBuffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 		}
 
@@ -325,9 +280,10 @@ func createStructOfTable(database *GeneralDatabase, table *Table) (err error) {
 	return err
 }
 
-func generateTags(database *GeneralDatabase, column Column) (tags string) {
-	for t := 1; t <= database.settings.effectiveTags; t *= 2 {
-		if shouldTag(database, t) {
+func generateTags(settings *Settings, database Database, column Column) (tags string) {
+	for t := 1; t <= settings.effectiveTags; t *= 2 {
+		shouldTag := settings.effectiveTags&t > 0
+		if shouldTag {
 			tags += taggers[t].GenerateTag(database, column) + " "
 		}
 	}
@@ -335,10 +291,6 @@ func generateTags(database *GeneralDatabase, column Column) (tags string) {
 		tags = " `" + strings.TrimSpace(tags) + "`"
 	}
 	return tags
-}
-
-func shouldTag(database *GeneralDatabase, t int) bool {
-	return database.settings.effectiveTags&t > 0
 }
 
 func mapDbColumnTypeToGoType(database Database, column Column) (goType string, isTime bool) {

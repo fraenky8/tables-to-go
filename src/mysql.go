@@ -5,15 +5,19 @@ import (
 	"strings"
 )
 
-// MySQLDatabase satisfy the database interface
+// MySQLDatabase implemenmts the Database interface with help of GeneralDatabase
 type MySQLDatabase struct {
 	*GeneralDatabase
+}
+
+func (mysql *MySQLDatabase) Connect() error {
+	return mysql.connect(mysql.DSN(mysql.settings))
 }
 
 // GetTables gets all tables for a given database by name
 func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 
-	err = mysql.Db.Select(&tables, `
+	err = mysql.db.Select(&tables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -34,7 +38,7 @@ func (mysql *MySQLDatabase) GetTables() (tables []*Table, err error) {
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 
-	mysql.GetColumnsOfTableStmt, err = mysql.Db.Preparex(`
+	mysql.getColumnsOfTableStmt, err = mysql.db.Preparex(`
 		SELECT
 		  ordinal_position,
 		  column_name,
@@ -58,7 +62,7 @@ func (mysql *MySQLDatabase) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table for a given database
 func (mysql *MySQLDatabase) GetColumnsOfTable(table *Table) (err error) {
 
-	mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.TableName, mysql.settings.DbName)
+	mysql.getColumnsOfTableStmt.Select(&table.Columns, table.TableName, mysql.settings.DbName)
 
 	if mysql.settings.Verbose {
 		if err != nil {
@@ -81,8 +85,8 @@ func (mysql *MySQLDatabase) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.Extra, "auto_increment")
 }
 
-// CreateDataSourceName creates the DSN String to connect to this database
-func (mysql *MySQLDatabase) CreateDataSourceName(settings *Settings) string {
+// DSN creates the DSN String to connect to this database
+func (mysql *MySQLDatabase) DSN(settings *Settings) string {
 	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
 		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }
