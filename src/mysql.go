@@ -10,6 +10,7 @@ type MySQLDatabase struct {
 	*GeneralDatabase
 }
 
+// Connect connects to the database by the given data source name (dsn) of the concrete database
 func (mysql *MySQLDatabase) Connect() error {
 	return mysql.connect(mysql.DSN(mysql.settings))
 }

@@ -10,6 +10,7 @@ type PostgreDatabase struct {
 	*GeneralDatabase
 }
 
+// Connect connects to the database by the given data source name (dsn) of the concrete database
 func (pg *PostgreDatabase) Connect() error {
 	return pg.connect(pg.DSN(pg.settings))
 }

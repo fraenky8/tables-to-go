@@ -78,6 +78,7 @@ func (gdb *GeneralDatabase) connect(dsn string) (err error) {
 	return gdb.db.Ping()
 }
 
+// Close closes the database connection
 func (gdb *GeneralDatabase) Close() error {
 	return gdb.db.Close()
 }
