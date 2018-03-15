@@ -9,6 +9,7 @@ import (
 var (
 	// SupportedDbTypes represents the supported databases
 	SupportedDbTypes = []string{"pg", "mysql"}
+
 	// SupportedOutputFormats represents the supported output formats
 	SupportedOutputFormats = []string{"c", "o"}
 

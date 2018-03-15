@@ -7,11 +7,6 @@ import (
 	"go/format"
 	"os"
 	"strings"
-
-	// mysql database driver
-	_ "github.com/go-sql-driver/mysql"
-	// postgres database driver
-	_ "github.com/lib/pq"
 )
 
 var (
@@ -148,11 +143,11 @@ func createEffectiveTags(settings *Settings) {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func run(settings *Settings, database Database) (err error) {
+func run(settings *Settings, db Database) (err error) {
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
-	tables, err := database.GetTables()
+	tables, err := db.GetTables()
 	if err != nil {
 		return err
 	}
@@ -161,7 +156,7 @@ func run(settings *Settings, database Database) (err error) {
 		fmt.Printf("> number of tables: %v\r\n", len(tables))
 	}
 
-	if err = database.PrepareGetColumnsOfTableStmt(); err != nil {
+	if err = db.PrepareGetColumnsOfTableStmt(); err != nil {
 		return err
 	}
 
@@ -171,7 +166,7 @@ func run(settings *Settings, database Database) (err error) {
 			fmt.Printf("> processing table %q\r\n", table.TableName)
 		}
 
-		if err = database.GetColumnsOfTable(table); err != nil {
+		if err = db.GetColumnsOfTable(table); err != nil {
 			return err
 		}
 
@@ -179,7 +174,7 @@ func run(settings *Settings, database Database) (err error) {
 			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
-		if err = createStructOfTable(settings, database, table); err != nil {
+		if err = createStructOfTable(settings, db, table); err != nil {
 			if settings.Verbose {
 				fmt.Printf(">Error at createStructOfTable(%v)\r\n", table.TableName)
 			}
@@ -192,7 +187,7 @@ func run(settings *Settings, database Database) (err error) {
 	return err
 }
 
-func createStructOfTable(settings *Settings, database Database, table *Table) (err error) {
+func createStructOfTable(settings *Settings, db Database, table *Table) (err error) {
 
 	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
@@ -209,9 +204,9 @@ func createStructOfTable(settings *Settings, database Database, table *Table) (e
 		if settings.OutputFormat == "c" {
 			columnName = CamelCaseString(columnName)
 		}
-		columnType, isTime := mapDbColumnTypeToGoType(database, column)
+		columnType, isTime := mapDbColumnTypeToGoType(db, column)
 
-		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(settings, database, column) + "\n")
+		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(settings, db, column) + "\n")
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -280,11 +275,11 @@ func createStructOfTable(settings *Settings, database Database, table *Table) (e
 	return err
 }
 
-func generateTags(settings *Settings, database Database, column Column) (tags string) {
+func generateTags(settings *Settings, db Database, column Column) (tags string) {
 	for t := 1; t <= settings.effectiveTags; t *= 2 {
 		shouldTag := settings.effectiveTags&t > 0
 		if shouldTag {
-			tags += taggers[t].GenerateTag(database, column) + " "
+			tags += taggers[t].GenerateTag(db, column) + " "
 		}
 	}
 	if len(tags) > 0 {
@@ -293,28 +288,28 @@ func generateTags(settings *Settings, database Database, column Column) (tags st
 	return tags
 }
 
-func mapDbColumnTypeToGoType(database Database, column Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(db Database, column Column) (goType string, isTime bool) {
 
 	isTime = false
 
-	if database.IsString(column) || database.IsText(column) {
+	if db.IsString(column) || db.IsText(column) {
 		goType = "string"
-		if database.IsNullable(column) {
+		if db.IsNullable(column) {
 			goType = "sql.NullString"
 		}
-	} else if database.IsInteger(column) {
+	} else if db.IsInteger(column) {
 		goType = "int"
-		if database.IsNullable(column) {
+		if db.IsNullable(column) {
 			goType = "sql.NullInt64"
 		}
-	} else if database.IsFloat(column) {
+	} else if db.IsFloat(column) {
 		goType = "float64"
-		if database.IsNullable(column) {
+		if db.IsNullable(column) {
 			goType = "sql.NullFloat64"
 		}
-	} else if database.IsTemporal(column) {
+	} else if db.IsTemporal(column) {
 		goType = "time.Time"
-		if database.IsNullable(column) {
+		if db.IsNullable(column) {
 			goType = "pq.NullTime"
 		}
 		isTime = true
@@ -324,7 +319,7 @@ func mapDbColumnTypeToGoType(database Database, column Column) (goType string, i
 		switch column.DataType {
 		case "boolean":
 			goType = "bool"
-			if database.IsNullable(column) {
+			if db.IsNullable(column) {
 				goType = "sql.NullBool"
 			}
 		default:

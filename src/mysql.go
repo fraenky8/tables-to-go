@@ -3,6 +3,9 @@ package tablestogo
 import (
 	"fmt"
 	"strings"
+
+	// mysql database driver
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // MySQLDatabase implemenmts the Database interface with help of GeneralDatabase

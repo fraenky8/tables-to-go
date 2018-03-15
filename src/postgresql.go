@@ -3,6 +3,9 @@ package tablestogo
 import (
 	"fmt"
 	"strings"
+
+	// postgres database driver
+	_ "github.com/lib/pq"
 )
 
 // PostgreDatabase implemenmts the Database interface with help of GeneralDatabase
