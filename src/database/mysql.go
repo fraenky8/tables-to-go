@@ -1,9 +1,10 @@
-package tablestogo
+package database
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/fraenky8/tables-to-go/src"
 	// mysql database driver
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -16,6 +17,12 @@ type MySQLDatabase struct {
 // Connect connects to the database by the given data source name (dsn) of the concrete database
 func (mysql *MySQLDatabase) Connect() error {
 	return mysql.connect(mysql.DSN(mysql.settings))
+}
+
+// DSN creates the DSN String to connect to this database
+func (mysql *MySQLDatabase) DSN(settings *tablestogo.Settings) string {
+	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
+		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }
 
 // GetTables gets all tables for a given database by name
@@ -89,12 +96,6 @@ func (mysql *MySQLDatabase) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.Extra, "auto_increment")
 }
 
-// DSN creates the DSN String to connect to this database
-func (mysql *MySQLDatabase) DSN(settings *Settings) string {
-	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
-		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
-}
-
 // GetStringDatatypes returns the string datatypes for the mysql database
 func (mysql *MySQLDatabase) GetStringDatatypes() []string {
 	return []string{
@@ -107,7 +108,7 @@ func (mysql *MySQLDatabase) GetStringDatatypes() []string {
 
 // IsString returns true if colum is of type string for the mysql database
 func (mysql *MySQLDatabase) IsString(column Column) bool {
-	return IsStringInSlice(column.DataType, mysql.GetStringDatatypes())
+	return mysql.IsStringInSlice(column.DataType, mysql.GetStringDatatypes())
 }
 
 // GetTextDatatypes returns the text datatypes for the mysql database
@@ -120,7 +121,7 @@ func (mysql *MySQLDatabase) GetTextDatatypes() []string {
 
 // IsText returns true if colum is of type text for the mysql database
 func (mysql *MySQLDatabase) IsText(column Column) bool {
-	return IsStringInSlice(column.DataType, mysql.GetTextDatatypes())
+	return mysql.IsStringInSlice(column.DataType, mysql.GetTextDatatypes())
 }
 
 // GetIntegerDatatypes returns the integer datatypes for the mysql database
@@ -136,7 +137,7 @@ func (mysql *MySQLDatabase) GetIntegerDatatypes() []string {
 
 // IsInteger returns true if colum is of type integer for the mysql database
 func (mysql *MySQLDatabase) IsInteger(column Column) bool {
-	return IsStringInSlice(column.DataType, mysql.GetIntegerDatatypes())
+	return mysql.IsStringInSlice(column.DataType, mysql.GetIntegerDatatypes())
 }
 
 // GetFloatDatatypes returns the float datatypes for the mysql database
@@ -152,7 +153,7 @@ func (mysql *MySQLDatabase) GetFloatDatatypes() []string {
 
 // IsFloat returns true if colum is of type float for the mysql database
 func (mysql *MySQLDatabase) IsFloat(column Column) bool {
-	return IsStringInSlice(column.DataType, mysql.GetFloatDatatypes())
+	return mysql.IsStringInSlice(column.DataType, mysql.GetFloatDatatypes())
 }
 
 // GetTemporalDatatypes returns the temporal datatypes for the mysql database
@@ -168,5 +169,5 @@ func (mysql *MySQLDatabase) GetTemporalDatatypes() []string {
 
 // IsTemporal returns true if colum is of type temporal for the mysql database
 func (mysql *MySQLDatabase) IsTemporal(column Column) bool {
-	return IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
+	return mysql.IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
 }

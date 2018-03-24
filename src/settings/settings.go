@@ -1,22 +1,40 @@
-package tablestogo
+package settings
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/fraenky8/tables-to-go/src/database"
+	"github.com/fraenky8/tables-to-go/src/tagger"
 )
 
 var (
-	// SupportedDbTypes represents the supported databases
-	SupportedDbTypes = []string{"pg", "mysql"}
+	// supportedDbTypes represents the supported databases
+	supportedDbTypes = map[string]bool{
+		"pg":    true,
+		"mysql": true,
+	}
 
-	// SupportedOutputFormats represents the supported output formats
-	SupportedOutputFormats = []string{"c", "o"}
+	// supportedOutputFormats represents the supported output formats
+	supportedOutputFormats = map[string]bool{
+		"c": true,
+		"o": true,
+	}
 
 	// dbDefaultPorts maps the database type to the default ports
 	dbDefaultPorts = map[string]string{
 		"pg":    "5432",
 		"mysql": "3306",
+	}
+
+	// map of Tagger used
+	// key is a ascending sequence of i*2 to determine easily which tags to generate later
+	taggers = map[int]tagger.Tagger{
+		1: new(dbTag),
+		2: new(stblTag),
+		4: new(SQLTag),
 	}
 )
 
@@ -93,12 +111,12 @@ func NewSettings() *Settings {
 // VerifySettings verifies the settings and checks the given output paths
 func VerifySettings(settings *Settings) (err error) {
 
-	if !IsStringInSlice(settings.DbType, SupportedDbTypes) {
-		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, SupportedDbTypes)
+	if !supportedDbTypes[settings.DbType] {
+		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, PrettyPrintSupportedDbTypes())
 	}
 
-	if !IsStringInSlice(settings.OutputFormat, SupportedOutputFormats) {
-		return fmt.Errorf("output format %q not supported! %v", settings.OutputFormat, SupportedOutputFormats)
+	if !supportedOutputFormats[settings.OutputFormat] {
+		return fmt.Errorf("output format %q not supported", settings.OutputFormat)
 	}
 
 	if err = verifyOutputPath(settings.OutputFilePath); err != nil {
@@ -139,4 +157,48 @@ func prepareOutputPath(ofp string) (outputFilePath string, err error) {
 	outputFilePath, err = filepath.Abs(ofp)
 	outputFilePath += string(filepath.Separator)
 	return outputFilePath, err
+}
+
+func (settings *Settings) CreateEffectiveTags() {
+	if settings.TagsNoDb {
+		settings.effectiveTags = 0
+	}
+	if settings.TagsMastermindStructable {
+		settings.effectiveTags |= 2
+	}
+	if settings.TagsMastermindStructableOnly {
+		settings.effectiveTags = 0
+		settings.effectiveTags |= 2
+	}
+	if settings.TagsSQL {
+		settings.effectiveTags |= 4
+	}
+	if settings.TagsSQLOnly {
+		settings.effectiveTags = 0
+		settings.effectiveTags |= 4
+	}
+	// last tag-"ONLY" wins if multiple specified
+}
+
+func (settings *Settings) GenerateTags(db database.Database, column database.Column) (tags string) {
+	for t := 1; t <= settings.effectiveTags; t *= 2 {
+		shouldTag := settings.effectiveTags&t > 0
+		if shouldTag {
+			tags += taggers[t].GenerateTag(db, column) + " "
+		}
+	}
+	if len(tags) > 0 {
+		tags = " `" + strings.TrimSpace(tags) + "`"
+	}
+	return tags
+}
+
+func (settings *Settings) PrettyPrintSupportedDbTypes() string {
+	names := make([]string, len(supportedDbTypes))
+	i := 0
+	for name := range supportedDbTypes {
+		names[i] = name
+		i++
+	}
+	return fmt.Sprintf("%v", names)
 }

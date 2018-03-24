@@ -1,9 +1,10 @@
-package tablestogo
+package database
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/fraenky8/tables-to-go/src"
 	// postgres database driver
 	_ "github.com/lib/pq"
 )
@@ -11,6 +12,12 @@ import (
 // PostgreDatabase implemenmts the Database interface with help of GeneralDatabase
 type PostgreDatabase struct {
 	*GeneralDatabase
+}
+
+// DSN creates the DSN String to connect to this database
+func (pg *PostgreDatabase) DSN(settings *tablestogo.Settings) string {
+	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
+		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }
 
 // Connect connects to the database by the given data source name (dsn) of the concrete database
@@ -94,12 +101,6 @@ func (pg *PostgreDatabase) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.ColumnDefault.String, "nextval")
 }
 
-// DSN creates the DSN String to connect to this database
-func (pg *PostgreDatabase) DSN(settings *Settings) string {
-	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
-		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
-}
-
 // GetStringDatatypes returns the string datatypes for the postgre database
 func (pg *PostgreDatabase) GetStringDatatypes() []string {
 	return []string{
@@ -112,7 +113,7 @@ func (pg *PostgreDatabase) GetStringDatatypes() []string {
 
 // IsString returns true if colum is of type string for the postgre database
 func (pg *PostgreDatabase) IsString(column Column) bool {
-	return IsStringInSlice(column.DataType, pg.GetStringDatatypes())
+	return pg.IsStringInSlice(column.DataType, pg.GetStringDatatypes())
 }
 
 // GetTextDatatypes returns the text datatypes for the postgre database
@@ -124,7 +125,7 @@ func (pg *PostgreDatabase) GetTextDatatypes() []string {
 
 // IsText returns true if colum is of type text for the postgre database
 func (pg *PostgreDatabase) IsText(column Column) bool {
-	return IsStringInSlice(column.DataType, pg.GetTextDatatypes())
+	return pg.IsStringInSlice(column.DataType, pg.GetTextDatatypes())
 }
 
 // GetIntegerDatatypes returns the integer datatypes for the postgre database
@@ -141,7 +142,7 @@ func (pg *PostgreDatabase) GetIntegerDatatypes() []string {
 
 // IsInteger returns true if colum is of type integer for the postgre database
 func (pg *PostgreDatabase) IsInteger(column Column) bool {
-	return IsStringInSlice(column.DataType, pg.GetIntegerDatatypes())
+	return pg.IsStringInSlice(column.DataType, pg.GetIntegerDatatypes())
 }
 
 // GetFloatDatatypes returns the float datatypes for the postgre database
@@ -156,7 +157,7 @@ func (pg *PostgreDatabase) GetFloatDatatypes() []string {
 
 // IsFloat returns true if colum is of type float for the postgre database
 func (pg *PostgreDatabase) IsFloat(column Column) bool {
-	return IsStringInSlice(column.DataType, pg.GetFloatDatatypes())
+	return pg.IsStringInSlice(column.DataType, pg.GetFloatDatatypes())
 }
 
 // GetTemporalDatatypes returns the temporal datatypes for the postgre database
@@ -174,5 +175,5 @@ func (pg *PostgreDatabase) GetTemporalDatatypes() []string {
 
 // IsTemporal returns true if colum is of type temporal for the postgre database
 func (pg *PostgreDatabase) IsTemporal(column Column) bool {
-	return IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
+	return pg.IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
 }

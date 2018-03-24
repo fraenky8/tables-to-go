@@ -1,14 +1,46 @@
-package tablestogo
+package database
 
 import (
+	"database/sql"
 	"fmt"
 
+	"github.com/fraenky8/tables-to-go/src"
 	"github.com/jmoiron/sqlx"
 )
 
+var (
+	// dbTypeToDriverMap maps the database type to the driver names
+	dbTypeToDriverMap = map[string]string{
+		"pg":    "postgres",
+		"mysql": "mysql",
+	}
+)
+
+// Table has a name and a set (slice) of columns
+type Table struct {
+	TableName string `db:"table_name"`
+	Columns   []Column
+}
+
+// Column stores information about a column
+type Column struct {
+	OrdinalPosition        int            `db:"ordinal_position"`
+	ColumnName             string         `db:"column_name"`
+	DataType               string         `db:"data_type"`
+	ColumnDefault          sql.NullString `db:"column_default"`
+	IsNullable             string         `db:"is_nullable"`
+	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
+	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
+	ColumnKey              string         `db:"column_key"`      // mysql specific
+	Extra                  string         `db:"extra"`           // mysql specific
+	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
+	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
+}
+
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *Settings) string
+	DSN(settings *tablestogo.Settings) string
 	Connect() (err error)
 	Close() (err error)
 
@@ -40,7 +72,7 @@ type Database interface {
 }
 
 // NewDatabase constructs based on the type in the settings a new Database
-func NewDatabase(settings *Settings) Database {
+func NewDatabase(settings *tablestogo.Settings) Database {
 
 	generalDatabase := &GeneralDatabase{
 		driver:   dbTypeToDriverMap[settings.DbType],
@@ -61,7 +93,7 @@ type GeneralDatabase struct {
 	driver                string
 	db                    *sqlx.DB
 	getColumnsOfTableStmt *sqlx.Stmt
-	settings              *Settings
+	settings              *tablestogo.Settings
 }
 
 func (gdb *GeneralDatabase) connect(dsn string) (err error) {
@@ -86,4 +118,14 @@ func (gdb *GeneralDatabase) Close() error {
 // IsNullable returns true if column is a nullable one
 func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
+}
+
+// IsStringInSlice checks if needle (string) is in haystack ([]string)
+func (gdb *GeneralDatabase) IsStringInSlice(needle string, haystack []string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }

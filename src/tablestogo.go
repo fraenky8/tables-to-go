@@ -2,148 +2,31 @@ package tablestogo
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 	"go/format"
 	"os"
 	"strings"
+
+	"github.com/fraenky8/tables-to-go/src/database"
+	"github.com/fraenky8/tables-to-go/src/settings"
 )
-
-var (
-	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[string]string{
-		"pg":    "postgres",
-		"mysql": "mysql",
-	}
-
-	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine easily which tags to generate later
-	taggers = map[int]Tagger{
-		1: new(DbTag),
-		2: new(StblTag),
-		4: new(SQLTag),
-	}
-)
-
-// Table has a name and a set (slice) of columns
-type Table struct {
-	TableName string `db:"table_name"`
-	Columns   []Column
-}
-
-// Column stores information about a column
-type Column struct {
-	OrdinalPosition        int            `db:"ordinal_position"`
-	ColumnName             string         `db:"column_name"`
-	DataType               string         `db:"data_type"`
-	ColumnDefault          sql.NullString `db:"column_default"`
-	IsNullable             string         `db:"is_nullable"`
-	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
-	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
-	ColumnKey              string         `db:"column_key"`      // mysql specific
-	Extra                  string         `db:"extra"`           // mysql specific
-	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
-	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
-}
-
-// Tagger interface for types of struct-tages
-type Tagger interface {
-	GenerateTag(db Database, column Column) string
-}
-
-// DbTag is the standard "db"-tag
-type DbTag string
-
-// GenerateTag for DbTag to satisfy the Tagger interface
-func (t *DbTag) GenerateTag(db Database, column Column) string {
-	return `db:"` + column.ColumnName + `"`
-}
-
-// StblTag represents the Masterminds/structable "stbl"-tag
-type StblTag string
-
-// GenerateTag for StblTag to satisfy the Tagger interface
-func (t *StblTag) GenerateTag(db Database, column Column) string {
-
-	isPk := ""
-	if db.IsPrimaryKey(column) {
-		isPk = ",PRIMARY_KEY"
-	}
-
-	isAutoIncrement := ""
-	if db.IsAutoIncrement(column) {
-		isAutoIncrement = ",SERIAL,AUTO_INCREMENT"
-	}
-
-	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
-}
-
-// SQLTag is the experimental "sql"-tag
-type SQLTag string
-
-// GenerateTag for SQLTag to satisfy the Tagger interface
-func (t *SQLTag) GenerateTag(db Database, column Column) string {
-
-	colType := ""
-	characterMaximumLength := ""
-	if db.IsString(column) && column.CharacterMaximumLength.Valid {
-		characterMaximumLength = fmt.Sprintf("(%v)", column.CharacterMaximumLength.Int64)
-	}
-
-	colType = fmt.Sprintf("type:%v%v;", column.DataType, characterMaximumLength)
-
-	isNullable := ""
-	if !db.IsNullable(column) {
-		isNullable = "not null;"
-	}
-
-	// TODO size:###
-	// TODO unique, key, index, ...
-
-	tag := colType + isNullable
-	tag = strings.TrimSuffix(tag, ";")
-
-	return `sql:"` + tag + `"`
-}
 
 // Run is the main function to run the conversions
-func Run(settings *Settings) (err error) {
+func Run(settings *settings.Settings) (err error) {
 
-	createEffectiveTags(settings)
+	settings.CreateEffectiveTags()
 
-	database := NewDatabase(settings)
+	db := database.NewDatabase(settings)
 
-	if err = database.Connect(); err != nil {
+	if err = db.Connect(); err != nil {
 		return err
 	}
-	defer database.Close()
+	defer db.Close()
 
-	return run(settings, database)
+	return run(settings, db)
 }
 
-func createEffectiveTags(settings *Settings) {
-	if settings.TagsNoDb {
-		settings.effectiveTags = 0
-	}
-	if settings.TagsMastermindStructable {
-		settings.effectiveTags |= 2
-	}
-	if settings.TagsMastermindStructableOnly {
-		settings.effectiveTags = 0
-		settings.effectiveTags |= 2
-	}
-	if settings.TagsSQL {
-		settings.effectiveTags |= 4
-	}
-	if settings.TagsSQLOnly {
-		settings.effectiveTags = 0
-		settings.effectiveTags |= 4
-	}
-	// last tag-"ONLY" wins if multiple specified
-}
-
-func run(settings *Settings, db Database) (err error) {
+func run(settings *settings.Settings, db database.Database) (err error) {
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
@@ -187,7 +70,7 @@ func run(settings *Settings, db Database) (err error) {
 	return err
 }
 
-func createStructOfTable(settings *Settings, db Database, table *Table) (err error) {
+func createStructOfTable(settings *settings.Settings, db database.Database, table *database.Table) (err error) {
 
 	var fileContentBuffer, structFieldsBuffer bytes.Buffer
 	var isNullable bool
@@ -196,13 +79,13 @@ func createStructOfTable(settings *Settings, db Database, table *Table) (err err
 	for _, column := range table.Columns {
 
 		// TODO add verbosity levels
-		//if settings.Verbose {
-		//	fmt.Printf("\t> %v\r\n", column.ColumnName)
-		//}
+		// if settings.Verbose {
+		// 	fmt.Printf("\t> %v\r\n", column.ColumnName)
+		// }
 
 		columnName := strings.Title(column.ColumnName)
 		if settings.OutputFormat == "c" {
-			columnName = CamelCaseString(columnName)
+			columnName = camelCaseString(columnName)
 		}
 		columnType, isTime := mapDbColumnTypeToGoType(db, column)
 
@@ -224,7 +107,7 @@ func createStructOfTable(settings *Settings, db Database, table *Table) (err err
 	// create file
 	tableName := strings.Title(settings.Prefix + table.TableName + settings.Suffix)
 	if settings.OutputFormat == "c" {
-		tableName = CamelCaseString(tableName)
+		tableName = camelCaseString(tableName)
 	}
 
 	outFile, err := os.Create(settings.OutputFilePath + tableName + ".go")
@@ -275,20 +158,7 @@ func createStructOfTable(settings *Settings, db Database, table *Table) (err err
 	return err
 }
 
-func generateTags(settings *Settings, db Database, column Column) (tags string) {
-	for t := 1; t <= settings.effectiveTags; t *= 2 {
-		shouldTag := settings.effectiveTags&t > 0
-		if shouldTag {
-			tags += taggers[t].GenerateTag(db, column) + " "
-		}
-	}
-	if len(tags) > 0 {
-		tags = " `" + strings.TrimSpace(tags) + "`"
-	}
-	return tags
-}
-
-func mapDbColumnTypeToGoType(db Database, column Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goType string, isTime bool) {
 
 	isTime = false
 
@@ -328,4 +198,17 @@ func mapDbColumnTypeToGoType(db Database, column Column) (goType string, isTime 
 	}
 
 	return goType, isTime
+}
+
+func camelCaseString(s string) (cc string) {
+	splitted := strings.Split(s, "_")
+
+	if len(splitted) == 1 {
+		return strings.Title(s)
+	}
+
+	for _, part := range splitted {
+		cc += strings.Title(strings.ToLower(part))
+	}
+	return cc
 }
