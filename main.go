@@ -25,7 +25,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := settings.VerifySettings(cmdArgs.Settings); err != nil {
+	if err := cmdArgs.Verify(); err != nil {
 		fmt.Printf("settings verification error: %v", err)
 		os.Exit(1)
 	}

@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/fraenky8/tables-to-go/src/database"
-	"github.com/fraenky8/tables-to-go/src/tagger"
 )
 
 var (
@@ -27,14 +23,6 @@ var (
 	dbDefaultPorts = map[string]string{
 		"pg":    "5432",
 		"mysql": "3306",
-	}
-
-	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine easily which tags to generate later
-	taggers = map[int]tagger.Tagger{
-		1: new(dbTag),
-		2: new(stblTag),
-		4: new(SQLTag),
 	}
 )
 
@@ -66,8 +54,6 @@ type Settings struct {
 	// experimental
 	TagsSQL     bool
 	TagsSQLOnly bool
-
-	effectiveTags int
 }
 
 // NewSettings constructs settings with default values
@@ -103,27 +89,25 @@ func NewSettings() *Settings {
 
 		TagsSQL:     false,
 		TagsSQLOnly: false,
-
-		effectiveTags: 1,
 	}
 }
 
-// VerifySettings verifies the settings and checks the given output paths
-func VerifySettings(settings *Settings) (err error) {
+// Verify verifies the settings and checks the given output paths
+func (settings *Settings) Verify() (err error) {
 
 	if !supportedDbTypes[settings.DbType] {
-		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, PrettyPrintSupportedDbTypes())
+		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, settings.PrettyPrintSupportedDbTypes())
 	}
 
 	if !supportedOutputFormats[settings.OutputFormat] {
 		return fmt.Errorf("output format %q not supported", settings.OutputFormat)
 	}
 
-	if err = verifyOutputPath(settings.OutputFilePath); err != nil {
+	if err = settings.verifyOutputPath(); err != nil {
 		return err
 	}
 
-	if settings.OutputFilePath, err = prepareOutputPath(settings.OutputFilePath); err != nil {
+	if settings.OutputFilePath, err = settings.prepareOutputPath(); err != nil {
 		return err
 	}
 
@@ -138,59 +122,25 @@ func VerifySettings(settings *Settings) (err error) {
 	return err
 }
 
-func verifyOutputPath(outputFilePath string) (err error) {
+func (settings *Settings) verifyOutputPath() (err error) {
 
-	info, err := os.Stat(outputFilePath)
+	info, err := os.Stat(settings.OutputFilePath)
 
 	if os.IsNotExist(err) {
-		return fmt.Errorf("output file path %q does not exists", outputFilePath)
+		return fmt.Errorf("output file path %q does not exists", settings.OutputFilePath)
 	}
 
 	if !info.Mode().IsDir() {
-		return fmt.Errorf("output file path %q is not a directory", outputFilePath)
+		return fmt.Errorf("output file path %q is not a directory", settings.OutputFilePath)
 	}
 
 	return err
 }
 
-func prepareOutputPath(ofp string) (outputFilePath string, err error) {
-	outputFilePath, err = filepath.Abs(ofp)
+func (settings *Settings) prepareOutputPath() (outputFilePath string, err error) {
+	outputFilePath, err = filepath.Abs(settings.OutputFilePath)
 	outputFilePath += string(filepath.Separator)
 	return outputFilePath, err
-}
-
-func (settings *Settings) CreateEffectiveTags() {
-	if settings.TagsNoDb {
-		settings.effectiveTags = 0
-	}
-	if settings.TagsMastermindStructable {
-		settings.effectiveTags |= 2
-	}
-	if settings.TagsMastermindStructableOnly {
-		settings.effectiveTags = 0
-		settings.effectiveTags |= 2
-	}
-	if settings.TagsSQL {
-		settings.effectiveTags |= 4
-	}
-	if settings.TagsSQLOnly {
-		settings.effectiveTags = 0
-		settings.effectiveTags |= 4
-	}
-	// last tag-"ONLY" wins if multiple specified
-}
-
-func (settings *Settings) GenerateTags(db database.Database, column database.Column) (tags string) {
-	for t := 1; t <= settings.effectiveTags; t *= 2 {
-		shouldTag := settings.effectiveTags&t > 0
-		if shouldTag {
-			tags += taggers[t].GenerateTag(db, column) + " "
-		}
-	}
-	if len(tags) > 0 {
-		tags = " `" + strings.TrimSpace(tags) + "`"
-	}
-	return tags
 }
 
 func (settings *Settings) PrettyPrintSupportedDbTypes() string {

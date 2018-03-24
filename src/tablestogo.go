@@ -9,12 +9,25 @@ import (
 
 	"github.com/fraenky8/tables-to-go/src/database"
 	"github.com/fraenky8/tables-to-go/src/settings"
+	"github.com/fraenky8/tables-to-go/src/tagger"
+)
+
+var (
+	// map of Tagger used
+	// key is a ascending sequence of i*2 to determine easily which tags to generate later
+	taggers = map[int]tagger.Tagger{
+		1: new(tagger.DbTag),
+		2: new(tagger.StblTag),
+		4: new(tagger.SQLTag),
+	}
+
+	effectiveTags = 1
 )
 
 // Run is the main function to run the conversions
 func Run(settings *settings.Settings) (err error) {
 
-	settings.CreateEffectiveTags()
+	createEffectiveTags(settings)
 
 	db := database.NewDatabase(settings)
 
@@ -89,7 +102,7 @@ func createStructOfTable(settings *settings.Settings, db database.Database, tabl
 		}
 		columnType, isTime := mapDbColumnTypeToGoType(db, column)
 
-		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(settings, db, column) + "\n")
+		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(db, column) + "\n")
 
 		// collect some info for later use
 		if column.IsNullable == "YES" {
@@ -156,6 +169,40 @@ func createStructOfTable(settings *settings.Settings, db database.Database, tabl
 	outFile.Close()
 
 	return err
+}
+
+func createEffectiveTags(settings *settings.Settings) {
+	if settings.TagsNoDb {
+		effectiveTags = 0
+	}
+	if settings.TagsMastermindStructable {
+		effectiveTags |= 2
+	}
+	if settings.TagsMastermindStructableOnly {
+		effectiveTags = 0
+		effectiveTags |= 2
+	}
+	if settings.TagsSQL {
+		effectiveTags |= 4
+	}
+	if settings.TagsSQLOnly {
+		effectiveTags = 0
+		effectiveTags |= 4
+	}
+	// last tag-"ONLY" wins if multiple specified
+}
+
+func generateTags(db database.Database, column database.Column) (tags string) {
+	for t := 1; t <= effectiveTags; t *= 2 {
+		shouldTag := effectiveTags&t > 0
+		if shouldTag {
+			tags += taggers[t].GenerateTag(db, column) + " "
+		}
+	}
+	if len(tags) > 0 {
+		tags = " `" + strings.TrimSpace(tags) + "`"
+	}
+	return tags
 }
 
 func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goType string, isTime bool) {

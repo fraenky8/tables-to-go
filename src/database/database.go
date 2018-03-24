@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/fraenky8/tables-to-go/src"
+	"github.com/fraenky8/tables-to-go/src/settings"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -40,7 +40,7 @@ type Column struct {
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *tablestogo.Settings) string
+	DSN(settings *settings.Settings) string
 	Connect() (err error)
 	Close() (err error)
 
@@ -72,31 +72,31 @@ type Database interface {
 }
 
 // NewDatabase constructs based on the type in the settings a new Database
-func NewDatabase(settings *tablestogo.Settings) Database {
+func NewDatabase(settings *settings.Settings) Database {
 
-	generalDatabase := &GeneralDatabase{
+	generalDatabase := &generalDatabase{
 		driver:   dbTypeToDriverMap[settings.DbType],
 		settings: settings,
 	}
 
 	switch settings.DbType {
 	case "mysql":
-		return &MySQLDatabase{generalDatabase}
+		return &mySQLDatabase{generalDatabase}
 	default: // pg
-		return &PostgreDatabase{generalDatabase}
+		return &postgreDatabase{generalDatabase}
 	}
 }
 
-// GeneralDatabase represents a base "class" database - for all other concrete databases
+// generalDatabase represents a base "class" database - for all other concrete databases
 // it implements partly the Database interface
-type GeneralDatabase struct {
+type generalDatabase struct {
 	driver                string
 	db                    *sqlx.DB
 	getColumnsOfTableStmt *sqlx.Stmt
-	settings              *tablestogo.Settings
+	settings              *settings.Settings
 }
 
-func (gdb *GeneralDatabase) connect(dsn string) (err error) {
+func (gdb *generalDatabase) connect(dsn string) (err error) {
 	gdb.db, err = sqlx.Connect(gdb.driver, dsn)
 	if err != nil {
 		usingPswd := "no"
@@ -111,17 +111,17 @@ func (gdb *GeneralDatabase) connect(dsn string) (err error) {
 }
 
 // Close closes the database connection
-func (gdb *GeneralDatabase) Close() error {
+func (gdb *generalDatabase) Close() error {
 	return gdb.db.Close()
 }
 
 // IsNullable returns true if column is a nullable one
-func (gdb *GeneralDatabase) IsNullable(column Column) bool {
+func (gdb *generalDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
 }
 
 // IsStringInSlice checks if needle (string) is in haystack ([]string)
-func (gdb *GeneralDatabase) IsStringInSlice(needle string, haystack []string) bool {
+func (gdb *generalDatabase) IsStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {
 			return true

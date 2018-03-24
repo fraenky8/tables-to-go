@@ -12,19 +12,19 @@ type Tagger interface {
 	GenerateTag(db database.Database, column database.Column) string
 }
 
-// dbTag is the standard "db"-tag
-type dbTag string
+// DbTag is the standard "db"-tag
+type DbTag string
 
-// GenerateTag for dbTag to satisfy the Tagger interface
-func (t *dbTag) GenerateTag(db database.Database, column database.Column) string {
+// GenerateTag for DbTag to satisfy the Tagger interface
+func (t *DbTag) GenerateTag(db database.Database, column database.Column) string {
 	return `db:"` + column.ColumnName + `"`
 }
 
-// stblTag represents the Masterminds/structable "stbl"-tag
-type stblTag string
+// StblTag represents the Masterminds/structable "stbl"-tag
+type StblTag string
 
-// GenerateTag for stblTag to satisfy the Tagger interface
-func (t *stblTag) GenerateTag(db database.Database, column database.Column) string {
+// GenerateTag for StblTag to satisfy the Tagger interface
+func (t *StblTag) GenerateTag(db database.Database, column database.Column) string {
 
 	isPk := ""
 	if db.IsPrimaryKey(column) {
