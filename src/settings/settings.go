@@ -96,7 +96,7 @@ func NewSettings() *Settings {
 func (settings *Settings) Verify() (err error) {
 
 	if !supportedDbTypes[settings.DbType] {
-		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, settings.PrettyPrintSupportedDbTypes())
+		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, settings.SupportedDbTypes())
 	}
 
 	if !supportedOutputFormats[settings.OutputFormat] {
@@ -143,7 +143,8 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 	return outputFilePath, err
 }
 
-func (settings *Settings) PrettyPrintSupportedDbTypes() string {
+// SupportedDbTypes returns a slice of strings as names of the supported database types
+func (settings *Settings) SupportedDbTypes() string {
 	names := make([]string, len(supportedDbTypes))
 	i := 0
 	for name := range supportedDbTypes {

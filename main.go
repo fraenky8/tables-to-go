@@ -15,29 +15,8 @@ type CmdArgs struct {
 	*settings.Settings
 }
 
-// main function to run the transformations
-func main() {
-
-	cmdArgs := prepareCmdArgs()
-
-	if cmdArgs.Help {
-		flag.Usage()
-		os.Exit(0)
-	}
-
-	if err := cmdArgs.Verify(); err != nil {
-		fmt.Printf("settings verification error: %v", err)
-		os.Exit(1)
-	}
-
-	if err := tablestogo.Run(cmdArgs.Settings); err != nil {
-		fmt.Printf("run error %v", err)
-		os.Exit(1)
-	}
-}
-
-// helper function to handle and prepare the command line arguments with default values
-func prepareCmdArgs() (cmdArgs *CmdArgs) {
+// NewCmdArgs creates and prepares the command line arguments with default values
+func NewCmdArgs() (cmdArgs *CmdArgs) {
 
 	cmdArgs = &CmdArgs{
 		Settings: settings.NewSettings(),
@@ -46,7 +25,7 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.BoolVar(&cmdArgs.Help, "?", false, "shows help and usage")
 	flag.BoolVar(&cmdArgs.Help, "help", false, "shows help and usage")
 	flag.BoolVar(&cmdArgs.Verbose, "v", cmdArgs.Verbose, "verbose output")
-	flag.StringVar(&cmdArgs.DbType, "t", cmdArgs.DbType, fmt.Sprintf("type of database to use, currently supported: %v", cmdArgs.PrettyPrintSupportedDbTypes()))
+	flag.StringVar(&cmdArgs.DbType, "t", cmdArgs.DbType, fmt.Sprintf("type of database to use, currently supported: %v", cmdArgs.SupportedDbTypes()))
 	flag.StringVar(&cmdArgs.User, "u", cmdArgs.User, "user to connect to the database")
 	flag.StringVar(&cmdArgs.Pswd, "p", cmdArgs.Pswd, "password of user")
 	flag.StringVar(&cmdArgs.DbName, "d", cmdArgs.DbName, "database name")
@@ -72,4 +51,25 @@ func prepareCmdArgs() (cmdArgs *CmdArgs) {
 	flag.Parse()
 
 	return cmdArgs
+}
+
+// main function to run the transformations
+func main() {
+
+	cmdArgs := NewCmdArgs()
+
+	if cmdArgs.Help {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	if err := cmdArgs.Verify(); err != nil {
+		fmt.Printf("settings verification error: %v", err)
+		os.Exit(1)
+	}
+
+	if err := tablestogo.Run(cmdArgs.Settings); err != nil {
+		fmt.Printf("run error %v", err)
+		os.Exit(1)
+	}
 }
