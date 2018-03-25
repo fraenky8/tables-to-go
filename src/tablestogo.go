@@ -123,7 +123,6 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		}
 		columnType, isTimeType := mapDbColumnTypeToGoType(db, column)
 
-		// structFields.WriteString("\t" + column.Name + " " + columnType + generateTags(db, column) + "\n")
 		structFields.WriteString(column.Name)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
