@@ -1,10 +1,9 @@
 package tablestogo
 
 import (
-	"bytes"
 	"fmt"
 	"go/format"
-	"os"
+	"io/ioutil"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/src/database"
@@ -14,13 +13,14 @@ import (
 
 var (
 	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine easily which tags to generate later
+	// key is a ascending sequence of i*2 to determine which tags to generate later
 	taggers = map[int]tagger.Tagger{
 		1: new(tagger.DbTag),
 		2: new(tagger.StblTag),
 		4: new(tagger.SQLTag),
 	}
 
+	// means that the `db`-Tag is enabled by default
 	effectiveTags = 1
 )
 
@@ -32,143 +32,11 @@ func Run(settings *settings.Settings) (err error) {
 	db := database.NewDatabase(settings)
 
 	if err = db.Connect(); err != nil {
-		return err
+		return fmt.Errorf("could not connect to database: %v", err)
 	}
 	defer db.Close()
 
 	return run(settings, db)
-}
-
-func run(settings *settings.Settings, db database.Database) (err error) {
-
-	fmt.Printf("running for %q...\r\n", settings.DbType)
-
-	tables, err := db.GetTables()
-	if err != nil {
-		return err
-	}
-
-	if settings.Verbose {
-		fmt.Printf("> number of tables: %v\r\n", len(tables))
-	}
-
-	if err = db.PrepareGetColumnsOfTableStmt(); err != nil {
-		return err
-	}
-
-	for _, table := range tables {
-
-		if settings.Verbose {
-			fmt.Printf("> processing table %q\r\n", table.TableName)
-		}
-
-		if err = db.GetColumnsOfTable(table); err != nil {
-			return err
-		}
-
-		if settings.Verbose {
-			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
-		}
-
-		if err = createStructOfTable(settings, db, table); err != nil {
-			if settings.Verbose {
-				fmt.Printf(">Error at createStructOfTable(%v)\r\n", table.TableName)
-			}
-			return err
-		}
-	}
-
-	fmt.Println("done!")
-
-	return err
-}
-
-func createStructOfTable(settings *settings.Settings, db database.Database, table *database.Table) (err error) {
-
-	var fileContentBuffer, structFieldsBuffer bytes.Buffer
-	var isNullable bool
-	timeIndicator := 0
-
-	for _, column := range table.Columns {
-
-		// TODO add verbosity levels
-		// if settings.Verbose {
-		// 	fmt.Printf("\t> %v\r\n", column.ColumnName)
-		// }
-
-		columnName := strings.Title(column.ColumnName)
-		if settings.OutputFormat == "c" {
-			columnName = camelCaseString(columnName)
-		}
-		columnType, isTime := mapDbColumnTypeToGoType(db, column)
-
-		structFieldsBuffer.WriteString("\t" + columnName + " " + columnType + generateTags(db, column) + "\n")
-
-		// collect some info for later use
-		if column.IsNullable == "YES" {
-			isNullable = true
-		}
-		if isTime {
-			timeIndicator++
-		}
-	}
-
-	if settings.IsMastermindStructableRecorder {
-		structFieldsBuffer.WriteString("\t\nstructable.Recorder\n")
-	}
-
-	// create file
-	tableName := strings.Title(settings.Prefix + table.TableName + settings.Suffix)
-	if settings.OutputFormat == "c" {
-		tableName = camelCaseString(tableName)
-	}
-
-	outFile, err := os.Create(settings.OutputFilePath + tableName + ".go")
-
-	if err != nil {
-		return err
-	}
-
-	// write header infos
-	fileContentBuffer.WriteString("package " + settings.PackageName + "\n\n")
-
-	// do imports
-	if isNullable || timeIndicator > 0 || settings.IsMastermindStructableRecorder {
-		fileContentBuffer.WriteString("import (\n")
-
-		if isNullable {
-			fileContentBuffer.WriteString("\t\"database/sql\"\n")
-		}
-
-		if timeIndicator > 0 {
-			if isNullable {
-				fileContentBuffer.WriteString("\t\n\"github.com/lib/pq\"\n")
-			} else {
-				fileContentBuffer.WriteString("\t\"time\"\n")
-			}
-		}
-
-		if settings.IsMastermindStructableRecorder {
-			fileContentBuffer.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
-		}
-
-		fileContentBuffer.WriteString(")\n\n")
-	}
-
-	// write struct with fields
-	fileContentBuffer.WriteString("type " + tableName + " struct {\n")
-	fileContentBuffer.WriteString(structFieldsBuffer.String())
-	fileContentBuffer.WriteString("}")
-
-	// format it
-	formatedFile, _ := format.Source(fileContentBuffer.Bytes())
-
-	// and save it in file
-	outFile.Write(formatedFile)
-	outFile.Sync()
-	outFile.Close()
-
-	return err
 }
 
 func createEffectiveTags(settings *settings.Settings) {
@@ -190,6 +58,147 @@ func createEffectiveTags(settings *settings.Settings) {
 		effectiveTags |= 4
 	}
 	// last tag-"ONLY" wins if multiple specified
+}
+
+func run(settings *settings.Settings, db database.Database) (err error) {
+
+	fmt.Printf("running for %q...\r\n", settings.DbType)
+
+	tables, err := db.GetTables()
+	if err != nil {
+		return fmt.Errorf("could not get tables: %v", err)
+	}
+
+	if settings.Verbose {
+		fmt.Printf("> number of tables: %v\r\n", len(tables))
+	}
+
+	if err = db.PrepareGetColumnsOfTableStmt(); err != nil {
+		return fmt.Errorf("could not prepare the get-column-statement: %v", err)
+	}
+
+	for _, table := range tables {
+
+		if settings.Verbose {
+			fmt.Printf("> processing table %q\r\n", table.Name)
+		}
+
+		if err = db.GetColumnsOfTable(table); err != nil {
+			return fmt.Errorf("could not get columns of table %s: %v", table.Name, err)
+		}
+
+		if settings.Verbose {
+			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
+		}
+
+		tableName, content := createTableStructString(settings, db, table)
+
+		if err = createStructFile(settings.OutputFilePath, tableName, content); err != nil {
+			return fmt.Errorf("could not create struct file for table %s: %v", table.Name, err)
+		}
+	}
+
+	fmt.Println("done!")
+
+	return err
+}
+
+func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string) {
+
+	var structFields strings.Builder
+
+	var isNullable bool
+	var isTime bool
+
+	for _, column := range table.Columns {
+
+		// TODO add verbosity levels
+		// if settings.Verbose {
+		// 	fmt.Printf("\t> %v\r\n", column.Name)
+		// }
+
+		column.Name = strings.Title(column.Name)
+		if settings.OutputFormat == "c" {
+			column.Name = camelCaseString(column.Name)
+		}
+		columnType, isTimeType := mapDbColumnTypeToGoType(db, column)
+
+		// structFields.WriteString("\t" + column.Name + " " + columnType + generateTags(db, column) + "\n")
+		structFields.WriteString(column.Name)
+		structFields.WriteString(" ")
+		structFields.WriteString(columnType)
+		structFields.WriteString(generateTags(db, column))
+		structFields.WriteString("\n")
+
+		// save some info for later use
+		if column.IsNullable == "YES" {
+			isNullable = true
+		}
+		if isTimeType {
+			isTime = true
+		}
+	}
+
+	if settings.IsMastermindStructableRecorder {
+		structFields.WriteString("\t\nstructable.Recorder\n")
+	}
+
+	var fileContent strings.Builder
+
+	// write header infos
+	fileContent.WriteString("package ")
+	fileContent.WriteString(settings.PackageName)
+	fileContent.WriteString("\n\n")
+
+	// do imports
+	if isNullable || isTime || settings.IsMastermindStructableRecorder {
+		fileContent.WriteString("import (\n")
+
+		if isNullable {
+			fileContent.WriteString("\t\"database/sql\"\n")
+		}
+
+		if isTime {
+			if isNullable {
+				fileContent.WriteString("\t\n\"github.com/lib/pq\"\n")
+			} else {
+				fileContent.WriteString("\t\"time\"\n")
+			}
+		}
+
+		if settings.IsMastermindStructableRecorder {
+			fileContent.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+		}
+
+		fileContent.WriteString(")\n\n")
+	}
+
+	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
+	if settings.OutputFormat == "c" {
+		tableName = camelCaseString(tableName)
+	}
+
+	// write struct with fields
+	fileContent.WriteString("type ")
+	fileContent.WriteString(tableName)
+	fileContent.WriteString(" struct {\n")
+	fileContent.WriteString(structFields.String())
+	fileContent.WriteString("}")
+
+	return tableName, fileContent.String()
+}
+
+func createStructFile(path, name, content string) error {
+
+	fileName := path + name + ".go"
+
+	// format it
+	formatedContent, err := format.Source([]byte(content))
+	if err != nil {
+		return fmt.Errorf("could not format file %s: %v", fileName, err)
+	}
+
+	return ioutil.WriteFile(fileName, formatedContent, 0666)
 }
 
 func generateTags(db database.Database, column database.Column) (tags string) {

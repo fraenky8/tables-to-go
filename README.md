@@ -44,6 +44,10 @@ Flag `-v` is verbose mode, `-of` is the output file path in which the structs ar
   * date/time: timestamp, date, datetime, year, time with time zone, timestamp with time zone, time without time zone, timestamp without time zone
   * others: boolean
 
+## Restrictions
+
+Because of using [strings.Builder](https://golang.org/pkg/strings/#example_Builder) this tool can only be built with **>= Go 1.10**
+
 ## Examples
 
 Assuming you have the following table definition (PostgreSQL):

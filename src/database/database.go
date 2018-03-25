@@ -18,16 +18,16 @@ var (
 
 // Table has a name and a set (slice) of columns
 type Table struct {
-	TableName string `db:"table_name"`
-	Columns   []Column
+	Name    string `db:"table_name"`
+	Columns []Column
 }
 
 // Column stores information about a column
 type Column struct {
 	OrdinalPosition        int            `db:"ordinal_position"`
-	ColumnName             string         `db:"column_name"`
+	Name                   string         `db:"column_name"`
 	DataType               string         `db:"data_type"`
-	ColumnDefault          sql.NullString `db:"column_default"`
+	DefaultValue           sql.NullString `db:"column_default"`
 	IsNullable             string         `db:"is_nullable"`
 	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
@@ -81,9 +81,9 @@ func NewDatabase(settings *settings.Settings) Database {
 
 	switch settings.DbType {
 	case "mysql":
-		return &mySQLDatabase{generalDatabase}
+		return &mysql{generalDatabase}
 	default: // pg
-		return &postgreDatabase{generalDatabase}
+		return &postgresql{generalDatabase}
 	}
 }
 

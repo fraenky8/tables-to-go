@@ -17,7 +17,7 @@ type DbTag string
 
 // GenerateTag for DbTag to satisfy the Tagger interface
 func (t *DbTag) GenerateTag(db database.Database, column database.Column) string {
-	return `db:"` + column.ColumnName + `"`
+	return `db:"` + column.Name + `"`
 }
 
 // StblTag represents the Masterminds/structable "stbl"-tag
@@ -36,7 +36,7 @@ func (t *StblTag) GenerateTag(db database.Database, column database.Column) stri
 		isAutoIncrement = ",SERIAL,AUTO_INCREMENT"
 	}
 
-	return `stbl:"` + column.ColumnName + isPk + isAutoIncrement + `"`
+	return `stbl:"` + column.Name + isPk + isAutoIncrement + `"`
 }
 
 // SQLTag is the experimental "sql"-tag
