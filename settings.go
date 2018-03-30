@@ -1,4 +1,4 @@
-package settings
+package tablestogo
 
 import (
 	"fmt"

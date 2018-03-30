@@ -17,7 +17,7 @@
 //
 // Run the following command (default local PostgreSQL instance):
 //
-//      go run main.go
+//      go run cmd/tables-to-go/main.go
 //
 // The following file SomeUserInfo.go with default package dto (data transfer object) will be created:
 //
@@ -63,7 +63,7 @@
 //          -suf string
 //              suffix for file- and struct names
 //          -t string
-//              type of database to use, currently supported: [pg mysql] (default "pg")
+//              type of database to use, currently supported: [postgres mysql] (default "postgres")
 //          -tags-no-db
 //              do not create db-tags
 //          -tags-structable
@@ -77,4 +77,4 @@
 //
 // For more details & exmaples refer to https://github.com/fraenky8/tables-to-go/blob/master/README.md
 //
-package main
+package tablestogo

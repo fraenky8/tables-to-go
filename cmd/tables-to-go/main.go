@@ -1,45 +1,121 @@
-package tablestogo
+package main
 
 import (
+	"flag"
 	"fmt"
+	"os"
+
 	"go/format"
 	"io/ioutil"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/src/database"
-	"github.com/fraenky8/tables-to-go/src/settings"
-	"github.com/fraenky8/tables-to-go/src/tagger"
+	"github.com/fraenky8/tables-to-go"
+	"github.com/fraenky8/tables-to-go/mysql"
+	"github.com/fraenky8/tables-to-go/postgresql"
+	"github.com/fraenky8/tables-to-go/tagger"
 )
 
 var (
 	// map of Tagger used
 	// key is a ascending sequence of i*2 to determine which tags to generate later
-	taggers = map[int]tagger.Tagger{
-		1: new(tagger.DbTag),
-		2: new(tagger.StblTag),
-		4: new(tagger.SQLTag),
+	taggers = map[int]tablestogo.Tagger{
+		1: new(tagger.Db),
+		2: new(tagger.Mastermind),
+		4: new(tagger.SQL),
 	}
 
 	// means that the `db`-Tag is enabled by default
 	effectiveTags = 1
 )
 
-// Run is the main function to run the conversions
-func Run(settings *settings.Settings) (err error) {
+// cmdArgs represents the supported command line args
+type cmdArgs struct {
+	Help bool
+	*tablestogo.Settings
+}
 
-	createEffectiveTags(settings)
+// newCmdArgs creates and prepares the command line arguments with default values
+func newCmdArgs() (args *cmdArgs) {
 
-	db := database.NewDatabase(settings)
+	args = &cmdArgs{
+		Settings: tablestogo.NewSettings(),
+	}
 
-	if err = db.Connect(); err != nil {
-		return fmt.Errorf("could not connect to database: %v", err)
+	flag.BoolVar(&args.Help, "?", false, "shows help and usage")
+	flag.BoolVar(&args.Help, "help", false, "shows help and usage")
+	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
+	flag.StringVar(&args.DbType, "t", args.DbType, fmt.Sprintf("type of database to use, currently supported: %v", args.SupportedDbTypes()))
+	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
+	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
+	flag.StringVar(&args.DbName, "d", args.DbName, "database name")
+	flag.StringVar(&args.Schema, "s", args.Schema, "schema name")
+	flag.StringVar(&args.Host, "h", args.Host, "host of database")
+	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
+
+	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
+	flag.StringVar(&args.OutputFormat, "format", args.OutputFormat, "camelCase (c) or original (o)")
+	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
+	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
+	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")
+
+	flag.BoolVar(&args.TagsNoDb, "tags-no-db", args.TagsNoDb, "do not create db-tags")
+
+	flag.BoolVar(&args.TagsMastermindStructable, "tags-structable", args.TagsMastermindStructable, "generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&args.TagsMastermindStructableOnly, "tags-structable-only", args.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	flag.BoolVar(&args.IsMastermindStructableRecorder, "structable-recorder", args.IsMastermindStructableRecorder, "generate a structable.Recorder field")
+
+	flag.BoolVar(&args.TagsSQL, "experimental-tags-sql", args.TagsSQL, "generate struct with sql-tags")
+	flag.BoolVar(&args.TagsSQLOnly, "experimental-tags-sql-only", args.TagsSQLOnly, "generate struct with ONLY sql-tags")
+
+	flag.Parse()
+
+	return args
+}
+
+// main function to run the transformations
+func main() {
+
+	cmdArgs := newCmdArgs()
+
+	if cmdArgs.Help {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	if err := cmdArgs.Verify(); err != nil {
+		fmt.Printf("settings verification error: %v", err)
+		os.Exit(1)
+	}
+
+	createEffectiveTags(cmdArgs.Settings)
+
+	gdb := &tablestogo.GeneralDatabase{
+		Settings: cmdArgs.Settings,
+	}
+
+	var db tablestogo.Database
+
+	switch cmdArgs.DbType {
+	case "mysql":
+		db = &mysql.Mysql{gdb}
+	case "postgres":
+	default:
+		db = &postgresql.Postgresql{gdb}
+	}
+
+	if err := db.Connect(); err != nil {
+		fmt.Printf("could not connect to database: %v", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
-	return run(settings, db)
+	if err := run(cmdArgs.Settings, db); err != nil {
+		fmt.Printf("run error: %v", err)
+		os.Exit(1)
+	}
 }
 
-func createEffectiveTags(settings *settings.Settings) {
+func createEffectiveTags(settings *tablestogo.Settings) {
 	if settings.TagsNoDb {
 		effectiveTags = 0
 	}
@@ -60,7 +136,7 @@ func createEffectiveTags(settings *settings.Settings) {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func run(settings *settings.Settings, db database.Database) (err error) {
+func run(settings *tablestogo.Settings, db tablestogo.Database) (err error) {
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
@@ -103,7 +179,7 @@ func run(settings *settings.Settings, db database.Database) (err error) {
 	return err
 }
 
-func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string) {
+func createTableStructString(settings *tablestogo.Settings, db tablestogo.Database, table *tablestogo.Table) (string, string) {
 
 	var structFields strings.Builder
 
@@ -200,7 +276,7 @@ func createStructFile(path, name, content string) error {
 	return ioutil.WriteFile(fileName, formatedContent, 0666)
 }
 
-func generateTags(db database.Database, column database.Column) (tags string) {
+func generateTags(db tablestogo.Database, column tablestogo.Column) (tags string) {
 	for t := 1; t <= effectiveTags; t *= 2 {
 		shouldTag := effectiveTags&t > 0
 		if shouldTag {
@@ -213,7 +289,7 @@ func generateTags(db database.Database, column database.Column) (tags string) {
 	return tags
 }
 
-func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(db tablestogo.Database, column tablestogo.Column) (goType string, isTime bool) {
 
 	isTime = false
 

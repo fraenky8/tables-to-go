@@ -1,19 +1,10 @@
-package database
+package tablestogo
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/fraenky8/tables-to-go/src/settings"
 	"github.com/jmoiron/sqlx"
-)
-
-var (
-	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[string]string{
-		"pg":    "postgres",
-		"mysql": "mysql",
-	}
 )
 
 // Table has a name and a set (slice) of columns
@@ -40,7 +31,7 @@ type Column struct {
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *settings.Settings) string
+	DSN(settings *Settings) string
 	Connect() (err error)
 	Close() (err error)
 
@@ -71,57 +62,40 @@ type Database interface {
 	// TODO mysql: bit, enums, set
 }
 
-// NewDatabase constructs based on the type in the settings a new Database
-func NewDatabase(settings *settings.Settings) Database {
-
-	generalDatabase := &generalDatabase{
-		driver:   dbTypeToDriverMap[settings.DbType],
-		settings: settings,
-	}
-
-	switch settings.DbType {
-	case "mysql":
-		return &mysql{generalDatabase}
-	default: // pg
-		return &postgresql{generalDatabase}
-	}
-}
-
-// generalDatabase represents a base "class" database - for all other concrete databases
+// GeneralDatabase represents a base "class" database - for all other concrete databases
 // it implements partly the Database interface
-type generalDatabase struct {
-	driver                string
-	db                    *sqlx.DB
-	getColumnsOfTableStmt *sqlx.Stmt
-	settings              *settings.Settings
+type GeneralDatabase struct {
+	GetColumnsOfTableStmt *sqlx.Stmt
+	*sqlx.DB
+	*Settings
 }
 
-func (gdb *generalDatabase) connect(dsn string) (err error) {
-	gdb.db, err = sqlx.Connect(gdb.driver, dsn)
+func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
+	gdb.DB, err = sqlx.Connect(gdb.DbType, dsn)
 	if err != nil {
 		usingPswd := "no"
-		if gdb.settings.Pswd != "" {
+		if gdb.Settings.Pswd != "" {
 			usingPswd = "yes"
 		}
 		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
-			gdb.settings.DbType, gdb.settings.User, gdb.settings.DbName, gdb.settings.Host, gdb.settings.Port, usingPswd, err)
+			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err)
 	}
 
-	return gdb.db.Ping()
+	return gdb.Ping()
 }
 
 // Close closes the database connection
-func (gdb *generalDatabase) Close() error {
-	return gdb.db.Close()
+func (gdb *GeneralDatabase) Close() error {
+	return gdb.Close()
 }
 
 // IsNullable returns true if column is a nullable one
-func (gdb *generalDatabase) IsNullable(column Column) bool {
+func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
 }
 
 // IsStringInSlice checks if needle (string) is in haystack ([]string)
-func (gdb *generalDatabase) IsStringInSlice(needle string, haystack []string) bool {
+func (gdb *GeneralDatabase) IsStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {
 			return true

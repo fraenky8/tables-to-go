@@ -11,6 +11,8 @@ A small and helpful tool which helps during developing with a changing database 
 
 ```
 go get github.com/fraenky8/tables-to-go
+cd github.com/fraenky8/tables-to-go/cmd/tables-to-go
+go install
 ```
 
 ## Getting started
