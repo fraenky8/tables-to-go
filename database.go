@@ -7,28 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Table has a name and a set (slice) of columns
-type Table struct {
-	Name    string `db:"table_name"`
-	Columns []Column
-}
-
-// Column stores information about a column
-type Column struct {
-	OrdinalPosition        int            `db:"ordinal_position"`
-	Name                   string         `db:"column_name"`
-	DataType               string         `db:"data_type"`
-	DefaultValue           sql.NullString `db:"column_default"`
-	IsNullable             string         `db:"is_nullable"`
-	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
-	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
-	ColumnKey              string         `db:"column_key"`      // mysql specific
-	Extra                  string         `db:"extra"`           // mysql specific
-	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
-	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
-}
-
 // Database interface for the concrete databases
 type Database interface {
 	DSN(settings *Settings) string
@@ -60,6 +38,28 @@ type Database interface {
 
 	// TODO pg: bitstrings, enum, range, other special types
 	// TODO mysql: bit, enums, set
+}
+
+// Table has a name and a set (slice) of columns
+type Table struct {
+	Name    string `db:"table_name"`
+	Columns []Column
+}
+
+// Column stores information about a column
+type Column struct {
+	OrdinalPosition        int            `db:"ordinal_position"`
+	Name                   string         `db:"column_name"`
+	DataType               string         `db:"data_type"`
+	DefaultValue           sql.NullString `db:"column_default"`
+	IsNullable             string         `db:"is_nullable"`
+	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
+	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
+	ColumnKey              string         `db:"column_key"`      // mysql specific
+	Extra                  string         `db:"extra"`           // mysql specific
+	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
+	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
 // GeneralDatabase represents a base "class" database - for all other concrete databases

@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/fraenky8/tables-to-go"
-	"github.com/fraenky8/tables-to-go/mysql"
-	"github.com/fraenky8/tables-to-go/postgresql"
+	"github.com/fraenky8/tables-to-go/database/mysql"
+	"github.com/fraenky8/tables-to-go/database/postgresql"
 	"github.com/fraenky8/tables-to-go/tagger"
 )
 
