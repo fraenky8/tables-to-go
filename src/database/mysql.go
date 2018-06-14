@@ -58,7 +58,6 @@ func (mysql *mysql) PrepareGetColumnsOfTableStmt() (err error) {
 		  is_nullable,
 		  character_maximum_length,
 		  numeric_precision,
-		  datetime_precision,
 		  column_key,
 		  extra
 		FROM information_schema.columns
