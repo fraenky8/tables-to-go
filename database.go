@@ -86,7 +86,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 
 // Close closes the database connection
 func (gdb *GeneralDatabase) Close() error {
-	return gdb.Close()
+	return gdb.DB.Close()
 }
 
 // IsNullable returns true if column is a nullable one
