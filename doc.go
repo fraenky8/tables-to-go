@@ -63,7 +63,7 @@
 //          -suf string
 //              suffix for file- and struct names
 //          -t string
-//              type of database to use, currently supported: [postgres mysql] (default "postgres")
+//              type of database to use, currently supported: [pg mysql] (default "pg")
 //          -tags-no-db
 //              do not create db-tags
 //          -tags-structable
