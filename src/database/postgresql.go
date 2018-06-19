@@ -58,7 +58,6 @@ func (pg *postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 			ic.is_nullable,
 			ic.character_maximum_length,
 			ic.numeric_precision,
-			ic.datetime_precision,
 			itc.constraint_name,
 			itc.constraint_type
 		FROM information_schema.columns AS ic
