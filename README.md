@@ -39,7 +39,7 @@ Flag `-v` is verbose mode, `-of` is the output file path in which the structs ar
     * with or without `structable.Recorder` 
 * **currently supported**:
   * PostgreSQL (9.5 tested)
-  * MySQL (5.6 tested)
+  * MySQL (5.5+ tested)
 * currently the following basic data types are supported:
   * numeric: integer, serial, double, real, float
   * character: varying, text, char, varchar, binary, varbinary, blob

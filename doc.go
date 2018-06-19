@@ -17,7 +17,7 @@
 //
 // Run the following command (default local PostgreSQL instance):
 //
-//      go run cmd/tables-to-go/main.go
+//      go run tables-to-go.go
 //
 // The following file SomeUserInfo.go with default package dto (data transfer object) will be created:
 //
@@ -36,7 +36,7 @@
 //
 // Commandline Flags
 //
-//       go run main.go -help
+//       go run tables-to-go.go -help
 //          -?    shows help and usage
 //          -d string
 //              database name (default "postgres")
@@ -77,4 +77,4 @@
 //
 // For more details & exmaples refer to https://github.com/fraenky8/tables-to-go/blob/master/README.md
 //
-package tablestogo
+package main

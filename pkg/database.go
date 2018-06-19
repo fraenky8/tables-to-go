@@ -7,6 +7,14 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var (
+	// dbTypeToDriverMap maps the database type to the driver names
+	dbTypeToDriverMap = map[string]string{
+		"pg":    "postgres",
+		"mysql": "mysql",
+	}
+)
+
 // Database interface for the concrete databases
 type Database interface {
 	DSN(settings *Settings) string
@@ -61,16 +69,24 @@ type Column struct {
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
+func NewDatabase(settings *Settings) *GeneralDatabase {
+	return &GeneralDatabase{
+		Settings: settings,
+		driver:   dbTypeToDriverMap[settings.DbType],
+	}
+}
+
 // GeneralDatabase represents a base "class" database - for all other concrete databases
 // it implements partly the Database interface
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*sqlx.DB
 	*Settings
+	driver string
 }
 
 func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
-	gdb.DB, err = sqlx.Connect(gdb.DbType, dsn)
+	gdb.DB, err = sqlx.Connect(gdb.driver, dsn)
 	if err != nil {
 		usingPswd := "no"
 		if gdb.Settings.Pswd != "" {

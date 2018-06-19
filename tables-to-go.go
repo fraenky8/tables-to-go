@@ -88,9 +88,7 @@ func main() {
 
 	createEffectiveTags(cmdArgs.Settings)
 
-	gdb := &pkg.GeneralDatabase{
-		Settings: cmdArgs.Settings,
-	}
+	gdb := pkg.NewDatabase(cmdArgs.Settings)
 
 	var db pkg.Database
 
