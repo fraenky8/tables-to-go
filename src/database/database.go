@@ -31,7 +31,6 @@ type Column struct {
 	IsNullable             string         `db:"is_nullable"`
 	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
 	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	DatetimePrecision      sql.NullInt64  `db:"datetime_precision"`
 	ColumnKey              string         `db:"column_key"`      // mysql specific
 	Extra                  string         `db:"extra"`           // mysql specific
 	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
