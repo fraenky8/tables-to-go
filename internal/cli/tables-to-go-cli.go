@@ -8,8 +8,7 @@ import (
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/pkg"
-	"github.com/fraenky8/tables-to-go/pkg/database/mysql"
-	"github.com/fraenky8/tables-to-go/pkg/database/postgresql"
+	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
@@ -127,10 +126,10 @@ func createDatabase(settings *pkg.Settings) (db pkg.Database, err error) {
 
 	switch settings.DbType {
 	case "mysql":
-		db = &mysql.Mysql{gdb}
+		db = &database.Mysql{gdb}
 	case "postgres":
 	default:
-		db = &postgresql.Postgresql{gdb}
+		db = &database.Postgresql{gdb}
 	}
 
 	if err := db.Connect(); err != nil {
