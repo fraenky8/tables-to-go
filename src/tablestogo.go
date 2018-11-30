@@ -127,7 +127,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
 		// that name to the struct, if so, skip.
-		if strings.Contains(structFields.String(), column.Name) {
+		if strings.Contains(structFields.String(), column.Name+" ") {
 			continue
 		}
 
