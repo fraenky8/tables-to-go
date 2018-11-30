@@ -72,7 +72,7 @@ func (mysql *mysql) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table for a given database
 func (mysql *mysql) GetColumnsOfTable(table *Table) (err error) {
 
-	mysql.getColumnsOfTableStmt.Select(&table.Columns, table.Name, mysql.settings.DbName)
+	err = mysql.getColumnsOfTableStmt.Select(&table.Columns, table.Name, mysql.settings.DbName)
 
 	if mysql.settings.Verbose {
 		if err != nil {
