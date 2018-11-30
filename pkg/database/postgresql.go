@@ -78,7 +78,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table in a given schema
 func (pg *Postgresql) GetColumnsOfTable(table *pkg.Table) (err error) {
 
-	pg.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, pg.Schema)
+	err = pg.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, pg.Schema)
 
 	if pg.Verbose {
 		if err != nil {
