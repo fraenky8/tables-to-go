@@ -1,32 +1,39 @@
-package database
+package mysql
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg"
-	// Mysql database driver
+	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/database"
+
+	// MySQL database driver
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Mysql implemenmts the Database interface with help of generalDatabase
-type Mysql struct {
-	*pkg.GeneralDatabase
+// MySQL implemenmts the Database interface with help of generalDatabase
+type MySQL struct {
+	*database.GeneralDatabase
+}
+
+// New creates a new MySQL database
+func New(gdb *database.GeneralDatabase) *MySQL {
+	return &MySQL{gdb}
 }
 
 // Connect connects to the database by the given data source name (dsn) of the concrete database
-func (mysql *Mysql) Connect() error {
+func (mysql *MySQL) Connect() error {
 	return mysql.GeneralDatabase.Connect(mysql.DSN(mysql.Settings))
 }
 
 // DSN creates the DSN String to connect to this database
-func (mysql *Mysql) DSN(settings *pkg.Settings) string {
+func (mysql *MySQL) DSN(settings *config.Settings) string {
 	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
 		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }
 
 // GetTables gets all tables for a given database by name
-func (mysql *Mysql) GetTables() (tables []*pkg.Table, err error) {
+func (mysql *MySQL) GetTables() (tables []*database.Table, err error) {
 
 	err = mysql.Select(&tables, `
 		SELECT table_name
@@ -47,7 +54,7 @@ func (mysql *Mysql) GetTables() (tables []*pkg.Table, err error) {
 }
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the columns of a specific table for a given database
-func (mysql *Mysql) PrepareGetColumnsOfTableStmt() (err error) {
+func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
 
 	mysql.GetColumnsOfTableStmt, err = mysql.Preparex(`
 		SELECT
@@ -70,7 +77,7 @@ func (mysql *Mysql) PrepareGetColumnsOfTableStmt() (err error) {
 }
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table for a given database
-func (mysql *Mysql) GetColumnsOfTable(table *pkg.Table) (err error) {
+func (mysql *MySQL) GetColumnsOfTable(table *database.Table) (err error) {
 
 	err = mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, mysql.DbName)
 
@@ -86,17 +93,17 @@ func (mysql *Mysql) GetColumnsOfTable(table *pkg.Table) (err error) {
 }
 
 // IsPrimaryKey checks if column belongs to primary key
-func (mysql *Mysql) IsPrimaryKey(column pkg.Column) bool {
+func (mysql *MySQL) IsPrimaryKey(column database.Column) bool {
 	return strings.Contains(column.ColumnKey, "PRI")
 }
 
 // IsAutoIncrement checks if column is a auto_increment column
-func (mysql *Mysql) IsAutoIncrement(column pkg.Column) bool {
+func (mysql *MySQL) IsAutoIncrement(column database.Column) bool {
 	return strings.Contains(column.Extra, "auto_increment")
 }
 
-// GetStringDatatypes returns the string datatypes for the Mysql database
-func (mysql *Mysql) GetStringDatatypes() []string {
+// GetStringDatatypes returns the string datatypes for the MySQL database
+func (mysql *MySQL) GetStringDatatypes() []string {
 	return []string{
 		"char",
 		"varchar",
@@ -105,26 +112,26 @@ func (mysql *Mysql) GetStringDatatypes() []string {
 	}
 }
 
-// IsString returns true if colum is of type string for the Mysql database
-func (mysql *Mysql) IsString(column pkg.Column) bool {
+// IsString returns true if colum is of type string for the MySQL database
+func (mysql *MySQL) IsString(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetStringDatatypes())
 }
 
-// GetTextDatatypes returns the text datatypes for the Mysql database
-func (mysql *Mysql) GetTextDatatypes() []string {
+// GetTextDatatypes returns the text datatypes for the MySQL database
+func (mysql *MySQL) GetTextDatatypes() []string {
 	return []string{
 		"text",
 		"blob",
 	}
 }
 
-// IsText returns true if colum is of type text for the Mysql database
-func (mysql *Mysql) IsText(column pkg.Column) bool {
+// IsText returns true if colum is of type text for the MySQL database
+func (mysql *MySQL) IsText(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetTextDatatypes())
 }
 
-// GetIntegerDatatypes returns the integer datatypes for the Mysql database
-func (mysql *Mysql) GetIntegerDatatypes() []string {
+// GetIntegerDatatypes returns the integer datatypes for the MySQL database
+func (mysql *MySQL) GetIntegerDatatypes() []string {
 	return []string{
 		"tinyint",
 		"smallint",
@@ -134,13 +141,13 @@ func (mysql *Mysql) GetIntegerDatatypes() []string {
 	}
 }
 
-// IsInteger returns true if colum is of type integer for the Mysql database
-func (mysql *Mysql) IsInteger(column pkg.Column) bool {
+// IsInteger returns true if colum is of type integer for the MySQL database
+func (mysql *MySQL) IsInteger(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetIntegerDatatypes())
 }
 
-// GetFloatDatatypes returns the float datatypes for the Mysql database
-func (mysql *Mysql) GetFloatDatatypes() []string {
+// GetFloatDatatypes returns the float datatypes for the MySQL database
+func (mysql *MySQL) GetFloatDatatypes() []string {
 	return []string{
 		"numeric",
 		"decimal",
@@ -150,13 +157,13 @@ func (mysql *Mysql) GetFloatDatatypes() []string {
 	}
 }
 
-// IsFloat returns true if colum is of type float for the Mysql database
-func (mysql *Mysql) IsFloat(column pkg.Column) bool {
+// IsFloat returns true if colum is of type float for the MySQL database
+func (mysql *MySQL) IsFloat(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetFloatDatatypes())
 }
 
-// GetTemporalDatatypes returns the temporal datatypes for the Mysql database
-func (mysql *Mysql) GetTemporalDatatypes() []string {
+// GetTemporalDatatypes returns the temporal datatypes for the MySQL database
+func (mysql *MySQL) GetTemporalDatatypes() []string {
 	return []string{
 		"time",
 		"timestamp",
@@ -166,7 +173,7 @@ func (mysql *Mysql) GetTemporalDatatypes() []string {
 	}
 }
 
-// IsTemporal returns true if colum is of type temporal for the Mysql database
-func (mysql *Mysql) IsTemporal(column pkg.Column) bool {
+// IsTemporal returns true if colum is of type temporal for the MySQL database
+func (mysql *MySQL) IsTemporal(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
 }

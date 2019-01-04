@@ -7,15 +7,17 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg"
+	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/database/mysql"
+	"github.com/fraenky8/tables-to-go/pkg/database/postgresql"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
 var (
 	// map of Tagger used
 	// key is a ascending sequence of i*2 to determine which tags to generate later
-	taggers = map[int]pkg.Tagger{
+	taggers = map[int]tagger.Tagger{
 		1: new(tagger.Db),
 		2: new(tagger.Mastermind),
 		4: new(tagger.SQL),
@@ -28,14 +30,14 @@ var (
 // cmdArgs represents the supported command line args
 type cmdArgs struct {
 	Help bool
-	*pkg.Settings
+	*config.Settings
 }
 
 // newCmdArgs creates and prepares the command line arguments with default values
 func NewCmdArgs() (args *cmdArgs) {
 
 	args = &cmdArgs{
-		Settings: pkg.NewSettings(),
+		Settings: config.NewSettings(),
 	}
 
 	flag.BoolVar(&args.Help, "?", false, "shows help and usage")
@@ -70,9 +72,9 @@ func NewCmdArgs() (args *cmdArgs) {
 }
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *pkg.Settings) (err error) {
+func Run(settings *config.Settings) (err error) {
 
-	db, err := createDatabase(settings)
+	db, err := newDatabase(settings)
 	if err != nil {
 		return err
 	}
@@ -120,16 +122,18 @@ func Run(settings *pkg.Settings) (err error) {
 	return err
 }
 
-func createDatabase(settings *pkg.Settings) (db pkg.Database, err error) {
+func newDatabase(settings *config.Settings) (database.Database, error) {
 
-	gdb := pkg.NewDatabase(settings)
+	gdb := database.New(settings)
+
+	var db database.Database
 
 	switch settings.DbType {
 	case "mysql":
-		db = &database.Mysql{gdb}
+		db = mysql.New(gdb)
 	case "postgres":
 	default:
-		db = &database.Postgresql{gdb}
+		db = postgresql.New(gdb)
 	}
 
 	if err := db.Connect(); err != nil {
@@ -139,7 +143,7 @@ func createDatabase(settings *pkg.Settings) (db pkg.Database, err error) {
 	return db, nil
 }
 
-func createEffectiveTags(settings *pkg.Settings) {
+func createEffectiveTags(settings *config.Settings) {
 	if settings.TagsNoDb {
 		effectiveTags = 0
 	}
@@ -160,7 +164,7 @@ func createEffectiveTags(settings *pkg.Settings) {
 	// last tag-"ONLY" wins if multiple specified
 }
 
-func createTableStructString(settings *pkg.Settings, db pkg.Database, table *pkg.Table) (string, string) {
+func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
 
 	var structFields strings.Builder
 
@@ -265,7 +269,7 @@ func createStructFile(path, name, content string) error {
 	return ioutil.WriteFile(fileName, formatedContent, 0666)
 }
 
-func generateTags(db pkg.Database, column pkg.Column) (tags string) {
+func generateTags(db database.Database, column database.Column) (tags string) {
 	for t := 1; t <= effectiveTags; t *= 2 {
 		shouldTag := effectiveTags&t > 0
 		if shouldTag {
@@ -278,7 +282,7 @@ func generateTags(db pkg.Database, column pkg.Column) (tags string) {
 	return tags
 }
 
-func mapDbColumnTypeToGoType(db pkg.Database, column pkg.Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goType string, isTime bool) {
 
 	isTime = false
 

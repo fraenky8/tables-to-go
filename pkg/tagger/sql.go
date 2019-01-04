@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg"
+	"github.com/fraenky8/tables-to-go/pkg/database"
 )
 
 // SQL is the experimental "sql"-tag
-type SQL string
+type SQL struct{}
 
 // GenerateTag for SQL to satisfy the Tagger interface
-func (t *SQL) GenerateTag(db pkg.Database, column pkg.Column) string {
+func (t SQL) GenerateTag(db database.Database, column database.Column) string {
 
 	colType := ""
 	characterMaximumLength := ""

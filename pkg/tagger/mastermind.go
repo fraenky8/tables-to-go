@@ -1,12 +1,14 @@
 package tagger
 
-import "github.com/fraenky8/tables-to-go/pkg"
+import (
+	"github.com/fraenky8/tables-to-go/pkg/database"
+)
 
 // Mastermind represents the Masterminds/structable "stbl"-tag
-type Mastermind string
+type Mastermind struct{}
 
 // GenerateTag for Mastermind to satisfy the Tagger interface
-func (t *Mastermind) GenerateTag(db pkg.Database, column pkg.Column) string {
+func (t Mastermind) GenerateTag(db database.Database, column database.Column) string {
 
 	isPk := ""
 	if db.IsPrimaryKey(column) {

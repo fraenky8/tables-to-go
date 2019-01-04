@@ -1,10 +1,12 @@
-package pkg
+package database
 
 import (
 	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/fraenky8/tables-to-go/pkg/config"
 )
 
 var (
@@ -17,7 +19,7 @@ var (
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *Settings) string
+	DSN(settings *config.Settings) string
 	Connect() (err error)
 	Close() (err error)
 
@@ -69,20 +71,20 @@ type Column struct {
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
-func NewDatabase(settings *Settings) *GeneralDatabase {
-	return &GeneralDatabase{
-		Settings: settings,
-		driver:   dbTypeToDriverMap[settings.DbType],
-	}
-}
-
 // GeneralDatabase represents a base "class" database - for all other concrete databases
 // it implements partly the Database interface
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*sqlx.DB
-	*Settings
+	*config.Settings
 	driver string
+}
+
+func New(settings *config.Settings) *GeneralDatabase {
+	return &GeneralDatabase{
+		Settings: settings,
+		driver:   dbTypeToDriverMap[settings.DbType],
+	}
 }
 
 func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
@@ -92,8 +94,10 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 		if gdb.Settings.Pswd != "" {
 			usingPswd = "yes"
 		}
-		return fmt.Errorf("Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
-			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err)
+		return fmt.Errorf(
+			"Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
+			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
+		)
 	}
 
 	return gdb.Ping()
