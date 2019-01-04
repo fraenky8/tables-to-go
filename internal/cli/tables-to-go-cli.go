@@ -27,16 +27,16 @@ var (
 	effectiveTags = 1
 )
 
-// cmdArgs represents the supported command line args
-type cmdArgs struct {
+// CmdArgs represents the supported command line args
+type CmdArgs struct {
 	Help bool
 	*config.Settings
 }
 
-// newCmdArgs creates and prepares the command line arguments with default values
-func NewCmdArgs() (args *cmdArgs) {
+// NewCmdArgs creates and prepares the command line arguments with default values
+func NewCmdArgs() (args *CmdArgs) {
 
-	args = &cmdArgs{
+	args = &CmdArgs{
 		Settings: config.NewSettings(),
 	}
 
