@@ -80,6 +80,7 @@ type GeneralDatabase struct {
 	driver string
 }
 
+// New creates a new GeneralDatabase
 func New(settings *config.Settings) *GeneralDatabase {
 	return &GeneralDatabase{
 		Settings: settings,
@@ -87,6 +88,8 @@ func New(settings *config.Settings) *GeneralDatabase {
 	}
 }
 
+// Connect establishes a connection to the database with the given DSN.
+// It pings the database to ensure it is reachable.
 func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 	gdb.DB, err = sqlx.Connect(gdb.driver, dsn)
 	if err != nil {
