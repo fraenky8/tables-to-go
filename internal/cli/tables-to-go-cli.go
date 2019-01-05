@@ -131,7 +131,8 @@ func newDatabase(settings *config.Settings) (database.Database, error) {
 	switch settings.DbType {
 	case "mysql":
 		db = mysql.New(gdb)
-	case "postgres":
+	case "pg":
+		fallthrough
 	default:
 		db = postgresql.New(gdb)
 	}
