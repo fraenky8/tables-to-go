@@ -11,22 +11,20 @@ A small and helpful tool which helps during developing with a changing database 
 
 ```
 go get github.com/fraenky8/tables-to-go
-cd github.com/fraenky8/tables-to-go/cmd/tables-to-go
-go install
 ```
 
 ## Getting started
 
 ```
-%GOPATH%/bin/tables-to-go -v -of ../path/to/my/models
+tables-to-go -v -of ../path/to/my/models
 ```
 
 This gets all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
-Flag `-v` is verbose mode, `-of` is the output file path in which the structs are created. (default: current working directory)
+Flag `-v` is verbose mode, `-of` is the output file path where the go files containing the structs will get created (default: current working directory).
 
 ## Features
 
-* convert your tables easily to structs
+* convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formated files with imports
 * automatically typed struct fields
@@ -66,7 +64,7 @@ CREATE TABLE some_user_info  (
 Run the following command (default local PostgreSQL instance):
 
 ```
-%GOPATH%/bin/tables-to-go
+tables-to-go
 ```
 
 The following file `SomeUserInfo.go` with default package `dto` (data transfer object) will be created:
@@ -89,25 +87,25 @@ type SomeUserInfo struct {
 Running on remote database server (eg. Mysql@Docker)
 
 ```
-%GOPATH%/bin/tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
+tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword
 ```
 
 PostgreSQL example with different default schema but default database `postgres`:
 
 ```
-%GOPATH%/bin/tables-to-go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+tables-to-go -v -t pg -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 Note: since database type `pg` is default, following command will be equivalent:
 
 ```
-%GOPATH%/bin/tables-to-go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
+tables-to-go -v -h 192.168.99.100 -s test -u postgres -p mysecretpassword
 ```
 
 You can also specify the package or prefix and suffix.
 
 ```
-%GOPATH%/bin/tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
+tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
 ```
 
 With same table given above, following file with Name `ModelSomeUserInfoModel.go` will be created:
@@ -132,7 +130,7 @@ type ModelSomeUserInfoModel struct {
 Print usage with `-?` or `-help`
 
 ```
-%GOPATH%/bin/tables-to-go -help
+tables-to-go -help
   -?    shows help and usage
   -d string
         database name (default "postgres")
