@@ -172,6 +172,8 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	var isNullable bool
 	var isTime bool
 
+	columns := map[string]struct{}{}
+
 	for _, column := range table.Columns {
 
 		// TODO add verbosity levels
@@ -189,9 +191,10 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
 		// that name to the struct, if so, skip.
-		if strings.Contains(structFields.String(), columnName+" ") {
+		if _, ok := columns[columnName]; ok {
 			continue
 		}
+		columns[columnName] = struct{}{}
 
 		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
