@@ -6,6 +6,11 @@ import (
 	"path/filepath"
 )
 
+const (
+	OutputFormatCamelCase = "c"
+	OutputFormatOriginal  = "o"
+)
+
 var (
 	// supportedDbTypes represents the supported databases
 	supportedDbTypes = map[string]bool{
@@ -15,8 +20,8 @@ var (
 
 	// supportedOutputFormats represents the supported output formats
 	supportedOutputFormats = map[string]bool{
-		"c": true,
-		"o": true,
+		OutputFormatCamelCase: true,
+		OutputFormatOriginal:  true,
 	}
 
 	// dbDefaultPorts maps the database type to the default ports
@@ -74,7 +79,7 @@ func NewSettings() *Settings {
 		Host:           "127.0.0.1",
 		Port:           "", // left blank -> is automatically determined if not set
 		OutputFilePath: dir,
-		OutputFormat:   "c",
+		OutputFormat:   OutputFormatCamelCase,
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",

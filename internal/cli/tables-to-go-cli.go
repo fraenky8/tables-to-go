@@ -172,6 +172,8 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	var isNullable bool
 	var isTime bool
 
+	columns := map[string]struct{}{}
+
 	for _, column := range table.Columns {
 
 		// TODO add verbosity levels
@@ -179,9 +181,9 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		// 	fmt.Printf("\t> %v\r\n", column.Name)
 		// }
 
-		column.Name = strings.Title(column.Name)
-		if settings.OutputFormat == "c" {
-			column.Name = camelCaseString(column.Name)
+		columnName := strings.Title(column.Name)
+		if settings.OutputFormat == config.OutputFormatCamelCase {
+			columnName = camelCaseString(column.Name)
 		}
 		columnType, isTimeType := mapDbColumnTypeToGoType(db, column)
 
@@ -189,11 +191,12 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
 		// that name to the struct, if so, skip.
-		if strings.Contains(structFields.String(), column.Name+" ") {
+		if _, ok := columns[columnName]; ok {
 			continue
 		}
+		columns[columnName] = struct{}{}
 
-		structFields.WriteString(column.Name)
+		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
 		structFields.WriteString(generateTags(db, column))
@@ -243,7 +246,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	}
 
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
-	if settings.OutputFormat == "c" {
+	if settings.OutputFormat == config.OutputFormatCamelCase {
 		tableName = camelCaseString(tableName)
 	}
 
