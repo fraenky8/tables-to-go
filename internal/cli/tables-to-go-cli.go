@@ -180,7 +180,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		// }
 
 		column.Name = strings.Title(column.Name)
-		if settings.OutputFormat == "c" {
+		if settings.OutputFormat == config.OutputFormatCamelCase {
 			column.Name = camelCaseString(column.Name)
 		}
 		columnType, isTimeType := mapDbColumnTypeToGoType(db, column)
@@ -243,7 +243,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	}
 
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
-	if settings.OutputFormat == "c" {
+	if settings.OutputFormat == config.OutputFormatCamelCase {
 		tableName = camelCaseString(tableName)
 	}
 
