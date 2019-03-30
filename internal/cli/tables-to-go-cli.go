@@ -167,13 +167,21 @@ func createEffectiveTags(settings *config.Settings) {
 	// last tag-"ONLY" wins if multiple specified
 }
 
+type columnInfo struct {
+	isTime             bool
+	isNullablePrimitve bool
+	isNullableTime     bool
+}
+
+func (c columnInfo) hasTrue() bool {
+	return c.isTime || c.isNullableTime || c.isNullablePrimitve
+}
+
 func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
 
 	var structFields strings.Builder
 
-	var isNullable bool
-	var isTime bool
-
+	columnInfo := columnInfo{}
 	columns := map[string]struct{}{}
 
 	for _, column := range table.Columns {
@@ -204,12 +212,12 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		structFields.WriteString("\n")
 
 		// save some info for later use
-		if db.IsNullable(column) {
-			isNullable = true
-		}
+		columnInfo.isNullablePrimitve = db.IsNullable(column) && !db.IsTemporal(column)
+
 		// save that we saw a time type column at least once
 		if isTimeType {
-			isTime = true
+			columnInfo.isTime = true
+			columnInfo.isNullableTime = db.IsNullable(column)
 		}
 	}
 
@@ -224,28 +232,8 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	fileContent.WriteString(settings.PackageName)
 	fileContent.WriteString("\n\n")
 
-	// do imports
-	if isNullable || isTime || settings.IsMastermindStructableRecorder {
-		fileContent.WriteString("import (\n")
-
-		if isNullable {
-			fileContent.WriteString("\t\"database/sql\"\n")
-		}
-
-		if isTime {
-			if isNullable {
-				fileContent.WriteString("\t\n\"github.com/lib/pq\"\n")
-			} else {
-				fileContent.WriteString("\t\"time\"\n")
-			}
-		}
-
-		if settings.IsMastermindStructableRecorder {
-			fileContent.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
-		}
-
-		fileContent.WriteString(")\n\n")
-	}
+	// write imports
+	generateImports(&fileContent, settings, db, columnInfo)
 
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
 	if settings.OutputFormat == config.OutputFormatCamelCase {
@@ -260,6 +248,35 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	fileContent.WriteString("}")
 
 	return tableName, fileContent.String()
+}
+
+func generateImports(content *strings.Builder, settings *config.Settings, db database.Database, columnInfo columnInfo) {
+
+	if !columnInfo.hasTrue() && !settings.IsMastermindStructableRecorder {
+		return
+	}
+
+	content.WriteString("import (\n")
+
+	if columnInfo.isNullablePrimitve {
+		content.WriteString("\t\"database/sql\"\n")
+	}
+
+	if settings.IsMastermindStructableRecorder {
+		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+	}
+
+	if columnInfo.isTime {
+		if columnInfo.isNullableTime {
+			content.WriteString("\t\n")
+			content.WriteString(db.GetDriverImportLibrary())
+			content.WriteString("\n")
+		} else {
+			content.WriteString("\t\"time\"\n")
+		}
+	}
+
+	content.WriteString(")\n\n")
 }
 
 func createStructFile(path, name, content string) error {
@@ -310,7 +327,7 @@ func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goTy
 	} else if db.IsTemporal(column) {
 		goType = "time.Time"
 		if db.IsNullable(column) {
-			goType = "pq.NullTime"
+			goType = db.GetTemporalDriverDataType()
 		}
 		isTime = true
 	} else {

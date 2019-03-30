@@ -32,6 +32,11 @@ func (mysql *MySQL) DSN(settings *config.Settings) string {
 		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }
 
+// GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database
+func (mysql *MySQL) GetDriverImportLibrary() string {
+	return `"github.com/go-sql-driver/mysql"`
+}
+
 // GetTables gets all tables for a given database by name
 func (mysql *MySQL) GetTables() (tables []*database.Table, err error) {
 
@@ -176,4 +181,9 @@ func (mysql *MySQL) GetTemporalDatatypes() []string {
 // IsTemporal returns true if colum is of type temporal for the MySQL database
 func (mysql *MySQL) IsTemporal(column database.Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
+}
+
+// GetTemporalDriverDataType returns the time data type specific for the MySQL database
+func (mysql *MySQL) GetTemporalDriverDataType() string {
+	return "mysql.NullTime"
 }
