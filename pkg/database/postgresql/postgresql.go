@@ -32,6 +32,11 @@ func (pg *Postgresql) DSN(settings *config.Settings) string {
 		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }
 
+// GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database
+func (pg *Postgresql) GetDriverImportLibrary() string {
+	return "pg \"github.com/lib/pq\""
+}
+
 // GetTables gets all tables for a given schema by name
 func (pg *Postgresql) GetTables() (tables []*database.Table, err error) {
 
@@ -182,4 +187,9 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 // IsTemporal returns true if colum is of type temporal for the postgre database
 func (pg *Postgresql) IsTemporal(column database.Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
+}
+
+// GetTemporalDriverDataType returns the time data type specific for the postgre database
+func (pg *Postgresql) GetTemporalDriverDataType() string {
+	return "pg.NullTime"
 }

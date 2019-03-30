@@ -228,13 +228,17 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	if isNullable || isTime || settings.IsMastermindStructableRecorder {
 		fileContent.WriteString("import (\n")
 
+		// FIXME this depends on if we use a primitve type as null value
+		//  - NullString, NullInt64, NullFloat64, NullBool
 		if isNullable {
 			fileContent.WriteString("\t\"database/sql\"\n")
 		}
 
 		if isTime {
 			if isNullable {
-				fileContent.WriteString("\t\n\"github.com/lib/pq\"\n")
+				fileContent.WriteString("\t\n")
+				fileContent.WriteString(db.GetDriverImportLibrary())
+				fileContent.WriteString("\n")
 			} else {
 				fileContent.WriteString("\t\"time\"\n")
 			}
@@ -310,7 +314,7 @@ func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goTy
 	} else if db.IsTemporal(column) {
 		goType = "time.Time"
 		if db.IsNullable(column) {
-			goType = "pq.NullTime"
+			goType = db.GetTemporalDriverDataType()
 		}
 		isTime = true
 	} else {
