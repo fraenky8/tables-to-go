@@ -33,7 +33,9 @@ var (
 
 // Settings stores the supported settings / command line arguments
 type Settings struct {
-	Verbose        bool
+	Verbose  bool
+	VVerbose bool
+
 	DbType         string
 	User           string
 	Pswd           string
@@ -70,7 +72,9 @@ func NewSettings() *Settings {
 	}
 
 	return &Settings{
-		Verbose:        false,
+		Verbose:  false,
+		VVerbose: false,
+
 		DbType:         "pg",
 		User:           "postgres",
 		Pswd:           "",
@@ -101,7 +105,7 @@ func NewSettings() *Settings {
 func (settings *Settings) Verify() (err error) {
 
 	if !supportedDbTypes[settings.DbType] {
-		return fmt.Errorf("type of database %q not supported! %v", settings.DbType, settings.SupportedDbTypes())
+		return fmt.Errorf("type of database %q not supported! supported: %v", settings.DbType, settings.SupportedDbTypes())
 	}
 
 	if !supportedOutputFormats[settings.OutputFormat] {
@@ -122,6 +126,10 @@ func (settings *Settings) Verify() (err error) {
 
 	if settings.PackageName == "" {
 		return fmt.Errorf("name of package can not be empty")
+	}
+
+	if settings.VVerbose {
+		settings.Verbose = true
 	}
 
 	return err
@@ -150,11 +158,9 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 
 // SupportedDbTypes returns a slice of strings as names of the supported database types
 func (settings *Settings) SupportedDbTypes() string {
-	names := make([]string, len(supportedDbTypes))
-	i := 0
+	names := make([]string, 0, len(supportedDbTypes))
 	for name := range supportedDbTypes {
-		names[i] = name
-		i++
+		names = append(names, name)
 	}
 	return fmt.Sprintf("%v", names)
 }

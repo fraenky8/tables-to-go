@@ -43,6 +43,8 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.Help, "?", false, "shows help and usage")
 	flag.BoolVar(&args.Help, "help", false, "shows help and usage")
 	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
+	flag.BoolVar(&args.VVerbose, "vv", args.VVerbose, "more verbose output")
+
 	flag.StringVar(&args.DbType, "t", args.DbType, fmt.Sprintf("type of database to use, currently supported: %v", args.SupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
 	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
@@ -52,7 +54,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
-	flag.StringVar(&args.OutputFormat, "format", args.OutputFormat, "camelCase (c) or original (o)")
+	flag.StringVar(&args.OutputFormat, "format", args.OutputFormat, "format of struct fields (columns): camelCase (c) or original (o)")
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")
@@ -176,11 +178,6 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 
 	for _, column := range table.Columns {
 
-		// TODO add verbosity levels
-		// if settings.Verbose {
-		// 	fmt.Printf("\t> %v\r\n", column.Name)
-		// }
-
 		columnName := strings.Title(column.Name)
 		if settings.OutputFormat == config.OutputFormatCamelCase {
 			columnName = camelCaseString(column.Name)
@@ -196,6 +193,10 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		}
 		columns[columnName] = struct{}{}
 
+		if settings.VVerbose {
+			fmt.Printf("\t\t> %v\r\n", column.Name)
+		}
+
 		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
@@ -203,9 +204,10 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		structFields.WriteString("\n")
 
 		// save some info for later use
-		if column.IsNullable == "YES" {
+		if db.IsNullable(column) {
 			isNullable = true
 		}
+		// save that we saw a time type column at least once
 		if isTimeType {
 			isTime = true
 		}
@@ -312,7 +314,6 @@ func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goTy
 		}
 		isTime = true
 	} else {
-
 		// TODO handle special data types
 		switch column.DataType {
 		case "boolean":

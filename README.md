@@ -131,42 +131,44 @@ Print usage with `-?` or `-help`
 
 ```
 tables-to-go -help
-  -?    shows help and usage
+  -?	shows help and usage
   -d string
-        database name (default "postgres")
+    	database name (default "postgres")
   -format string
-        camelCase (c) or original (o) (default "c")
+    	format of struct fields (columns): camelCase (c) or original (o) (default "c")
   -h string
-        host of database (default "127.0.0.1")
+    	host of database (default "127.0.0.1")
   -help
-        shows help and usage
+    	shows help and usage
   -of string
-        output file path (default "current working directory")
+    	output file path (default "current working directory")
   -p string
-        password of user
+    	password of user
   -pn string
-        package name (default "dto")
+    	package name (default "dto")
   -port string
-        port of database host, if not specified, it will be the default ports for the supported databases
+    	port of database host, if not specified, it will be the default ports for the supported databases
   -pre string
-        prefix for file- and struct names
+    	prefix for file- and struct names
   -s string
-        schema name (default "public")
+    	schema name (default "public")
   -structable-recorder
-        generate a structable.Recorder field
+    	generate a structable.Recorder field
   -suf string
-        suffix for file- and struct names
+    	suffix for file- and struct names
   -t string
-        type of database to use, currently supported: [pg mysql] (default "pg")
+    	type of database to use, currently supported: [pg mysql] (default "pg")
   -tags-no-db
-        do not create db-tags
+    	do not create db-tags
   -tags-structable
-        generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
+    	generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
   -tags-structable-only
-        generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+    	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
   -u string
-        user to connect to the database (default "postgres")
-  -v    verbose output
+    	user to connect to the database (default "postgres")
+  -v	verbose output
+  -vv
+    	more verbose output
 ```
 
 ## Contributing
