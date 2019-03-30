@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// These are the output format command line parameter
 const (
 	OutputFormatCamelCase = "c"
 	OutputFormatOriginal  = "o"
