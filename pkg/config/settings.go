@@ -30,6 +30,13 @@ var (
 		"pg":    "5432",
 		"mysql": "3306",
 	}
+
+	// supportedNullTypes represents the supported types of NULL types
+	supportedNullTypes = map[string]bool{
+		"sql":       true,
+		"native":    true,
+		"primitive": true,
+	}
 )
 
 // Settings stores the supported settings / command line arguments
@@ -49,6 +56,7 @@ type Settings struct {
 	PackageName    string
 	Prefix         string
 	Suffix         string
+	Null           string
 
 	TagsNoDb bool
 
@@ -88,6 +96,7 @@ func NewSettings() *Settings {
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
+		Null:           "sql",
 
 		TagsNoDb: false,
 
@@ -129,6 +138,10 @@ func (settings *Settings) Verify() (err error) {
 		return fmt.Errorf("name of package can not be empty")
 	}
 
+	if !supportedNullTypes[settings.Null] {
+		return fmt.Errorf("null type %q not supported! supported: %v", settings.Null, settings.SupportedNullTypes())
+	}
+
 	if settings.VVerbose {
 		settings.Verbose = true
 	}
@@ -161,6 +174,15 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 func (settings *Settings) SupportedDbTypes() string {
 	names := make([]string, 0, len(supportedDbTypes))
 	for name := range supportedDbTypes {
+		names = append(names, name)
+	}
+	return fmt.Sprintf("%v", names)
+}
+
+// SupportedNullTypes returns a slice of strings as names of the supported null types
+func (settings *Settings) SupportedNullTypes() string {
+	names := make([]string, 0, len(supportedNullTypes))
+	for name := range supportedNullTypes {
 		names = append(names, name)
 	}
 	return fmt.Sprintf("%v", names)
