@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"go/format"
@@ -58,6 +59,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")
+	flag.StringVar(&args.Null, "null", args.Null, "representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) ")
 
 	flag.BoolVar(&args.TagsNoDb, "tags-no-db", args.TagsNoDb, "do not create db-tags")
 
@@ -190,7 +192,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		if settings.OutputFormat == config.OutputFormatCamelCase {
 			columnName = camelCaseString(column.Name)
 		}
-		columnType, isTimeType := mapDbColumnTypeToGoType(db, column)
+		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
 
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
@@ -258,7 +260,7 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 
 	content.WriteString("import (\n")
 
-	if columnInfo.isNullablePrimitve {
+	if columnInfo.isNullablePrimitve && settings.IsNullTypeSQL() {
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
@@ -267,7 +269,7 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 	}
 
 	if columnInfo.isTime {
-		if columnInfo.isNullableTime {
+		if columnInfo.isNullableTime && settings.IsNullTypeSQL() {
 			content.WriteString("\t\n")
 			content.WriteString(db.GetDriverImportLibrary())
 			content.WriteString("\n")
@@ -289,6 +291,9 @@ func createStructFile(path, name, content string) error {
 		return fmt.Errorf("could not format file %s: %v", fileName, err)
 	}
 
+	// fight the sympton instead of the cause - if we didnt imported anything, remove it
+	formatedContent = bytes.ReplaceAll(formatedContent, []byte("\nimport ()\n"), []byte(""))
+
 	return ioutil.WriteFile(fileName, formatedContent, 0666)
 }
 
@@ -305,29 +310,29 @@ func generateTags(db database.Database, column database.Column) (tags string) {
 	return tags
 }
 
-func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goType string, isTime bool) {
+func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, isTime bool) {
 
 	isTime = false
 
 	if db.IsString(column) || db.IsText(column) {
 		goType = "string"
 		if db.IsNullable(column) {
-			goType = "sql.NullString"
+			goType = getNullType(settings, "*string", "sql.NullString")
 		}
 	} else if db.IsInteger(column) {
 		goType = "int"
 		if db.IsNullable(column) {
-			goType = "sql.NullInt64"
+			goType = getNullType(settings, "*int", "sql.NullInt64")
 		}
 	} else if db.IsFloat(column) {
 		goType = "float64"
 		if db.IsNullable(column) {
-			goType = "sql.NullFloat64"
+			goType = getNullType(settings, "*float64", "sql.NullFloat64")
 		}
 	} else if db.IsTemporal(column) {
 		goType = "time.Time"
 		if db.IsNullable(column) {
-			goType = db.GetTemporalDriverDataType()
+			goType = getNullType(settings, "*time.Time", db.GetTemporalDriverDataType())
 		}
 		isTime = true
 	} else {
@@ -336,14 +341,21 @@ func mapDbColumnTypeToGoType(db database.Database, column database.Column) (goTy
 		case "boolean":
 			goType = "bool"
 			if db.IsNullable(column) {
-				goType = "sql.NullBool"
+				goType = getNullType(settings, "*bool", "sql.NullBool")
 			}
 		default:
-			goType = "sql.NullString"
+			goType = getNullType(settings, "*string", "sql.NullString")
 		}
 	}
 
 	return goType, isTime
+}
+
+func getNullType(settings *config.Settings, primitive string, sql string) string {
+	if settings.IsNullTypeSQL() {
+		return sql
+	}
+	return primitive
 }
 
 func camelCaseString(s string) (cc string) {

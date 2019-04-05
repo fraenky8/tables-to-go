@@ -12,6 +12,17 @@ const (
 	OutputFormatOriginal  = "o"
 )
 
+// NullType represents a null type.
+type NullType string
+
+// These null types are supported. The types native and primitve map to the same
+// underlying builtin golang type.
+const (
+	NullTypeSQL      NullType = "sql"
+	NullTypeNative   NullType = "native"
+	NullTypePrimitve NullType = "primitive"
+)
+
 var (
 	// supportedDbTypes represents the supported databases
 	supportedDbTypes = map[string]bool{
@@ -29,6 +40,13 @@ var (
 	dbDefaultPorts = map[string]string{
 		"pg":    "5432",
 		"mysql": "3306",
+	}
+
+	// supportedNullTypes represents the supported types of NULL types
+	supportedNullTypes = map[NullType]bool{
+		NullTypeSQL:      true,
+		NullTypeNative:   true,
+		NullTypePrimitve: true,
 	}
 )
 
@@ -49,6 +67,7 @@ type Settings struct {
 	PackageName    string
 	Prefix         string
 	Suffix         string
+	Null           string
 
 	TagsNoDb bool
 
@@ -88,6 +107,7 @@ func NewSettings() *Settings {
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
+		Null:           string(NullTypeSQL),
 
 		TagsNoDb: false,
 
@@ -129,6 +149,10 @@ func (settings *Settings) Verify() (err error) {
 		return fmt.Errorf("name of package can not be empty")
 	}
 
+	if !supportedNullTypes[NullType(settings.Null)] {
+		return fmt.Errorf("null type %q not supported! supported: %v", settings.Null, settings.SupportedNullTypes())
+	}
+
 	if settings.VVerbose {
 		settings.Verbose = true
 	}
@@ -164,4 +188,18 @@ func (settings *Settings) SupportedDbTypes() string {
 		names = append(names, name)
 	}
 	return fmt.Sprintf("%v", names)
+}
+
+// SupportedNullTypes returns a slice of strings as names of the supported null types
+func (settings *Settings) SupportedNullTypes() string {
+	names := make([]string, 0, len(supportedNullTypes))
+	for name := range supportedNullTypes {
+		names = append(names, string(name))
+	}
+	return fmt.Sprintf("%v", names)
+}
+
+// IsNullTypeSQL returns if the type given by command line args is of null type SQL
+func (settings *Settings) IsNullTypeSQL() bool {
+	return settings.Null == string(NullTypeSQL)
 }
