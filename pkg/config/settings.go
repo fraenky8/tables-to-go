@@ -12,6 +12,17 @@ const (
 	OutputFormatOriginal  = "o"
 )
 
+// NullType represents a null type.
+type NullType string
+
+// These null types are supported. The types native and primitve map to the same
+// underlying builtin golang type.
+const (
+	NullTypeSQL      NullType = "sql"
+	NullTypeNative   NullType = "native"
+	NullTypePrimitve NullType = "primitive"
+)
+
 var (
 	// supportedDbTypes represents the supported databases
 	supportedDbTypes = map[string]bool{
@@ -32,10 +43,10 @@ var (
 	}
 
 	// supportedNullTypes represents the supported types of NULL types
-	supportedNullTypes = map[string]bool{
-		"sql":       true,
-		"native":    true,
-		"primitive": true,
+	supportedNullTypes = map[NullType]bool{
+		NullTypeSQL:      true,
+		NullTypeNative:   true,
+		NullTypePrimitve: true,
 	}
 )
 
@@ -96,7 +107,7 @@ func NewSettings() *Settings {
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
-		Null:           "sql",
+		Null:           string(NullTypeSQL),
 
 		TagsNoDb: false,
 
@@ -138,7 +149,7 @@ func (settings *Settings) Verify() (err error) {
 		return fmt.Errorf("name of package can not be empty")
 	}
 
-	if !supportedNullTypes[settings.Null] {
+	if !supportedNullTypes[NullType(settings.Null)] {
 		return fmt.Errorf("null type %q not supported! supported: %v", settings.Null, settings.SupportedNullTypes())
 	}
 
@@ -183,7 +194,12 @@ func (settings *Settings) SupportedDbTypes() string {
 func (settings *Settings) SupportedNullTypes() string {
 	names := make([]string, 0, len(supportedNullTypes))
 	for name := range supportedNullTypes {
-		names = append(names, name)
+		names = append(names, string(name))
 	}
 	return fmt.Sprintf("%v", names)
+}
+
+// IsNullTypeSQL returns if the type given by command line args is of null type SQL
+func (settings *Settings) IsNullTypeSQL() bool {
+	return settings.Null == string(NullTypeSQL)
 }
