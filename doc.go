@@ -46,6 +46,8 @@
 //            	host of database (default "127.0.0.1")
 //          -help
 //            	shows help and usage
+//          -null string
+//       	  	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)  (default "sql")
 //          -of string
 //            	output file path (default "current working directory")
 //          -p string
