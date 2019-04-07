@@ -147,6 +147,8 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		columnName := strings.Title(column.Name)
 		if settings.OutputFormat == config.OutputFormatCamelCase {
 			columnName = camelCaseString(column.Name)
+		}
+		if settings.ShouldInitialism() {
 			columnName = toInitialisms(columnName)
 		}
 		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)

@@ -40,7 +40,9 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")
-	flag.StringVar(&args.Null, "null", args.Null, "representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) ")
+	flag.StringVar(&args.Null, "null", args.Null, "representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)")
+
+	flag.BoolVar(&args.NoInitialism, "no-initialism", args.NoInitialism, "disable the conversion to upper-case words in column names")
 
 	flag.BoolVar(&args.TagsNoDb, "tags-no-db", args.TagsNoDb, "do not create db-tags")
 

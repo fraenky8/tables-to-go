@@ -13,6 +13,11 @@ func Test_toInitialisms(t *testing.T) {
 		expected string
 	}{
 		{
+			desc:     "id should be upper case",
+			intput:   "Id",
+			expected: "ID",
+		},
+		{
 			desc:     "id at the end of string should be upper case",
 			intput:   "userId",
 			expected: "userID",
