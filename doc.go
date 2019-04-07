@@ -28,7 +28,7 @@
 //      )
 //
 //      type SomeUserInfo struct {
-//          Id        int             `db:"id"`
+//          ID        int             `db:"id"`
 //          FirstName sql.NullString  `db:"first_name"`
 //          LastName  string          `db:"last_name"`
 //          Height    sql.NullFloat64 `db:"height"`
@@ -46,6 +46,8 @@
 //            	host of database (default "127.0.0.1")
 //          -help
 //            	shows help and usage
+//          -no-initialism
+//      	  	disable the conversion to upper-case words in column names
 //          -null string
 //       	  	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)  (default "sql")
 //          -of string
