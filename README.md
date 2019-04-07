@@ -83,6 +83,7 @@ type SomeUserInfo struct {
 The column `id` got autmatically converted to upper-case to follow the idiomatic
 go guidelines. See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) for more details. 
 Words which gets converted can be found [here](https://github.com/fraenky8/tables-to-go/blob/master/internal/cli/tables-to-go-cli.go#L31).
+<br>
 This behaviour can be disabled by providing the command-line flag `-no-initialism`.
 
 Running on remote database server (eg. Mysql@Docker)
