@@ -33,7 +33,7 @@ func Test_toInitialisms(t *testing.T) {
 			expected: "userIDprim",
 		},
 		{
-			desc:     "multiple occurences should be upper case",
+			desc:     "multiple occurrences should be upper case",
 			intput:   "userIdasJsonWithUrl",
 			expected: "userIDasJSONWithURL",
 		},
