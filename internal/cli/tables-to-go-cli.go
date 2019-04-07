@@ -25,6 +25,10 @@ var (
 
 	// means that the `db`-Tag is enabled by default
 	effectiveTags = 1
+
+	// some strings for idiomatic go in column names
+	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
+	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL"}
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
@@ -144,6 +148,9 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		if settings.OutputFormat == config.OutputFormatCamelCase {
 			columnName = camelCaseString(column.Name)
 		}
+		if settings.ShouldInitialism() {
+			columnName = toInitialisms(columnName)
+		}
 		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
 
 		// ISSUE-4: if columns are part of multiple constraints
@@ -243,7 +250,7 @@ func createStructFile(path, name, content string) error {
 		return fmt.Errorf("could not format file %s: %v", fileName, err)
 	}
 
-	// fight the sympton instead of the cause - if we didnt imported anything, remove it
+	// fight the symptom instead of the cause - if we didnt imported anything, remove it
 	formatedContent = bytes.ReplaceAll(formatedContent, []byte("\nimport ()\n"), []byte(""))
 
 	return ioutil.WriteFile(fileName, formatedContent, 0666)
@@ -321,4 +328,21 @@ func camelCaseString(s string) (cc string) {
 		cc += strings.Title(strings.ToLower(part))
 	}
 	return cc
+}
+
+func toInitialisms(s string) string {
+	for _, substr := range initialisms {
+		idx := indexCaseInsensitive(s, substr)
+		if idx == -1 {
+			continue
+		}
+		toReplace := s[idx : idx+len(substr)]
+		s = strings.ReplaceAll(s, toReplace, substr)
+	}
+	return s
+}
+
+func indexCaseInsensitive(s, substr string) int {
+	s, substr = strings.ToLower(s), strings.ToLower(substr)
+	return strings.Index(s, substr)
 }

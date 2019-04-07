@@ -27,7 +27,7 @@ Flag `-v` is verbose mode, `-of` is the output file path where the go files cont
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formated files with imports
-* automatically typed struct fields
+* automatically typed struct fields, either with `sql.Null*` or primitve pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
   * only primary key & auto increment columns supported
@@ -43,10 +43,6 @@ Flag `-v` is verbose mode, `-of` is the output file path where the go files cont
   * character: varying, text, char, varchar, binary, varbinary, blob
   * date/time: timestamp, date, datetime, year, time with time zone, timestamp with time zone, time without time zone, timestamp without time zone
   * others: boolean
-
-## Restrictions
-
-Because of using [strings.Builder](https://golang.org/pkg/strings/#example_Builder) this tool can only be built with **>= Go 1.10**
 
 ## Examples
 
@@ -77,12 +73,17 @@ import (
 )
 
 type SomeUserInfo struct {
-	Id        int             `db:"id"`
+	ID        int             `db:"id"`
 	FirstName sql.NullString  `db:"first_name"`
 	LastName  string          `db:"last_name"`
 	Height    sql.NullFloat64 `db:"height"`
 }
 ```
+
+The column `id` got autmatically converted to upper-case to follow the idiomatic
+go guidelines. See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) for more details. 
+Words which gets converted can be found [here](https://github.com/fraenky8/tables-to-go/blob/master/internal/cli/tables-to-go-cli.go#L31).
+This behaviour can be disabled by providing the command-line flag `-no-initialism`.
 
 Running on remote database server (eg. Mysql@Docker)
 
@@ -118,14 +119,14 @@ import (
 )
 
 type ModelSomeUserInfoModel struct {
-	Id        int             `db:"id"`
+	ID        int             `db:"id"`
 	FirstName sql.NullString  `db:"first_name"`
 	LastName  string          `db:"last_name"`
 	Height    sql.NullFloat64 `db:"height"`
 }
 ```
 
-### Commandline Flags
+### Command-line Flags
 
 Print usage with `-?` or `-help`
 
@@ -140,6 +141,8 @@ tables-to-go -help
     	host of database (default "127.0.0.1")
   -help
     	shows help and usage
+  -no-initialism
+      	disable the conversion to upper-case words in column names
   -null string
        	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)  (default "sql")
   -of string

@@ -69,6 +69,8 @@ type Settings struct {
 	Suffix         string
 	Null           string
 
+	NoInitialism bool
+
 	TagsNoDb bool
 
 	TagsMastermindStructable       bool
@@ -108,6 +110,8 @@ func NewSettings() *Settings {
 		Prefix:         "",
 		Suffix:         "",
 		Null:           string(NullTypeSQL),
+
+		NoInitialism: false,
 
 		TagsNoDb: false,
 
@@ -202,4 +206,10 @@ func (settings *Settings) SupportedNullTypes() string {
 // IsNullTypeSQL returns if the type given by command line args is of null type SQL
 func (settings *Settings) IsNullTypeSQL() bool {
 	return settings.Null == string(NullTypeSQL)
+}
+
+// ShouldInitialism returns wheather or not if column names should be converted
+// to initialisms.
+func (settings *Settings) ShouldInitialism() bool {
+	return !settings.NoInitialism
 }
