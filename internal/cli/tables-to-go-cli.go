@@ -9,8 +9,6 @@ import (
 
 	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
-	"github.com/fraenky8/tables-to-go/pkg/database/mysql"
-	"github.com/fraenky8/tables-to-go/pkg/database/postgresql"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
@@ -32,12 +30,7 @@ var (
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *config.Settings) (err error) {
-
-	db, err := newDatabase(settings)
-	if err != nil {
-		return err
-	}
+func Run(settings *config.Settings, db database.Database) (err error) {
 
 	createEffectiveTags(settings)
 
@@ -80,28 +73,6 @@ func Run(settings *config.Settings) (err error) {
 	fmt.Println("done!")
 
 	return nil
-}
-
-func newDatabase(settings *config.Settings) (database.Database, error) {
-
-	gdb := database.New(settings)
-
-	var db database.Database
-
-	switch settings.DbType {
-	case "mysql":
-		db = mysql.New(gdb)
-	case "pg":
-		fallthrough
-	default:
-		db = postgresql.New(gdb)
-	}
-
-	if err := db.Connect(); err != nil {
-		return nil, fmt.Errorf("could not connect to database: %v", err)
-	}
-
-	return db, nil
 }
 
 func createEffectiveTags(settings *config.Settings) {

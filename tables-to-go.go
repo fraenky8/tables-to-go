@@ -7,6 +7,9 @@ import (
 
 	"github.com/fraenky8/tables-to-go/internal/cli"
 	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/database/mysql"
+	"github.com/fraenky8/tables-to-go/pkg/database/postgresql"
 )
 
 // CmdArgs represents the supported command line args
@@ -73,8 +76,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := cli.Run(cmdArgs.Settings); err != nil {
+	db, err := newDatabase(cmdArgs.Settings)
+	if err != nil {
+		fmt.Printf("could not create database: %v", err)
+		os.Exit(1)
+	}
+
+	if err := cli.Run(cmdArgs.Settings, db); err != nil {
 		fmt.Printf("run error: %v", err)
 		os.Exit(1)
 	}
+}
+
+func newDatabase(settings *config.Settings) (database.Database, error) {
+
+	gdb := database.New(settings)
+
+	var db database.Database
+
+	switch settings.DbType {
+	case "mysql":
+		db = mysql.New(gdb)
+	case "pg":
+		fallthrough
+	default:
+		db = postgresql.New(gdb)
+	}
+
+	if err := db.Connect(); err != nil {
+		return nil, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	return db, nil
 }
