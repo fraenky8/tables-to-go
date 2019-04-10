@@ -79,7 +79,7 @@ func Run(settings *config.Settings) (err error) {
 
 	fmt.Println("done!")
 
-	return err
+	return nil
 }
 
 func newDatabase(settings *config.Settings) (database.Database, error) {
