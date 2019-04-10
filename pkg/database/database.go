@@ -82,12 +82,25 @@ type GeneralDatabase struct {
 	driver string
 }
 
-// New creates a new GeneralDatabase
-func New(settings *config.Settings) *GeneralDatabase {
-	return &GeneralDatabase{
-		Settings: settings,
-		driver:   dbTypeToDriverMap[settings.DbType],
+// New creates a new Database based on the given type in the settings.
+func New(settings *config.Settings) (Database, error) {
+
+	var db Database
+
+	switch settings.DbType {
+	case "mysql":
+		db = NewMySQL(settings)
+	case "pg":
+		fallthrough
+	default:
+		db = NewPostgresql(settings)
 	}
+
+	if err := db.Connect(); err != nil {
+		return nil, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	return db, nil
 }
 
 // Connect establishes a connection to the database with the given DSN.
