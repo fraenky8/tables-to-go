@@ -23,11 +23,24 @@ const (
 	NullTypePrimitive NullType = "primitive"
 )
 
+// DbType represents a type of a database.
+type DbType string
+
+// These database types are supported.
+const (
+	DbTypePostgresql DbType = "pg"
+	DbTypeMySQL      DbType = "mysql"
+)
+
+func (t DbType) String() string {
+	return string(t)
+}
+
 var (
 	// supportedDbTypes represents the supported databases
-	supportedDbTypes = map[string]bool{
-		"pg":    true,
-		"mysql": true,
+	supportedDbTypes = map[DbType]bool{
+		DbTypePostgresql: true,
+		DbTypeMySQL:      true,
 	}
 
 	// supportedOutputFormats represents the supported output formats
@@ -37,9 +50,9 @@ var (
 	}
 
 	// dbDefaultPorts maps the database type to the default ports
-	dbDefaultPorts = map[string]string{
-		"pg":    "5432",
-		"mysql": "3306",
+	dbDefaultPorts = map[DbType]string{
+		DbTypePostgresql: "5432",
+		DbTypeMySQL:      "3306",
 	}
 
 	// supportedNullTypes represents the supported types of NULL types
@@ -97,7 +110,7 @@ func NewSettings() *Settings {
 		Verbose:  false,
 		VVerbose: false,
 
-		DbType:         "pg",
+		DbType:         DbTypePostgresql.String(),
 		User:           "postgres",
 		Pswd:           "",
 		DbName:         "postgres",
@@ -129,7 +142,7 @@ func NewSettings() *Settings {
 // Verify verifies the settings and checks the given output paths
 func (settings *Settings) Verify() (err error) {
 
-	if !supportedDbTypes[settings.DbType] {
+	if !supportedDbTypes[DbType(settings.DbType)] {
 		return fmt.Errorf("type of database %q not supported! supported: %v", settings.DbType, settings.SupportedDbTypes())
 	}
 
@@ -146,7 +159,7 @@ func (settings *Settings) Verify() (err error) {
 	}
 
 	if settings.Port == "" {
-		settings.Port = dbDefaultPorts[settings.DbType]
+		settings.Port = dbDefaultPorts[DbType(settings.DbType)]
 	}
 
 	if settings.PackageName == "" {
@@ -189,7 +202,7 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 func (settings *Settings) SupportedDbTypes() string {
 	names := make([]string, 0, len(supportedDbTypes))
 	for name := range supportedDbTypes {
-		names = append(names, name)
+		names = append(names, name.String())
 	}
 	return fmt.Sprintf("%v", names)
 }

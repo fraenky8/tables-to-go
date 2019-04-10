@@ -11,9 +11,9 @@ import (
 
 var (
 	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[string]string{
-		"pg":    "postgres",
-		"mysql": "mysql",
+	dbTypeToDriverMap = map[config.DbType]string{
+		config.DbTypePostgresql: "postgres",
+		config.DbTypeMySQL:      "mysql",
 	}
 )
 
@@ -87,10 +87,10 @@ func New(settings *config.Settings) (Database, error) {
 
 	var db Database
 
-	switch settings.DbType {
-	case "mysql":
+	switch config.DbType(settings.DbType) {
+	case config.DbTypeMySQL:
 		db = NewMySQL(settings)
-	case "pg":
+	case config.DbTypePostgresql:
 		fallthrough
 	default:
 		db = NewPostgresql(settings)

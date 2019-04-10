@@ -20,7 +20,7 @@ func NewMySQL(settings *config.Settings) *MySQL {
 	return &MySQL{
 		GeneralDatabase: &GeneralDatabase{
 			Settings: settings,
-			driver:   dbTypeToDriverMap[settings.DbType],
+			driver:   dbTypeToDriverMap[config.DbType(settings.DbType)],
 		},
 	}
 }
