@@ -15,12 +15,12 @@ const (
 // NullType represents a null type.
 type NullType string
 
-// These null types are supported. The types native and primitve map to the same
+// These null types are supported. The types native and primitive map to the same
 // underlying builtin golang type.
 const (
-	NullTypeSQL      NullType = "sql"
-	NullTypeNative   NullType = "native"
-	NullTypePrimitve NullType = "primitive"
+	NullTypeSQL       NullType = "sql"
+	NullTypeNative    NullType = "native"
+	NullTypePrimitive NullType = "primitive"
 )
 
 var (
@@ -44,9 +44,9 @@ var (
 
 	// supportedNullTypes represents the supported types of NULL types
 	supportedNullTypes = map[NullType]bool{
-		NullTypeSQL:      true,
-		NullTypeNative:   true,
-		NullTypePrimitve: true,
+		NullTypeSQL:       true,
+		NullTypeNative:    true,
+		NullTypePrimitive: true,
 	}
 )
 

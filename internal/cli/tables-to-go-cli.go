@@ -126,13 +126,13 @@ func createEffectiveTags(settings *config.Settings) {
 }
 
 type columnInfo struct {
-	isTime             bool
-	isNullablePrimitve bool
-	isNullableTime     bool
+	isTime              bool
+	isNullablePrimitive bool
+	isNullableTime      bool
 }
 
 func (c columnInfo) hasTrue() bool {
-	return c.isTime || c.isNullableTime || c.isNullablePrimitve
+	return c.isTime || c.isNullableTime || c.isNullablePrimitive
 }
 
 func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
@@ -173,7 +173,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		structFields.WriteString("\n")
 
 		// save some info for later use
-		columnInfo.isNullablePrimitve = db.IsNullable(column) && !db.IsTemporal(column)
+		columnInfo.isNullablePrimitive = db.IsNullable(column) && !db.IsTemporal(column)
 
 		// save that we saw a time type column at least once
 		if isTimeType {
@@ -219,7 +219,7 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 
 	content.WriteString("import (\n")
 
-	if columnInfo.isNullablePrimitve && settings.IsNullTypeSQL() {
+	if columnInfo.isNullablePrimitive && settings.IsNullTypeSQL() {
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
