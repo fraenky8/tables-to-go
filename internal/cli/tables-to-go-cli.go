@@ -1,14 +1,12 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
-	"go/format"
-	"io/ioutil"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
@@ -30,7 +28,7 @@ var (
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *config.Settings, db database.Database) (err error) {
+func Run(settings *config.Settings, db database.Database, out output.Writer) (err error) {
 
 	createEffectiveTags(settings)
 
@@ -65,8 +63,9 @@ func Run(settings *config.Settings, db database.Database) (err error) {
 
 		tableName, content := createTableStructString(settings, db, table)
 
-		if err = createStructFile(settings.OutputFilePath, tableName, content); err != nil {
-			return fmt.Errorf("could not create struct file for table %s: %v", table.Name, err)
+		err = out.Write(tableName, content)
+		if err != nil {
+			return fmt.Errorf("could not write struct for table %s: %v", table.Name, err)
 		}
 	}
 
@@ -209,22 +208,6 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 	}
 
 	content.WriteString(")\n\n")
-}
-
-func createStructFile(path, name, content string) error {
-
-	fileName := path + name + ".go"
-
-	// format it
-	formatedContent, err := format.Source([]byte(content))
-	if err != nil {
-		return fmt.Errorf("could not format file %s: %v", fileName, err)
-	}
-
-	// fight the symptom instead of the cause - if we didnt imported anything, remove it
-	formatedContent = bytes.ReplaceAll(formatedContent, []byte("\nimport ()\n"), []byte(""))
-
-	return ioutil.WriteFile(fileName, formatedContent, 0666)
 }
 
 func generateTags(db database.Database, column database.Column) (tags string) {

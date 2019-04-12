@@ -8,6 +8,7 @@ import (
 	"github.com/fraenky8/tables-to-go/internal/cli"
 	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/output"
 )
 
 // CmdArgs represents the supported command line args
@@ -38,6 +39,7 @@ func NewCmdArgs() (args *CmdArgs) {
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
 	flag.StringVar(&args.OutputFormat, "format", args.OutputFormat, "format of struct fields (columns): camelCase (c) or original (o)")
+
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")
@@ -70,7 +72,7 @@ func main() {
 	}
 
 	if err := cmdArgs.Verify(); err != nil {
-		fmt.Printf("settings verification error: %v", err)
+		fmt.Print(err)
 		os.Exit(1)
 	}
 
@@ -80,7 +82,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := cli.Run(cmdArgs.Settings, db); err != nil {
+	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
+
+	if err := cli.Run(cmdArgs.Settings, db, writer); err != nil {
 		fmt.Printf("run error: %v", err)
 		os.Exit(1)
 	}
