@@ -83,7 +83,7 @@ type GeneralDatabase struct {
 }
 
 // New creates a new Database based on the given type in the settings.
-func New(settings *config.Settings) (Database, error) {
+func New(settings *config.Settings) Database {
 
 	var db Database
 
@@ -96,11 +96,7 @@ func New(settings *config.Settings) (Database, error) {
 		db = NewPostgresql(settings)
 	}
 
-	if err := db.Connect(); err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	return db
 }
 
 // Connect establishes a connection to the database with the given DSN.

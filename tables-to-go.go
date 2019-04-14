@@ -79,8 +79,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := database.New(cmdArgs.Settings)
-	if err != nil {
+	db := database.New(cmdArgs.Settings)
+
+	if err := db.Connect(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
