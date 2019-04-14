@@ -38,7 +38,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
-	flag.StringVar(&args.OutputFormat, "format", args.OutputFormat, "format of struct fields (columns): camelCase (c) or original (o)")
+	flag.Var(&args.OutputFormat, "format", "format of struct fields (columns): camelCase (c) or original (o)")
 
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")

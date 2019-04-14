@@ -60,10 +60,30 @@ const (
 	NullTypePrimitive NullType = "primitive"
 )
 
+// OutputFormat represents a output format option.
+type OutputFormat string
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (of OutputFormat) String() string {
+	return string(of)
+}
+
+// Set sets the datatype for the custom type for the flag package.
+func (of *OutputFormat) Set(s string) error {
+	*of = OutputFormat(s)
+	if *of == "" {
+		*of = OutputFormatCamelCase
+	}
+	if !supportedOutputFormats[*of] {
+		return fmt.Errorf("output format %q not supported", *of)
+	}
+	return nil
+}
+
 // These are the output format command line parameter.
 const (
-	OutputFormatCamelCase = "c"
-	OutputFormatOriginal  = "o"
+	OutputFormatCamelCase OutputFormat = "c"
+	OutputFormatOriginal  OutputFormat = "o"
 )
 
 var (
@@ -74,7 +94,7 @@ var (
 	}
 
 	// supportedOutputFormats represents the supported output formats
-	supportedOutputFormats = map[string]bool{
+	supportedOutputFormats = map[OutputFormat]bool{
 		OutputFormatCamelCase: true,
 		OutputFormatOriginal:  true,
 	}
@@ -108,7 +128,7 @@ type Settings struct {
 	Port   string
 
 	OutputFilePath string
-	OutputFormat   string
+	OutputFormat   OutputFormat
 
 	PackageName string
 	Prefix      string
@@ -174,10 +194,6 @@ func NewSettings() *Settings {
 
 // Verify verifies the settings and checks the given output paths
 func (settings *Settings) Verify() (err error) {
-
-	if !supportedOutputFormats[settings.OutputFormat] {
-		return fmt.Errorf("output format %q not supported", settings.OutputFormat)
-	}
 
 	if err = settings.verifyOutputPath(); err != nil {
 		return err
@@ -250,4 +266,9 @@ func (settings *Settings) IsNullTypeSQL() bool {
 // to initialisms.
 func (settings *Settings) ShouldInitialism() bool {
 	return !settings.NoInitialism
+}
+
+// IsOutputFormatCamelCase returns if the type given by command line args is of camel-case format.
+func (settings *Settings) IsOutputFormatCamelCase() bool {
+	return settings.OutputFormat == OutputFormatCamelCase
 }

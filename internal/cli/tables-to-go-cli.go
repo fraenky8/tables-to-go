@@ -115,7 +115,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	for _, column := range table.Columns {
 
 		columnName := strings.Title(column.Name)
-		if settings.OutputFormat == config.OutputFormatCamelCase {
+		if settings.IsOutputFormatCamelCase() {
 			columnName = camelCaseString(column.Name)
 		}
 		if settings.ShouldInitialism() {
@@ -167,7 +167,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	generateImports(&fileContent, settings, db, columnInfo)
 
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
-	if settings.OutputFormat == config.OutputFormatCamelCase {
+	if settings.IsOutputFormatCamelCase() {
 		tableName = camelCaseString(tableName)
 	}
 
