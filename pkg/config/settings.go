@@ -32,14 +32,25 @@ const (
 	DbTypeMySQL      DbType = "mysql"
 )
 
-// These are the output format command line parameter.
-const (
-	OutputFormatCamelCase = "c"
-	OutputFormatOriginal  = "o"
-)
-
 // NullType represents a null type.
 type NullType string
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (t NullType) String() string {
+	return string(t)
+}
+
+// Set sets the datatype for the custom type for the flag package.
+func (t *NullType) Set(s string) error {
+	*t = NullType(s)
+	if *t == "" {
+		*t = NullTypeSQL
+	}
+	if !supportedNullTypes[*t] {
+		return fmt.Errorf("null type %q not supported! supported: %v", *t, SupportedNullTypes())
+	}
+	return nil
+}
 
 // These null types are supported. The types native and primitive map to the same
 // underlying builtin golang type.
@@ -47,6 +58,12 @@ const (
 	NullTypeSQL       NullType = "sql"
 	NullTypeNative    NullType = "native"
 	NullTypePrimitive NullType = "primitive"
+)
+
+// These are the output format command line parameter.
+const (
+	OutputFormatCamelCase = "c"
+	OutputFormatOriginal  = "o"
 )
 
 var (
@@ -96,7 +113,7 @@ type Settings struct {
 	PackageName string
 	Prefix      string
 	Suffix      string
-	Null        string
+	Null        NullType
 
 	NoInitialism bool
 
@@ -138,7 +155,7 @@ func NewSettings() *Settings {
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
-		Null:           string(NullTypeSQL),
+		Null:           NullTypeSQL,
 
 		NoInitialism: false,
 
@@ -176,10 +193,6 @@ func (settings *Settings) Verify() (err error) {
 
 	if settings.PackageName == "" {
 		return fmt.Errorf("name of package can not be empty")
-	}
-
-	if !supportedNullTypes[NullType(settings.Null)] {
-		return fmt.Errorf("null type %q not supported! supported: %v", settings.Null, settings.SupportedNullTypes())
 	}
 
 	if settings.VVerbose {
@@ -220,7 +233,7 @@ func SupportedDbTypes() string {
 }
 
 // SupportedNullTypes returns a slice of strings as names of the supported null types
-func (settings *Settings) SupportedNullTypes() string {
+func SupportedNullTypes() string {
 	names := make([]string, 0, len(supportedNullTypes))
 	for name := range supportedNullTypes {
 		names = append(names, string(name))
@@ -230,7 +243,7 @@ func (settings *Settings) SupportedNullTypes() string {
 
 // IsNullTypeSQL returns if the type given by command line args is of null type SQL
 func (settings *Settings) IsNullTypeSQL() bool {
-	return settings.Null == string(NullTypeSQL)
+	return settings.Null == NullTypeSQL
 }
 
 // ShouldInitialism returns wheather or not if column names should be converted
