@@ -56,6 +56,9 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.TagsSQL, "experimental-tags-sql", args.TagsSQL, "generate struct with sql-tags")
 	flag.BoolVar(&args.TagsSQLOnly, "experimental-tags-sql-only", args.TagsSQLOnly, "generate struct with ONLY sql-tags")
 
+	// disable the print of usage when an error occurs
+	flag.CommandLine.Usage = func() {}
+
 	flag.Parse()
 
 	return args
@@ -78,7 +81,7 @@ func main() {
 
 	db, err := database.New(cmdArgs.Settings)
 	if err != nil {
-		fmt.Printf("could not create database: %v", err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 

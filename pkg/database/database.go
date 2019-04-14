@@ -97,7 +97,7 @@ func New(settings *config.Settings) (Database, error) {
 	}
 
 	if err := db.Connect(); err != nil {
-		return nil, fmt.Errorf("could not connect to database: %v", err)
+		return nil, err
 	}
 
 	return db, nil
@@ -113,7 +113,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 			usingPswd = "yes"
 		}
 		return fmt.Errorf(
-			"Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
+			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %v",
 			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
 		)
 	}
