@@ -29,7 +29,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
 	flag.BoolVar(&args.VVerbose, "vv", args.VVerbose, "more verbose output")
 
-	flag.StringVar(&args.DbType, "t", args.DbType, fmt.Sprintf("type of database to use, currently supported: %v", args.SupportedDbTypes()))
+	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", config.SupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
 	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
 	flag.StringVar(&args.DbName, "d", args.DbName, "database name")

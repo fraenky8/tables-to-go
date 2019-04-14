@@ -6,7 +6,33 @@ import (
 	"path/filepath"
 )
 
-// These are the output format command line parameter
+// DbType represents a type of a database.
+type DbType string
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (db DbType) String() string {
+	return string(db)
+}
+
+// Set sets the datatype for the custom type for the flag package.
+func (db *DbType) Set(s string) error {
+	*db = DbType(s)
+	if *db == "" {
+		*db = DbTypePostgresql
+	}
+	if !supportedDbTypes[*db] {
+		return fmt.Errorf("type of database %q not supported! supported: %v", *db, SupportedDbTypes())
+	}
+	return nil
+}
+
+// These database types are supported.
+const (
+	DbTypePostgresql DbType = "pg"
+	DbTypeMySQL      DbType = "mysql"
+)
+
+// These are the output format command line parameter.
 const (
 	OutputFormatCamelCase = "c"
 	OutputFormatOriginal  = "o"
@@ -22,19 +48,6 @@ const (
 	NullTypeNative    NullType = "native"
 	NullTypePrimitive NullType = "primitive"
 )
-
-// DbType represents a type of a database.
-type DbType string
-
-// These database types are supported.
-const (
-	DbTypePostgresql DbType = "pg"
-	DbTypeMySQL      DbType = "mysql"
-)
-
-func (t DbType) String() string {
-	return string(t)
-}
 
 var (
 	// supportedDbTypes represents the supported databases
@@ -68,19 +81,22 @@ type Settings struct {
 	Verbose  bool
 	VVerbose bool
 
-	DbType         string
-	User           string
-	Pswd           string
-	DbName         string
-	Schema         string
-	Host           string
-	Port           string
+	DbType DbType
+
+	User   string
+	Pswd   string
+	DbName string
+	Schema string
+	Host   string
+	Port   string
+
 	OutputFilePath string
 	OutputFormat   string
-	PackageName    string
-	Prefix         string
-	Suffix         string
-	Null           string
+
+	PackageName string
+	Prefix      string
+	Suffix      string
+	Null        string
 
 	NoInitialism bool
 
@@ -110,7 +126,7 @@ func NewSettings() *Settings {
 		Verbose:  false,
 		VVerbose: false,
 
-		DbType:         DbTypePostgresql.String(),
+		DbType:         DbTypePostgresql,
 		User:           "postgres",
 		Pswd:           "",
 		DbName:         "postgres",
@@ -142,10 +158,6 @@ func NewSettings() *Settings {
 // Verify verifies the settings and checks the given output paths
 func (settings *Settings) Verify() (err error) {
 
-	if !supportedDbTypes[DbType(settings.DbType)] {
-		return fmt.Errorf("type of database %q not supported! supported: %v", settings.DbType, settings.SupportedDbTypes())
-	}
-
 	if !supportedOutputFormats[settings.OutputFormat] {
 		return fmt.Errorf("output format %q not supported", settings.OutputFormat)
 	}
@@ -159,7 +171,7 @@ func (settings *Settings) Verify() (err error) {
 	}
 
 	if settings.Port == "" {
-		settings.Port = dbDefaultPorts[DbType(settings.DbType)]
+		settings.Port = dbDefaultPorts[settings.DbType]
 	}
 
 	if settings.PackageName == "" {
@@ -199,10 +211,10 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 }
 
 // SupportedDbTypes returns a slice of strings as names of the supported database types
-func (settings *Settings) SupportedDbTypes() string {
+func SupportedDbTypes() string {
 	names := make([]string, 0, len(supportedDbTypes))
 	for name := range supportedDbTypes {
-		names = append(names, name.String())
+		names = append(names, string(name))
 	}
 	return fmt.Sprintf("%v", names)
 }

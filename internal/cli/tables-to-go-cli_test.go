@@ -130,7 +130,7 @@ func TestRun(t *testing.T) {
 			desc: "mysql: single table with integer column",
 			settings: func() *config.Settings {
 				s := config.NewSettings()
-				s.DbType = config.DbTypeMySQL.String()
+				s.DbType = config.DbTypeMySQL
 				return s
 			},
 			db: func(settings *config.Settings) database.Database {
