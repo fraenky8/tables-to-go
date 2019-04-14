@@ -193,10 +193,6 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
-	if settings.IsMastermindStructableRecorder {
-		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
-	}
-
 	if columnInfo.isTime {
 		if columnInfo.isNullableTime && settings.IsNullTypeSQL() {
 			content.WriteString("\t\n")
@@ -205,6 +201,10 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 		} else {
 			content.WriteString("\t\"time\"\n")
 		}
+	}
+
+	if settings.IsMastermindStructableRecorder {
+		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 	}
 
 	content.WriteString(")\n\n")
