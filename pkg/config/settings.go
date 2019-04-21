@@ -257,7 +257,7 @@ func SupportedNullTypes() string {
 	return fmt.Sprintf("%v", names)
 }
 
-// IsNullTypeSQL returns if the type given by command line args is of null type SQL
+// IsNullTypeSQL returns true if the type given by the command line args is of null type SQL
 func (settings *Settings) IsNullTypeSQL() bool {
 	return settings.Null == NullTypeSQL
 }

@@ -1001,3 +1001,299 @@ func TestRun_FloatColumns(t *testing.T) {
 		})
 	}
 }
+
+func TestRun_TemporalColumns(t *testing.T) {
+	for dbType := range config.SupportedDbTypes {
+		t.Run(dbType.String(), func(t *testing.T) {
+
+			settings := config.NewSettings()
+			settings.DbType = dbType
+			db := database.New(settings)
+
+			columnTypes := db.GetTemporalDatatypes()
+
+			for _, columnType := range columnTypes {
+				t.Run(columnType, func(t *testing.T) {
+
+					t.Run("single table with NOT NULL column", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName time.Time `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with NULL column", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName "+dbType.String()+".NullTime `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with NULL column and native data type", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+						settings.Null = config.NullTypeNative
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName *time.Time `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with two mixed columns", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName1 "+dbType.String()+".NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+						settings.Null = config.NullTypeNative
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName1 *time.Time `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("multi table with multi columns", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table1 := &database.Table{
+							Name: "test_table_1",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						table2 := &database.Table{
+							Name: "test_table_2",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table1, table2)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", table2)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable1",
+								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable1 struct {\nColumnName1 "+dbType.String()+".NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+							).
+							On(
+								"Write",
+								"TestTable2",
+								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable2 struct {\nColumnName1 time.Time `db:\"column_name_1\"`\nColumnName2 "+dbType.String()+".NullTime `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+				})
+			}
+		})
+	}
+}

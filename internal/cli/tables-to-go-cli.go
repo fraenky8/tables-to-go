@@ -96,13 +96,14 @@ func createEffectiveTags(settings *config.Settings) {
 }
 
 type columnInfo struct {
-	isTime              bool
+	isNullable          bool
+	isTemporal          bool
 	isNullablePrimitive bool
-	isNullableTime      bool
+	isNullableTemporal  bool
 }
 
 func (c columnInfo) hasTrue() bool {
-	return c.isTime || c.isNullableTime || c.isNullablePrimitive
+	return c.isNullable || c.isTemporal || c.isNullableTemporal || c.isNullablePrimitive
 }
 
 func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
@@ -135,17 +136,17 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 			fmt.Printf("\t\t> %v\r\n", column.Name)
 		}
 
-		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
+		columnType, col := mapDbColumnTypeToGoType(settings, db, column)
 
-		// save that we saw a time type column at least once
-		if isTimeType {
-			columnInfo.isTime = true
-			columnInfo.isNullableTime = db.IsNullable(column)
+		// save that we saw types of columns at least once
+		if !columnInfo.isTemporal {
+			columnInfo.isTemporal = col.isTemporal
 		}
-
-		// save some info for later use
+		if !columnInfo.isNullableTemporal {
+			columnInfo.isNullableTemporal = col.isNullableTemporal
+		}
 		if !columnInfo.isNullablePrimitive {
-			columnInfo.isNullablePrimitive = db.IsNullable(column) && !db.IsTemporal(column)
+			columnInfo.isNullablePrimitive = col.isNullablePrimitive
 		}
 
 		structFields.WriteString(columnName)
@@ -196,14 +197,14 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
-	if columnInfo.isTime {
-		if columnInfo.isNullableTime && settings.IsNullTypeSQL() {
-			content.WriteString("\t\n")
-			content.WriteString(db.GetDriverImportLibrary())
-			content.WriteString("\n")
-		} else {
-			content.WriteString("\t\"time\"\n")
-		}
+	if columnInfo.isTemporal {
+		content.WriteString("\t\"time\"\n")
+	}
+
+	if columnInfo.isNullableTemporal && settings.IsNullTypeSQL() {
+		content.WriteString("\t\n")
+		content.WriteString(db.GetDriverImportLibrary())
+		content.WriteString("\n")
 	}
 
 	if settings.IsMastermindStructableRecorder {
@@ -226,31 +227,35 @@ func generateTags(db database.Database, column database.Column) (tags string) {
 	return tags
 }
 
-func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, isTime bool) {
-
-	isTime = false
-
+func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
 	if db.IsString(column) || db.IsText(column) {
 		goType = "string"
 		if db.IsNullable(column) {
 			goType = getNullType(settings, "*string", "sql.NullString")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsInteger(column) {
 		goType = "int"
 		if db.IsNullable(column) {
 			goType = getNullType(settings, "*int", "sql.NullInt64")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsFloat(column) {
 		goType = "float64"
 		if db.IsNullable(column) {
 			goType = getNullType(settings, "*float64", "sql.NullFloat64")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsTemporal(column) {
-		goType = "time.Time"
-		if db.IsNullable(column) {
+		if !db.IsNullable(column) {
+			goType = "time.Time"
+			columnInfo.isTemporal = true
+		} else {
 			goType = getNullType(settings, "*time.Time", db.GetTemporalDriverDataType())
+			columnInfo.isTemporal = settings.Null == config.NullTypeNative
+			columnInfo.isNullableTemporal = true
+			columnInfo.isNullable = true
 		}
-		isTime = true
 	} else {
 		// TODO handle special data types
 		switch column.DataType {
@@ -258,13 +263,16 @@ func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, co
 			goType = "bool"
 			if db.IsNullable(column) {
 				goType = getNullType(settings, "*bool", "sql.NullBool")
+				columnInfo.isNullable = true
 			}
 		default:
 			goType = getNullType(settings, "*string", "sql.NullString")
 		}
 	}
 
-	return goType, isTime
+	columnInfo.isNullablePrimitive = columnInfo.isNullable && !db.IsTemporal(column)
+
+	return goType, columnInfo
 }
 
 func getNullType(settings *config.Settings, primitive string, sql string) string {
