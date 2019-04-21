@@ -8,44 +8,40 @@ import (
 
 	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
-	"github.com/fraenky8/tables-to-go/pkg/output"
 )
 
-type mockMySQLDb struct {
+type mockDb struct {
 	mock.Mock
-
-	*database.MySQL
+	database.Database
 
 	tables []*database.Table
 }
 
-func newMockMySQLDb(settings *config.Settings) *mockMySQLDb {
-	return &mockMySQLDb{
-		MySQL: database.NewMySQL(settings),
-	}
+func newMockDb(db database.Database) *mockDb {
+	return &mockDb{Database: db}
 }
 
-func (db *mockMySQLDb) Connect() (err error) {
+func (db *mockDb) Connect() (err error) {
 	db.Called()
 	return nil
 }
 
-func (db *mockMySQLDb) Close() (err error) {
+func (db *mockDb) Close() (err error) {
 	db.Called()
 	return nil
 }
 
-func (db *mockMySQLDb) GetTables() (tables []*database.Table, err error) {
+func (db *mockDb) GetTables() (tables []*database.Table, err error) {
 	db.Called()
 	return db.tables, nil
 }
 
-func (db *mockMySQLDb) PrepareGetColumnsOfTableStmt() (err error) {
+func (db *mockDb) PrepareGetColumnsOfTableStmt() (err error) {
 	db.Called()
 	return nil
 }
 
-func (db *mockMySQLDb) GetColumnsOfTable(table *database.Table) (err error) {
+func (db *mockDb) GetColumnsOfTable(table *database.Table) (err error) {
 	db.Called(table)
 	return nil
 }
@@ -118,68 +114,298 @@ func Test_toInitialisms(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
-	tests := []struct {
-		desc     string
-		settings func() *config.Settings
-		db       func(*config.Settings) database.Database
-		writer   func() output.Writer
-		isError  assert.ErrorAssertionFunc
-	}{
-		{
-			desc: "mysql: single table with integer column",
-			settings: func() *config.Settings {
-				s := config.NewSettings()
-				s.DbType = config.DbTypeMySQL
-				return s
-			},
-			db: func(settings *config.Settings) database.Database {
-				db := newMockMySQLDb(settings)
+func TestRun_StringTextColumns(t *testing.T) {
+	for dbType := range config.SupportedDbTypes {
+		t.Run(dbType.String(), func(t *testing.T) {
 
-				table := &database.Table{
-					Name: "test_table",
-					Columns: []database.Column{
-						{
-							OrdinalPosition: 1,
-							Name:            "user_id",
-							DataType:        "integer",
-						},
-					},
-				}
-				db.tables = append(db.tables, table)
+			settings := config.NewSettings()
+			settings.DbType = dbType
+			db := database.New(settings)
 
-				db.
-					On("GetTables").
-					Return(db.tables, nil)
-				db.
-					On("PrepareGetColumnsOfTableStmt").
-					Return(nil)
-				db.
-					On("GetColumnsOfTable", table)
+			columnTypes := db.GetStringDatatypes()
 
-				return db
-			},
-			writer: func() output.Writer {
-				w := newMockWriter()
-				w.
-					On(
-						"Write",
-						"TestTable",
-						"package dto\n\ntype TestTable struct {\nUserID sql.NullString `db:\"user_id\"`\n}",
-					)
-				return w
-			},
-			isError: assert.NoError,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			s := test.settings()
-			db := test.db(s)
-			w := test.writer()
+			for _, columnType := range columnTypes {
+				t.Run(columnType, func(t *testing.T) {
 
-			err := Run(s, db, w)
-			test.isError(t, err)
+					t.Run("single table with NOT NULL column", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\ntype TestTable struct {\nColumnName string `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with NULL column", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with NULL column and native data type", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+						settings.Null = config.NullTypeNative
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName *string `db:\"column_name\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with two mixed columns", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullString `db:\"column_name_1\"`\nColumnName2 string `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+						settings.Null = config.NullTypeNative
+
+						mdb := newMockDb(db)
+
+						table := &database.Table{
+							Name: "test_table",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable",
+								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName1 *string `db:\"column_name_1\"`\nColumnName2 string `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+
+					t.Run("multi table with multi columns", func(t *testing.T) {
+						settings := config.NewSettings()
+						settings.DbType = dbType
+
+						mdb := newMockDb(db)
+
+						table1 := &database.Table{
+							Name: "test_table_1",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+								},
+							},
+						}
+						table2 := &database.Table{
+							Name: "test_table_2",
+							Columns: []database.Column{
+								{
+									OrdinalPosition: 1,
+									Name:            "column_name_1",
+									DataType:        columnType,
+								},
+								{
+									OrdinalPosition: 2,
+									Name:            "column_name_2",
+									DataType:        columnType,
+									IsNullable:      "YES",
+								},
+							},
+						}
+						mdb.tables = append(mdb.tables, table1, table2)
+
+						mdb.
+							On("GetTables").
+							Return(mdb.tables, nil)
+						mdb.
+							On("PrepareGetColumnsOfTableStmt").
+							Return(nil)
+						mdb.
+							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", table2)
+
+						w := newMockWriter()
+						w.
+							On(
+								"Write",
+								"TestTable1",
+								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable1 struct {\nColumnName1 sql.NullString `db:\"column_name_1\"`\nColumnName2 string `db:\"column_name_2\"`\n}",
+							).
+							On(
+								"Write",
+								"TestTable2",
+								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable2 struct {\nColumnName1 string `db:\"column_name_1\"`\nColumnName2 sql.NullString `db:\"column_name_2\"`\n}",
+							)
+
+						err := Run(settings, mdb, w)
+						assert.NoError(t, err)
+					})
+				})
+			}
 		})
 	}
 }

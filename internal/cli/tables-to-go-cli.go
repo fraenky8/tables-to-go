@@ -121,7 +121,6 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		if settings.ShouldInitialism() {
 			columnName = toInitialisms(columnName)
 		}
-		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
 
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
@@ -136,20 +135,24 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 			fmt.Printf("\t\t> %v\r\n", column.Name)
 		}
 
-		structFields.WriteString(columnName)
-		structFields.WriteString(" ")
-		structFields.WriteString(columnType)
-		structFields.WriteString(generateTags(db, column))
-		structFields.WriteString("\n")
-
-		// save some info for later use
-		columnInfo.isNullablePrimitive = db.IsNullable(column) && !db.IsTemporal(column)
+		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
 
 		// save that we saw a time type column at least once
 		if isTimeType {
 			columnInfo.isTime = true
 			columnInfo.isNullableTime = db.IsNullable(column)
 		}
+
+		// save some info for later use
+		if !columnInfo.isNullablePrimitive {
+			columnInfo.isNullablePrimitive = db.IsNullable(column) && !db.IsTemporal(column)
+		}
+
+		structFields.WriteString(columnName)
+		structFields.WriteString(" ")
+		structFields.WriteString(columnType)
+		structFields.WriteString(generateTags(db, column))
+		structFields.WriteString("\n")
 	}
 
 	if settings.IsMastermindStructableRecorder {

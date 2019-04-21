@@ -20,8 +20,8 @@ func (db *DbType) Set(s string) error {
 	if *db == "" {
 		*db = DbTypePostgresql
 	}
-	if !supportedDbTypes[*db] {
-		return fmt.Errorf("type of database %q not supported! supported: %v", *db, SupportedDbTypes())
+	if !SupportedDbTypes[*db] {
+		return fmt.Errorf("type of database %q not supported! supported: %v", *db, SprintfSupportedDbTypes())
 	}
 	return nil
 }
@@ -87,8 +87,8 @@ const (
 )
 
 var (
-	// supportedDbTypes represents the supported databases
-	supportedDbTypes = map[DbType]bool{
+	// SupportedDbTypes represents the supported databases
+	SupportedDbTypes = map[DbType]bool{
 		DbTypePostgresql: true,
 		DbTypeMySQL:      true,
 	}
@@ -239,10 +239,10 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 	return outputFilePath, err
 }
 
-// SupportedDbTypes returns a slice of strings as names of the supported database types
-func SupportedDbTypes() string {
-	names := make([]string, 0, len(supportedDbTypes))
-	for name := range supportedDbTypes {
+// SprintfSupportedDbTypes returns a slice of strings as names of the supported database types
+func SprintfSupportedDbTypes() string {
+	names := make([]string, 0, len(SupportedDbTypes))
+	for name := range SupportedDbTypes {
 		names = append(names, string(name))
 	}
 	return fmt.Sprintf("%v", names)
