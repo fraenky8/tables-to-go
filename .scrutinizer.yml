@@ -1,0 +1,20 @@
+checks:
+  go: true
+
+build:
+  project_setup:
+    override:
+      - go build .
+  environment:
+    go: go1.12.4
+  nodes:
+    analysis:
+      tests:
+        override:
+          - go-scrutinizer-run
+          - govet-run
+          - golint-run
+
+filter:
+  excluded_paths:
+    - "*/*_test.go"
