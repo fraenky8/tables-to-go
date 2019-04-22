@@ -6,7 +6,7 @@ build:
     override:
       - go build .
   environment:
-    go: go1.12.4
+    go: go1.12
   nodes:
     analysis:
       tests:
@@ -14,6 +14,13 @@ build:
           - go-scrutinizer-run
           - govet-run
           - golint-run
+    coverage:
+      tests:
+        override:
+          - command: go test -coverprofile=cover.out
+            coverage:
+              file: 'cover.out'
+              format: 'go-cc'
 
 filter:
   excluded_paths:
