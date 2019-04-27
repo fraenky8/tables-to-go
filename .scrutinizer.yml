@@ -17,7 +17,8 @@ build:
     coverage:
       tests:
         override:
-          - command: go test -coverprofile=cover.out
+          -
+            command: go test -coverprofile=cover.out
             coverage:
               file: 'cover.out'
               format: 'go-cc'
