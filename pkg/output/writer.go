@@ -2,6 +2,7 @@ package output
 
 import (
 	"io/ioutil"
+	"path"
 )
 
 const (
@@ -16,20 +17,27 @@ type Writer interface {
 
 // FileWriter is a writer that writes to a file given by the path and the table name.
 type FileWriter struct {
-	path string
+	path       string
+	decorators []Decorator
 }
 
 // NewFileWriter constructs a new FileWriter.
 func NewFileWriter(path string) *FileWriter {
-	return &FileWriter{path: path}
+	return &FileWriter{
+		path: path,
+		decorators: []Decorator{
+			FormatDecorator{},
+			ImportDecorator{},
+		},
+	}
 }
 
 // Write is the implementation of the Writer interface. The FilerWriter writes
 // decorated content to the file specified by the given path and table name.
 func (w FileWriter) Write(tableName string, content string) error {
-	fileName := w.path + tableName + FileWriterExtension
+	fileName := path.Join(w.path, tableName+FileWriterExtension)
 
-	decorated, err := decorate(content)
+	decorated, err := w.decorate(content)
 	if err != nil {
 		return err
 	}
@@ -38,12 +46,8 @@ func (w FileWriter) Write(tableName string, content string) error {
 }
 
 // decorate applies some decorations like formatting and empty import removal.
-func decorate(content string) (decorated string, err error) {
-	decorators := []Decorator{
-		FormatDecorator{},
-		ImportDecorator{},
-	}
-	for _, decorator := range decorators {
+func (w FileWriter) decorate(content string) (decorated string, err error) {
+	for _, decorator := range w.decorators {
 		content, err = decorator.Decorate(content)
 		if err != nil {
 			return content, err

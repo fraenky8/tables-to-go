@@ -26,7 +26,7 @@ type Bar struct {
 		},
 		{
 			desc:     "arbitrary text throws error",
-			input:    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+			input:    "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
 			expected: "",
 			isError:  assert.Error,
 		},
