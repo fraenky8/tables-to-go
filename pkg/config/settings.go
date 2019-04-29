@@ -145,10 +145,6 @@ type Settings struct {
 
 	// TODO not implemented yet
 	TagsGorm bool
-
-	// experimental
-	TagsSQL     bool
-	TagsSQLOnly bool
 }
 
 // NewSettings constructs settings with default values
@@ -186,9 +182,6 @@ func NewSettings() *Settings {
 		IsMastermindStructableRecorder: false,
 
 		TagsGorm: false,
-
-		TagsSQL:     false,
-		TagsSQLOnly: false,
 	}
 }
 

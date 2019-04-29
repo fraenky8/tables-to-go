@@ -11,16 +11,7 @@ import (
 )
 
 var (
-	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine which tags to generate later
-	taggers = map[int]tagger.Tagger{
-		1: new(tagger.Db),
-		2: new(tagger.Mastermind),
-		4: new(tagger.SQL),
-	}
-
-	// means that the `db`-Tag is enabled by default
-	effectiveTags = 1
+	taggers tagger.Tagger
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
@@ -30,7 +21,7 @@ var (
 // Run runs the transformations by creating the concrete Database by the provided settings
 func Run(settings *config.Settings, db database.Database, out output.Writer) (err error) {
 
-	createEffectiveTags(settings)
+	taggers = tagger.NewTaggers(settings)
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
@@ -72,27 +63,6 @@ func Run(settings *config.Settings, db database.Database, out output.Writer) (er
 	fmt.Println("done!")
 
 	return nil
-}
-
-func createEffectiveTags(settings *config.Settings) {
-	if settings.TagsNoDb {
-		effectiveTags = 0
-	}
-	if settings.TagsMastermindStructable {
-		effectiveTags |= 2
-	}
-	if settings.TagsMastermindStructableOnly {
-		effectiveTags = 0
-		effectiveTags |= 2
-	}
-	if settings.TagsSQL {
-		effectiveTags |= 4
-	}
-	if settings.TagsSQLOnly {
-		effectiveTags = 0
-		effectiveTags |= 4
-	}
-	// last tag-"ONLY" wins if multiple specified
 }
 
 type columnInfo struct {
@@ -152,7 +122,8 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
-		structFields.WriteString(generateTags(db, column))
+		structFields.WriteString(" ")
+		structFields.WriteString(taggers.GenerateTag(db, column))
 		structFields.WriteString("\n")
 	}
 
@@ -212,19 +183,6 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 	}
 
 	content.WriteString(")\n\n")
-}
-
-func generateTags(db database.Database, column database.Column) (tags string) {
-	for t := 1; t <= effectiveTags; t *= 2 {
-		shouldTag := effectiveTags&t > 0
-		if shouldTag {
-			tags += taggers[t].GenerateTag(db, column) + " "
-		}
-	}
-	if len(tags) > 0 {
-		tags = " `" + strings.TrimSpace(tags) + "`"
-	}
-	return tags
 }
 
 func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
