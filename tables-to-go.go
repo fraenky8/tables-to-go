@@ -6,22 +6,22 @@ import (
 	"os"
 
 	"github.com/fraenky8/tables-to-go/internal/cli"
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 // CmdArgs represents the supported command line args
 type CmdArgs struct {
 	Help bool
-	*config.Settings
+	*settings.Settings
 }
 
 // NewCmdArgs creates and prepares the command line arguments with default values
 func NewCmdArgs() (args *CmdArgs) {
 
 	args = &CmdArgs{
-		Settings: config.NewSettings(),
+		Settings: settings.New(),
 	}
 
 	flag.BoolVar(&args.Help, "?", false, "shows help and usage")
@@ -29,7 +29,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
 	flag.BoolVar(&args.VVerbose, "vv", args.VVerbose, "more verbose output")
 
-	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", config.SprintfSupportedDbTypes()))
+	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
 	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
 	flag.StringVar(&args.DbName, "d", args.DbName, "database name")

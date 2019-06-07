@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 
 	// MySQL database driver
 	_ "github.com/go-sql-driver/mysql"
@@ -16,11 +16,11 @@ type MySQL struct {
 }
 
 // NewMySQL creates a new MySQL database
-func NewMySQL(settings *config.Settings) *MySQL {
+func NewMySQL(s *settings.Settings) *MySQL {
 	return &MySQL{
 		GeneralDatabase: &GeneralDatabase{
-			Settings: settings,
-			driver:   dbTypeToDriverMap[config.DbType(settings.DbType)],
+			Settings: s,
+			driver:   dbTypeToDriverMap[settings.DbType(s.DbType)],
 		},
 	}
 }
@@ -31,7 +31,7 @@ func (mysql *MySQL) Connect() error {
 }
 
 // DSN creates the DSN String to connect to this database
-func (mysql *MySQL) DSN(settings *config.Settings) string {
+func (mysql *MySQL) DSN(settings *settings.Settings) string {
 	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
 		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
 }

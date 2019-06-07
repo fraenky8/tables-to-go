@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
@@ -19,7 +19,7 @@ var (
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *config.Settings, db database.Database, out output.Writer) (err error) {
+func Run(settings *settings.Settings, db database.Database, out output.Writer) (err error) {
 
 	taggers = tagger.NewTaggers(settings)
 
@@ -76,7 +76,7 @@ func (c columnInfo) hasTrue() bool {
 	return c.isNullable || c.isTemporal || c.isNullableTemporal || c.isNullablePrimitive
 }
 
-func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
+func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string) {
 
 	var structFields strings.Builder
 
@@ -156,7 +156,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	return tableName, fileContent.String()
 }
 
-func generateImports(content *strings.Builder, settings *config.Settings, db database.Database, columnInfo columnInfo) {
+func generateImports(content *strings.Builder, settings *settings.Settings, db database.Database, columnInfo columnInfo) {
 
 	if !columnInfo.hasTrue() && !settings.IsMastermindStructableRecorder {
 		return
@@ -185,23 +185,23 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 	content.WriteString(")\n\n")
 }
 
-func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
+func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
 	if db.IsString(column) || db.IsText(column) {
 		goType = "string"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*string", "sql.NullString")
+			goType = getNullType(s, "*string", "sql.NullString")
 			columnInfo.isNullable = true
 		}
 	} else if db.IsInteger(column) {
 		goType = "int"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*int", "sql.NullInt64")
+			goType = getNullType(s, "*int", "sql.NullInt64")
 			columnInfo.isNullable = true
 		}
 	} else if db.IsFloat(column) {
 		goType = "float64"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*float64", "sql.NullFloat64")
+			goType = getNullType(s, "*float64", "sql.NullFloat64")
 			columnInfo.isNullable = true
 		}
 	} else if db.IsTemporal(column) {
@@ -209,8 +209,8 @@ func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, co
 			goType = "time.Time"
 			columnInfo.isTemporal = true
 		} else {
-			goType = getNullType(settings, "*time.Time", db.GetTemporalDriverDataType())
-			columnInfo.isTemporal = settings.Null == config.NullTypeNative
+			goType = getNullType(s, "*time.Time", db.GetTemporalDriverDataType())
+			columnInfo.isTemporal = s.Null == settings.NullTypeNative
 			columnInfo.isNullableTemporal = true
 			columnInfo.isNullable = true
 		}
@@ -220,11 +220,11 @@ func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, co
 		case "boolean":
 			goType = "bool"
 			if db.IsNullable(column) {
-				goType = getNullType(settings, "*bool", "sql.NullBool")
+				goType = getNullType(s, "*bool", "sql.NullBool")
 				columnInfo.isNullable = true
 			}
 		default:
-			goType = getNullType(settings, "*string", "sql.NullString")
+			goType = getNullType(s, "*string", "sql.NullString")
 		}
 	}
 
@@ -233,7 +233,7 @@ func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, co
 	return goType, columnInfo
 }
 
-func getNullType(settings *config.Settings, primitive string, sql string) string {
+func getNullType(settings *settings.Settings, primitive string, sql string) string {
 	if settings.IsNullTypeSQL() {
 		return sql
 	}

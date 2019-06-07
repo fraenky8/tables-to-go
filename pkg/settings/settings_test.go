@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"os"
@@ -16,13 +16,13 @@ func TestSettings_Verify(t *testing.T) {
 	}{
 		{
 			desc:     "default settings produce no error",
-			settings: NewSettings,
+			settings: New,
 			isError:  assert.NoError,
 		},
 		{
 			desc: "wrong output file path produces error",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.OutputFilePath = ""
 				return s
 			},
@@ -31,7 +31,7 @@ func TestSettings_Verify(t *testing.T) {
 		{
 			desc: "output file path with file produces error",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				ex, err := os.Executable()
 				assert.Nil(t, err)
 				s.OutputFilePath = ex
@@ -42,7 +42,7 @@ func TestSettings_Verify(t *testing.T) {
 		{
 			desc: "empty package name produces error",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.PackageName = ""
 				return s
 			},
@@ -51,7 +51,7 @@ func TestSettings_Verify(t *testing.T) {
 		{
 			desc: "set v-verbose mode activates verbose mode without error",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.VVerbose = true
 				return s
 			},
@@ -75,13 +75,13 @@ func TestSettings_IsNullTypeSQL(t *testing.T) {
 	}{
 		{
 			desc:     "in default settings sql NULL type is activated",
-			settings: NewSettings,
+			settings: New,
 			expected: true,
 		},
 		{
 			desc: "explicit enabled sql NULL type ativates sql NULL type",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.Null = NullTypeSQL
 				return s
 			},
@@ -90,7 +90,7 @@ func TestSettings_IsNullTypeSQL(t *testing.T) {
 		{
 			desc: "native NULL type deativates sql NULL type",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.Null = NullTypeNative
 				return s
 			},
@@ -99,7 +99,7 @@ func TestSettings_IsNullTypeSQL(t *testing.T) {
 		{
 			desc: "primitve NULL type deativates sql NULL type",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.Null = NullTypePrimitive
 				return s
 			},
@@ -108,7 +108,7 @@ func TestSettings_IsNullTypeSQL(t *testing.T) {
 		{
 			desc: "any other NULL type deativates sql NULL type",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.Null = NullType("any")
 				return s
 			},
@@ -132,13 +132,13 @@ func TestSettings_ShouldInitialism(t *testing.T) {
 	}{
 		{
 			desc:     "in default settings initialism is activated",
-			settings: NewSettings,
+			settings: New,
 			expected: true,
 		},
 		{
 			desc: "explicit enabled initialism ativates initialism",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.NoInitialism = false
 				return s
 			},
@@ -147,7 +147,7 @@ func TestSettings_ShouldInitialism(t *testing.T) {
 		{
 			desc: "disabled initialism deactivates initialism",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.NoInitialism = true
 				return s
 			},
@@ -171,13 +171,13 @@ func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
 	}{
 		{
 			desc:     "in default settings camel case is activated",
-			settings: NewSettings,
+			settings: New,
 			expected: true,
 		},
 		{
 			desc: "explicit enabled camel case ativates initialism",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.OutputFormat = OutputFormatCamelCase
 				return s
 			},
@@ -186,7 +186,7 @@ func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
 		{
 			desc: "disabled camel case deactivates camel case",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.OutputFormat = OutputFormatOriginal
 				return s
 			},
@@ -195,7 +195,7 @@ func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
 		{
 			desc: "any other output format deativates camel case",
 			settings: func() *Settings {
-				s := NewSettings()
+				s := New()
 				s.OutputFormat = OutputFormat("any")
 				return s
 			},

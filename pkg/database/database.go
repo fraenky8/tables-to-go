@@ -6,20 +6,20 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 var (
 	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[config.DbType]string{
-		config.DbTypePostgresql: "postgres",
-		config.DbTypeMySQL:      "mysql",
+	dbTypeToDriverMap = map[settings.DbType]string{
+		settings.DbTypePostgresql: "postgres",
+		settings.DbTypeMySQL:      "mysql",
 	}
 )
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *config.Settings) string
+	DSN(settings *settings.Settings) string
 	Connect() (err error)
 	Close() (err error)
 	GetDriverImportLibrary() string
@@ -78,22 +78,22 @@ type Column struct {
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*sqlx.DB
-	*config.Settings
+	*settings.Settings
 	driver string
 }
 
 // New creates a new Database based on the given type in the settings.
-func New(settings *config.Settings) Database {
+func New(s *settings.Settings) Database {
 
 	var db Database
 
-	switch config.DbType(settings.DbType) {
-	case config.DbTypeMySQL:
-		db = NewMySQL(settings)
-	case config.DbTypePostgresql:
+	switch settings.DbType(s.DbType) {
+	case settings.DbTypeMySQL:
+		db = NewMySQL(s)
+	case settings.DbTypePostgresql:
 		fallthrough
 	default:
-		db = NewPostgresql(settings)
+		db = NewPostgresql(s)
 	}
 
 	return db

@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"fmt"
@@ -147,8 +147,8 @@ type Settings struct {
 	TagsGorm bool
 }
 
-// NewSettings constructs settings with default values
-func NewSettings() *Settings {
+// New constructs settings with default values
+func New() *Settings {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {

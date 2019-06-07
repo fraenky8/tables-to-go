@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 type mockDb struct {
@@ -115,12 +115,12 @@ func Test_toInitialisms(t *testing.T) {
 }
 
 func TestRun_StringTextColumns(t *testing.T) {
-	for dbType := range config.SupportedDbTypes {
+	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
-			settings := config.NewSettings()
-			settings.DbType = dbType
-			db := database.New(settings)
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
 
 			columnTypes := db.GetStringDatatypes()
 
@@ -128,8 +128,8 @@ func TestRun_StringTextColumns(t *testing.T) {
 				t.Run(columnType, func(t *testing.T) {
 
 					t.Run("single table with NOT NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -162,13 +162,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\ntype TestTable struct {\nColumnName string `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -202,14 +202,14 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -243,13 +243,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName *string `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -288,14 +288,14 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullString `db:\"column_name_1\"`\nColumnName2 string `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -334,13 +334,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName1 *string `db:\"column_name_1\"`\nColumnName2 string `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("multi table with multi columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -401,7 +401,7 @@ func TestRun_StringTextColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable2 struct {\nColumnName1 string `db:\"column_name_1\"`\nColumnName2 sql.NullString `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 				})
@@ -411,12 +411,12 @@ func TestRun_StringTextColumns(t *testing.T) {
 }
 
 func TestRun_IntegerColumns(t *testing.T) {
-	for dbType := range config.SupportedDbTypes {
+	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
-			settings := config.NewSettings()
-			settings.DbType = dbType
-			db := database.New(settings)
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
 
 			columnTypes := db.GetIntegerDatatypes()
 
@@ -424,8 +424,8 @@ func TestRun_IntegerColumns(t *testing.T) {
 				t.Run(columnType, func(t *testing.T) {
 
 					t.Run("single table with NOT NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -458,13 +458,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\ntype TestTable struct {\nColumnName int `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -498,14 +498,14 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullInt64 `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -539,13 +539,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName *int `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -584,14 +584,14 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullInt64 `db:\"column_name_1\"`\nColumnName2 int `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -630,13 +630,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName1 *int `db:\"column_name_1\"`\nColumnName2 int `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("multi table with multi columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -697,7 +697,7 @@ func TestRun_IntegerColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable2 struct {\nColumnName1 int `db:\"column_name_1\"`\nColumnName2 sql.NullInt64 `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 				})
@@ -707,12 +707,12 @@ func TestRun_IntegerColumns(t *testing.T) {
 }
 
 func TestRun_FloatColumns(t *testing.T) {
-	for dbType := range config.SupportedDbTypes {
+	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
-			settings := config.NewSettings()
-			settings.DbType = dbType
-			db := database.New(settings)
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
 
 			columnTypes := db.GetFloatDatatypes()
 
@@ -720,8 +720,8 @@ func TestRun_FloatColumns(t *testing.T) {
 				t.Run(columnType, func(t *testing.T) {
 
 					t.Run("single table with NOT NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -754,13 +754,13 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\ntype TestTable struct {\nColumnName float64 `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -794,14 +794,14 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullFloat64 `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -835,13 +835,13 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName *float64 `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -880,14 +880,14 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullFloat64 `db:\"column_name_1\"`\nColumnName2 float64 `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -926,13 +926,13 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName1 *float64 `db:\"column_name_1\"`\nColumnName2 float64 `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("multi table with multi columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -993,7 +993,7 @@ func TestRun_FloatColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable2 struct {\nColumnName1 float64 `db:\"column_name_1\"`\nColumnName2 sql.NullFloat64 `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 				})
@@ -1003,12 +1003,12 @@ func TestRun_FloatColumns(t *testing.T) {
 }
 
 func TestRun_TemporalColumns(t *testing.T) {
-	for dbType := range config.SupportedDbTypes {
+	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
-			settings := config.NewSettings()
-			settings.DbType = dbType
-			db := database.New(settings)
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
 
 			columnTypes := db.GetTemporalDatatypes()
 
@@ -1016,8 +1016,8 @@ func TestRun_TemporalColumns(t *testing.T) {
 				t.Run(columnType, func(t *testing.T) {
 
 					t.Run("single table with NOT NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1050,13 +1050,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName time.Time `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1090,14 +1090,14 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName "+dbType.String()+".NullTime `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -1131,13 +1131,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName *time.Time `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1176,14 +1176,14 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName1 "+dbType.String()+".NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -1222,13 +1222,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName1 *time.Time `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("multi table with multi columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1289,7 +1289,7 @@ func TestRun_TemporalColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable2 struct {\nColumnName1 time.Time `db:\"column_name_1\"`\nColumnName2 "+dbType.String()+".NullTime `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 				})
@@ -1299,12 +1299,12 @@ func TestRun_TemporalColumns(t *testing.T) {
 }
 
 func TestRun_BooleanColumns(t *testing.T) {
-	for dbType := range config.SupportedDbTypes {
+	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
-			settings := config.NewSettings()
-			settings.DbType = dbType
-			db := database.New(settings)
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
 
 			columnTypes := []string{"boolean"}
 
@@ -1312,8 +1312,8 @@ func TestRun_BooleanColumns(t *testing.T) {
 				t.Run(columnType, func(t *testing.T) {
 
 					t.Run("single table with NOT NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1346,13 +1346,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\ntype TestTable struct {\nColumnName bool `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1386,14 +1386,14 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullBool `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with NULL column and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -1427,13 +1427,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName *bool `db:\"column_name\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1472,14 +1472,14 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullBool `db:\"column_name_1\"`\nColumnName2 bool `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("single table with two mixed columns and native data type", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
-						settings.Null = config.NullTypeNative
+						s := settings.New()
+						s.DbType = dbType
+						s.Null = settings.NullTypeNative
 
 						mdb := newMockDb(db)
 
@@ -1518,13 +1518,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\nimport (\n)\n\ntype TestTable struct {\nColumnName1 *bool `db:\"column_name_1\"`\nColumnName2 bool `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 
 					t.Run("multi table with multi columns", func(t *testing.T) {
-						settings := config.NewSettings()
-						settings.DbType = dbType
+						s := settings.New()
+						s.DbType = dbType
 
 						mdb := newMockDb(db)
 
@@ -1585,7 +1585,7 @@ func TestRun_BooleanColumns(t *testing.T) {
 								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable2 struct {\nColumnName1 bool `db:\"column_name_1\"`\nColumnName2 sql.NullBool `db:\"column_name_2\"`\n}",
 							)
 
-						err := Run(settings, mdb, w)
+						err := Run(s, mdb, w)
 						assert.NoError(t, err)
 					})
 				})

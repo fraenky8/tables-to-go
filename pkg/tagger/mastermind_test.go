@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 type mastermindMockDb struct {
@@ -32,20 +32,20 @@ func (db *mastermindMockDb) IsAutoIncrement(column database.Column) bool {
 func TestMastermind_GenerateTag(t *testing.T) {
 	tests := []struct {
 		desc     string
-		settings func() *config.Settings
-		database func(settings *config.Settings, column database.Column) database.Database
+		settings func() *settings.Settings
+		database func(settings *settings.Settings, column database.Column) database.Database
 		column   database.Column
 		expected string
 	}{
 		{
 			desc: "non PK column generates standard Mastermind-tag",
-			settings: func() *config.Settings {
-				s := config.NewSettings()
+			settings: func() *settings.Settings {
+				s := settings.New()
 				s.TagsNoDb = true
 				s.TagsMastermindStructable = true
 				return s
 			},
-			database: func(settings *config.Settings, column database.Column) database.Database {
+			database: func(settings *settings.Settings, column database.Column) database.Database {
 				db := database.New(settings)
 				mdb := newMastermindMockDb(db)
 				mdb.
@@ -62,13 +62,13 @@ func TestMastermind_GenerateTag(t *testing.T) {
 		},
 		{
 			desc: "PK column generates Mastermind-tag with PK indicator",
-			settings: func() *config.Settings {
-				s := config.NewSettings()
+			settings: func() *settings.Settings {
+				s := settings.New()
 				s.TagsNoDb = true
 				s.TagsMastermindStructable = true
 				return s
 			},
-			database: func(settings *config.Settings, column database.Column) database.Database {
+			database: func(settings *settings.Settings, column database.Column) database.Database {
 				db := database.New(settings)
 				mdb := newMastermindMockDb(db)
 				mdb.
@@ -86,13 +86,13 @@ func TestMastermind_GenerateTag(t *testing.T) {
 		},
 		{
 			desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
-			settings: func() *config.Settings {
-				s := config.NewSettings()
+			settings: func() *settings.Settings {
+				s := settings.New()
 				s.TagsNoDb = true
 				s.TagsMastermindStructable = true
 				return s
 			},
-			database: func(settings *config.Settings, column database.Column) database.Database {
+			database: func(settings *settings.Settings, column database.Column) database.Database {
 				db := database.New(settings)
 				mdb := newMastermindMockDb(db)
 				mdb.

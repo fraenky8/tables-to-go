@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 
 	// postgres database driver
 	_ "github.com/lib/pq"
@@ -16,11 +16,11 @@ type Postgresql struct {
 }
 
 // NewPostgresql creates a new Postgresql database
-func NewPostgresql(settings *config.Settings) *Postgresql {
+func NewPostgresql(s *settings.Settings) *Postgresql {
 	return &Postgresql{
 		GeneralDatabase: &GeneralDatabase{
-			Settings: settings,
-			driver:   dbTypeToDriverMap[config.DbType(settings.DbType)],
+			Settings: s,
+			driver:   dbTypeToDriverMap[settings.DbType(s.DbType)],
 		},
 	}
 }
@@ -31,7 +31,7 @@ func (pg *Postgresql) Connect() error {
 }
 
 // DSN creates the DSN String to connect to this database
-func (pg *Postgresql) DSN(settings *config.Settings) string {
+func (pg *Postgresql) DSN(settings *settings.Settings) string {
 	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
 		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 const (
@@ -29,14 +29,14 @@ type Tagger interface {
 
 // Taggers represents the supported tags to generate.
 type Taggers struct {
-	settings *config.Settings
+	settings *settings.Settings
 
 	enabledTags int
 	taggers     map[int]Tagger
 }
 
 // NewTaggers is the constructor function to create the supported taggers.
-func NewTaggers(s *config.Settings) *Taggers {
+func NewTaggers(s *settings.Settings) *Taggers {
 	t := &Taggers{
 		settings:    s,
 		enabledTags: tagDb,
