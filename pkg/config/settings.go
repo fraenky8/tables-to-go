@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 )
 
+// These database types are supported.
+const (
+	DbTypePostgresql DbType = "pg"
+	DbTypeMySQL      DbType = "mysql"
+)
+
 // DbType represents a type of a database.
 type DbType string
-
-// String is the implementation of the Stringer interface needed for flag.Value interface.
-func (db DbType) String() string {
-	return string(db)
-}
 
 // Set sets the datatype for the custom type for the flag package.
 func (db *DbType) Set(s string) error {
@@ -26,30 +27,9 @@ func (db *DbType) Set(s string) error {
 	return nil
 }
 
-// These database types are supported.
-const (
-	DbTypePostgresql DbType = "pg"
-	DbTypeMySQL      DbType = "mysql"
-)
-
-// NullType represents a null type.
-type NullType string
-
 // String is the implementation of the Stringer interface needed for flag.Value interface.
-func (t NullType) String() string {
-	return string(t)
-}
-
-// Set sets the datatype for the custom type for the flag package.
-func (t *NullType) Set(s string) error {
-	*t = NullType(s)
-	if *t == "" {
-		*t = NullTypeSQL
-	}
-	if !supportedNullTypes[*t] {
-		return fmt.Errorf("null type %q not supported! supported: %v", *t, SupportedNullTypes())
-	}
-	return nil
+func (db DbType) String() string {
+	return string(db)
 }
 
 // These null types are supported. The types native and primitive map to the same
@@ -60,13 +40,34 @@ const (
 	NullTypePrimitive NullType = "primitive"
 )
 
-// OutputFormat represents a output format option.
-type OutputFormat string
+// NullType represents a null type.
+type NullType string
+
+// Set sets the datatype for the custom type for the flag package.
+func (t *NullType) Set(s string) error {
+	*t = NullType(s)
+	if *t == "" {
+		*t = NullTypeSQL
+	}
+	if !supportedNullTypes[*t] {
+		return fmt.Errorf("null type %q not supported! supported: %v", *t, SprintfSupportedNullTypes())
+	}
+	return nil
+}
 
 // String is the implementation of the Stringer interface needed for flag.Value interface.
-func (of OutputFormat) String() string {
-	return string(of)
+func (t NullType) String() string {
+	return string(t)
 }
+
+// These are the output format command line parameter.
+const (
+	OutputFormatCamelCase OutputFormat = "c"
+	OutputFormatOriginal  OutputFormat = "o"
+)
+
+// OutputFormat represents a output format option.
+type OutputFormat string
 
 // Set sets the datatype for the custom type for the flag package.
 func (of *OutputFormat) Set(s string) error {
@@ -80,11 +81,10 @@ func (of *OutputFormat) Set(s string) error {
 	return nil
 }
 
-// These are the output format command line parameter.
-const (
-	OutputFormatCamelCase OutputFormat = "c"
-	OutputFormatOriginal  OutputFormat = "o"
-)
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (of OutputFormat) String() string {
+	return string(of)
+}
 
 var (
 	// SupportedDbTypes represents the supported databases
@@ -241,8 +241,8 @@ func SprintfSupportedDbTypes() string {
 	return fmt.Sprintf("%v", names)
 }
 
-// SupportedNullTypes returns a slice of strings as names of the supported null types
-func SupportedNullTypes() string {
+// SprintfSupportedNullTypes returns a slice of strings as names of the supported null types
+func SprintfSupportedNullTypes() string {
 	names := make([]string, 0, len(supportedNullTypes))
 	for name := range supportedNullTypes {
 		names = append(names, string(name))
