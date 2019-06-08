@@ -240,13 +240,18 @@ func getNullType(settings *settings.Settings, primitive string, sql string) stri
 	return primitive
 }
 
-func camelCaseString(s string) (cc string) {
+func camelCaseString(s string) string {
+	if s == "" {
+		return s
+	}
+
 	splitted := strings.Split(s, "_")
 
 	if len(splitted) == 1 {
 		return strings.Title(s)
 	}
 
+	var cc string
 	for _, part := range splitted {
 		cc += strings.Title(strings.ToLower(part))
 	}

@@ -59,57 +59,87 @@ func (w *mockWriter) Write(tableName string, content string) error {
 	return nil
 }
 
-func Test_toInitialisms(t *testing.T) {
+func TestCamelCaseString(t *testing.T) {
 	tests := []struct {
 		desc     string
-		intput   string
+		input    string
+		expected string
+	}{
+		{
+			desc:     "empty string returns empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			desc:     "single string returns titleized single string",
+			input:    "string",
+			expected: "String",
+		},
+		{
+			desc:     "multi separated string returns CamelCase string",
+			input:    "string_with_separate_sections",
+			expected: "StringWithSeparateSections",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			actual := camelCaseString(tt.input)
+			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
+		})
+	}
+}
+
+func TestToInitialisms(t *testing.T) {
+	tests := []struct {
+		desc     string
+		input    string
 		expected string
 	}{
 		{
 			desc:     "id should be upper case",
-			intput:   "Id",
+			input:    "Id",
 			expected: "ID",
 		},
 		{
 			desc:     "id at the end of string should be upper case",
-			intput:   "userId",
+			input:    "userId",
 			expected: "userID",
 		},
 		{
 			desc:     "id at the beginning of string should be upper case",
-			intput:   "Iduser",
+			input:    "Iduser",
 			expected: "IDuser",
 		},
 		{
 			desc:     "id in the middle of string should be upper case",
-			intput:   "userIdprim",
+			input:    "userIdprim",
 			expected: "userIDprim",
 		},
 		{
 			desc:     "multiple occurrences should be upper case",
-			intput:   "userIdasJsonWithUrl",
+			input:    "userIdasJsonWithUrl",
 			expected: "userIDasJSONWithURL",
 		},
 		{
 			desc:     "multiple id in the string should be upper case",
-			intput:   "IduserId",
+			input:    "IduserId",
 			expected: "IDuserID",
 		},
 		{
 			desc:     "non replacement in the string should be return original string",
-			intput:   "name",
+			input:    "name",
 			expected: "name",
 		},
 		{
 			desc:     "replacements only in the string should be return original string",
-			intput:   "IdjsonuRlHtTp",
+			input:    "IdjsonuRlHtTp",
 			expected: "IDJSONURLHTTP",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			actual := toInitialisms(tt.intput)
-			assert.Equal(t, tt.expected, actual, "test case input: "+tt.intput)
+			actual := toInitialisms(tt.input)
+			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
 		})
 	}
 }
