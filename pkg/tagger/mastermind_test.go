@@ -1,123 +1,141 @@
 package tagger
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
-type mastermindMockDb struct {
-	mock.Mock
-	database.Database
-}
-
-func newMastermindMockDb(db database.Database) *mastermindMockDb {
-	return &mastermindMockDb{Database: db}
-}
-
-func (db *mastermindMockDb) IsPrimaryKey(column database.Column) bool {
-	db.Called(column)
-	return column.ColumnKey == "PK"
-}
-
-func (db *mastermindMockDb) IsAutoIncrement(column database.Column) bool {
-	db.Called(column)
-	return column.Extra == "AI"
-}
-
 func TestMastermind_GenerateTag(t *testing.T) {
-	tests := []struct {
+	type test struct {
 		desc     string
 		settings func() *settings.Settings
-		database func(settings *settings.Settings, column database.Column) database.Database
 		column   database.Column
 		expected string
-	}{
-		{
-			desc: "non PK column generates standard Mastermind-tag",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = true
-				s.TagsMastermindStructable = true
-				return s
+	}
+
+	tests := map[settings.DbType][]test{
+		settings.DbTypePostgresql: {
+			{
+				desc: "non PK column generates standard Mastermind-tag",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypePostgresql
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name: "column_name",
+				},
+				expected: `stbl:"column_name"`,
 			},
-			database: func(settings *settings.Settings, column database.Column) database.Database {
-				db := database.New(settings)
-				mdb := newMastermindMockDb(db)
-				mdb.
-					On("IsPrimaryKey", column).
-					Return(false).
-					On("IsAutoIncrement", column).
-					Return(false)
-				return mdb
+			{
+				desc: "PK column generates Mastermind-tag with PK indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypePostgresql
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name: "column_name",
+					ConstraintType: sql.NullString{
+						String: "PRIMARY KEY",
+						Valid:  true,
+					},
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY"`,
 			},
-			column: database.Column{
-				Name: "column_name",
+			{
+				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypePostgresql
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name: "column_name",
+					ConstraintType: sql.NullString{
+						String: "PRIMARY KEY",
+						Valid:  true,
+					},
+					DefaultValue: sql.NullString{
+						String: "nextval",
+						Valid:  true,
+					},
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 			},
-			expected: `stbl:"column_name"`,
 		},
-		{
-			desc: "PK column generates Mastermind-tag with PK indicator",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = true
-				s.TagsMastermindStructable = true
-				return s
+		settings.DbTypeMySQL: {
+			{
+				desc: "non PK column generates standard Mastermind-tag",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypeMySQL
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name: "column_name",
+				},
+				expected: `stbl:"column_name"`,
 			},
-			database: func(settings *settings.Settings, column database.Column) database.Database {
-				db := database.New(settings)
-				mdb := newMastermindMockDb(db)
-				mdb.
-					On("IsPrimaryKey", column).
-					Return(true).
-					On("IsAutoIncrement", column).
-					Return(false)
-				return mdb
+			{
+				desc: "PK column generates Mastermind-tag with PK indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypeMySQL
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name:      "column_name",
+					ColumnKey: "PRI",
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY"`,
 			},
-			column: database.Column{
-				Name:      "column_name",
-				ColumnKey: "PK",
+			{
+				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypeMySQL
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name:      "column_name",
+					ColumnKey: "PRI",
+					Extra:     "auto_increment",
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 			},
-			expected: `stbl:"column_name,PRIMARY_KEY"`,
-		},
-		{
-			desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = true
-				s.TagsMastermindStructable = true
-				return s
-			},
-			database: func(settings *settings.Settings, column database.Column) database.Database {
-				db := database.New(settings)
-				mdb := newMastermindMockDb(db)
-				mdb.
-					On("IsPrimaryKey", column).
-					Return(true).
-					On("IsAutoIncrement", column).
-					Return(true)
-				return mdb
-			},
-			column: database.Column{
-				Name:      "column_name",
-				ColumnKey: "PK",
-				Extra:     "AI",
-			},
-			expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 		},
 	}
 
 	tagger := new(Mastermind)
 
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			db := test.database(test.settings(), test.column)
-			actual := tagger.GenerateTag(db, test.column)
-			assert.Equal(t, test.expected, actual)
+	for dbType := range settings.SupportedDbTypes {
+		t.Run(dbType.String(), func(t *testing.T) {
+			tests := tests[dbType]
+			for _, test := range tests {
+				t.Run(test.desc, func(t *testing.T) {
+					db := database.New(test.settings())
+					actual := tagger.GenerateTag(db, test.column)
+					assert.Equal(t, test.expected, actual)
+				})
+			}
 		})
 	}
 }
