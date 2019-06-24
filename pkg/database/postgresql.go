@@ -1,11 +1,10 @@
-package postgresql
+package database
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
-	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 
 	// postgres database driver
 	_ "github.com/lib/pq"
@@ -13,12 +12,17 @@ import (
 
 // Postgresql implemenmts the Database interface with help of generalDatabase
 type Postgresql struct {
-	*database.GeneralDatabase
+	*GeneralDatabase
 }
 
-// New creates a new Postgresql database
-func New(gdb *database.GeneralDatabase) *Postgresql {
-	return &Postgresql{gdb}
+// NewPostgresql creates a new Postgresql database
+func NewPostgresql(s *settings.Settings) *Postgresql {
+	return &Postgresql{
+		GeneralDatabase: &GeneralDatabase{
+			Settings: s,
+			driver:   dbTypeToDriverMap[settings.DbType(s.DbType)],
+		},
+	}
 }
 
 // Connect connects to the database by the given data source name (dsn) of the concrete database
@@ -27,7 +31,7 @@ func (pg *Postgresql) Connect() error {
 }
 
 // DSN creates the DSN String to connect to this database
-func (pg *Postgresql) DSN(settings *config.Settings) string {
+func (pg *Postgresql) DSN(settings *settings.Settings) string {
 	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
 		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
 }
@@ -38,7 +42,7 @@ func (pg *Postgresql) GetDriverImportLibrary() string {
 }
 
 // GetTables gets all tables for a given schema by name
-func (pg *Postgresql) GetTables() (tables []*database.Table, err error) {
+func (pg *Postgresql) GetTables() (tables []*Table, err error) {
 
 	err = pg.Select(&tables, `
 		SELECT table_name
@@ -88,7 +92,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 }
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a specific table in a given schema
-func (pg *Postgresql) GetColumnsOfTable(table *database.Table) (err error) {
+func (pg *Postgresql) GetColumnsOfTable(table *Table) (err error) {
 
 	err = pg.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, pg.Schema)
 
@@ -103,12 +107,12 @@ func (pg *Postgresql) GetColumnsOfTable(table *database.Table) (err error) {
 }
 
 // IsPrimaryKey checks if column belongs to primary key
-func (pg *Postgresql) IsPrimaryKey(column database.Column) bool {
+func (pg *Postgresql) IsPrimaryKey(column Column) bool {
 	return strings.Contains(column.ConstraintType.String, "PRIMARY KEY")
 }
 
 // IsAutoIncrement checks if column is a serial column
-func (pg *Postgresql) IsAutoIncrement(column database.Column) bool {
+func (pg *Postgresql) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.DefaultValue.String, "nextval")
 }
 
@@ -123,7 +127,7 @@ func (pg *Postgresql) GetStringDatatypes() []string {
 }
 
 // IsString returns true if colum is of type string for the postgre database
-func (pg *Postgresql) IsString(column database.Column) bool {
+func (pg *Postgresql) IsString(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetStringDatatypes())
 }
 
@@ -135,7 +139,7 @@ func (pg *Postgresql) GetTextDatatypes() []string {
 }
 
 // IsText returns true if colum is of type text for the postgre database
-func (pg *Postgresql) IsText(column database.Column) bool {
+func (pg *Postgresql) IsText(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetTextDatatypes())
 }
 
@@ -152,7 +156,7 @@ func (pg *Postgresql) GetIntegerDatatypes() []string {
 }
 
 // IsInteger returns true if colum is of type integer for the postgre database
-func (pg *Postgresql) IsInteger(column database.Column) bool {
+func (pg *Postgresql) IsInteger(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetIntegerDatatypes())
 }
 
@@ -167,7 +171,7 @@ func (pg *Postgresql) GetFloatDatatypes() []string {
 }
 
 // IsFloat returns true if colum is of type float for the postgre database
-func (pg *Postgresql) IsFloat(column database.Column) bool {
+func (pg *Postgresql) IsFloat(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetFloatDatatypes())
 }
 
@@ -185,7 +189,7 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 }
 
 // IsTemporal returns true if colum is of type temporal for the postgre database
-func (pg *Postgresql) IsTemporal(column database.Column) bool {
+func (pg *Postgresql) IsTemporal(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
 }
 

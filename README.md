@@ -5,7 +5,9 @@ A small and helpful tool which helps during developing with a changing database 
 
 **Tables change, run the tool, get your structs!**
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go) [![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go)
+[![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
+[![Code Coverage](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/?branch=master)
 
 ## Installing
 

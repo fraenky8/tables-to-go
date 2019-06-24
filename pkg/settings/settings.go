@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"fmt"
@@ -6,14 +6,31 @@ import (
 	"path/filepath"
 )
 
-// These are the output format command line parameter
+// These database types are supported.
 const (
-	OutputFormatCamelCase = "c"
-	OutputFormatOriginal  = "o"
+	DbTypePostgresql DbType = "pg"
+	DbTypeMySQL      DbType = "mysql"
 )
 
-// NullType represents a null type.
-type NullType string
+// DbType represents a type of a database.
+type DbType string
+
+// Set sets the datatype for the custom type for the flag package.
+func (db *DbType) Set(s string) error {
+	*db = DbType(s)
+	if *db == "" {
+		*db = DbTypePostgresql
+	}
+	if !SupportedDbTypes[*db] {
+		return fmt.Errorf("type of database %q not supported! supported: %v", *db, SprintfSupportedDbTypes())
+	}
+	return nil
+}
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (db DbType) String() string {
+	return string(db)
+}
 
 // These null types are supported. The types native and primitive map to the same
 // underlying builtin golang type.
@@ -23,23 +40,69 @@ const (
 	NullTypePrimitive NullType = "primitive"
 )
 
+// NullType represents a null type.
+type NullType string
+
+// Set sets the datatype for the custom type for the flag package.
+func (t *NullType) Set(s string) error {
+	*t = NullType(s)
+	if *t == "" {
+		*t = NullTypeSQL
+	}
+	if !supportedNullTypes[*t] {
+		return fmt.Errorf("null type %q not supported! supported: %v", *t, SprintfSupportedNullTypes())
+	}
+	return nil
+}
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (t NullType) String() string {
+	return string(t)
+}
+
+// These are the output format command line parameter.
+const (
+	OutputFormatCamelCase OutputFormat = "c"
+	OutputFormatOriginal  OutputFormat = "o"
+)
+
+// OutputFormat represents a output format option.
+type OutputFormat string
+
+// Set sets the datatype for the custom type for the flag package.
+func (of *OutputFormat) Set(s string) error {
+	*of = OutputFormat(s)
+	if *of == "" {
+		*of = OutputFormatCamelCase
+	}
+	if !supportedOutputFormats[*of] {
+		return fmt.Errorf("output format %q not supported", *of)
+	}
+	return nil
+}
+
+// String is the implementation of the Stringer interface needed for flag.Value interface.
+func (of OutputFormat) String() string {
+	return string(of)
+}
+
 var (
-	// supportedDbTypes represents the supported databases
-	supportedDbTypes = map[string]bool{
-		"pg":    true,
-		"mysql": true,
+	// SupportedDbTypes represents the supported databases
+	SupportedDbTypes = map[DbType]bool{
+		DbTypePostgresql: true,
+		DbTypeMySQL:      true,
 	}
 
 	// supportedOutputFormats represents the supported output formats
-	supportedOutputFormats = map[string]bool{
+	supportedOutputFormats = map[OutputFormat]bool{
 		OutputFormatCamelCase: true,
 		OutputFormatOriginal:  true,
 	}
 
 	// dbDefaultPorts maps the database type to the default ports
-	dbDefaultPorts = map[string]string{
-		"pg":    "5432",
-		"mysql": "3306",
+	dbDefaultPorts = map[DbType]string{
+		DbTypePostgresql: "5432",
+		DbTypeMySQL:      "3306",
 	}
 
 	// supportedNullTypes represents the supported types of NULL types
@@ -55,19 +118,22 @@ type Settings struct {
 	Verbose  bool
 	VVerbose bool
 
-	DbType         string
-	User           string
-	Pswd           string
-	DbName         string
-	Schema         string
-	Host           string
-	Port           string
+	DbType DbType
+
+	User   string
+	Pswd   string
+	DbName string
+	Schema string
+	Host   string
+	Port   string
+
 	OutputFilePath string
-	OutputFormat   string
-	PackageName    string
-	Prefix         string
-	Suffix         string
-	Null           string
+	OutputFormat   OutputFormat
+
+	PackageName string
+	Prefix      string
+	Suffix      string
+	Null        NullType
 
 	NoInitialism bool
 
@@ -79,14 +145,10 @@ type Settings struct {
 
 	// TODO not implemented yet
 	TagsGorm bool
-
-	// experimental
-	TagsSQL     bool
-	TagsSQLOnly bool
 }
 
-// NewSettings constructs settings with default values
-func NewSettings() *Settings {
+// New constructs settings with default values
+func New() *Settings {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -97,7 +159,7 @@ func NewSettings() *Settings {
 		Verbose:  false,
 		VVerbose: false,
 
-		DbType:         "pg",
+		DbType:         DbTypePostgresql,
 		User:           "postgres",
 		Pswd:           "",
 		DbName:         "postgres",
@@ -109,7 +171,7 @@ func NewSettings() *Settings {
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
-		Null:           string(NullTypeSQL),
+		Null:           NullTypeSQL,
 
 		NoInitialism: false,
 
@@ -120,22 +182,11 @@ func NewSettings() *Settings {
 		IsMastermindStructableRecorder: false,
 
 		TagsGorm: false,
-
-		TagsSQL:     false,
-		TagsSQLOnly: false,
 	}
 }
 
 // Verify verifies the settings and checks the given output paths
 func (settings *Settings) Verify() (err error) {
-
-	if !supportedDbTypes[settings.DbType] {
-		return fmt.Errorf("type of database %q not supported! supported: %v", settings.DbType, settings.SupportedDbTypes())
-	}
-
-	if !supportedOutputFormats[settings.OutputFormat] {
-		return fmt.Errorf("output format %q not supported", settings.OutputFormat)
-	}
 
 	if err = settings.verifyOutputPath(); err != nil {
 		return err
@@ -151,10 +202,6 @@ func (settings *Settings) Verify() (err error) {
 
 	if settings.PackageName == "" {
 		return fmt.Errorf("name of package can not be empty")
-	}
-
-	if !supportedNullTypes[NullType(settings.Null)] {
-		return fmt.Errorf("null type %q not supported! supported: %v", settings.Null, settings.SupportedNullTypes())
 	}
 
 	if settings.VVerbose {
@@ -185,17 +232,17 @@ func (settings *Settings) prepareOutputPath() (outputFilePath string, err error)
 	return outputFilePath, err
 }
 
-// SupportedDbTypes returns a slice of strings as names of the supported database types
-func (settings *Settings) SupportedDbTypes() string {
-	names := make([]string, 0, len(supportedDbTypes))
-	for name := range supportedDbTypes {
-		names = append(names, name)
+// SprintfSupportedDbTypes returns a slice of strings as names of the supported database types
+func SprintfSupportedDbTypes() string {
+	names := make([]string, 0, len(SupportedDbTypes))
+	for name := range SupportedDbTypes {
+		names = append(names, string(name))
 	}
 	return fmt.Sprintf("%v", names)
 }
 
-// SupportedNullTypes returns a slice of strings as names of the supported null types
-func (settings *Settings) SupportedNullTypes() string {
+// SprintfSupportedNullTypes returns a slice of strings as names of the supported null types
+func SprintfSupportedNullTypes() string {
 	names := make([]string, 0, len(supportedNullTypes))
 	for name := range supportedNullTypes {
 		names = append(names, string(name))
@@ -203,13 +250,18 @@ func (settings *Settings) SupportedNullTypes() string {
 	return fmt.Sprintf("%v", names)
 }
 
-// IsNullTypeSQL returns if the type given by command line args is of null type SQL
+// IsNullTypeSQL returns true if the type given by the command line args is of null type SQL
 func (settings *Settings) IsNullTypeSQL() bool {
-	return settings.Null == string(NullTypeSQL)
+	return settings.Null == NullTypeSQL
 }
 
 // ShouldInitialism returns wheather or not if column names should be converted
 // to initialisms.
 func (settings *Settings) ShouldInitialism() bool {
 	return !settings.NoInitialism
+}
+
+// IsOutputFormatCamelCase returns if the type given by command line args is of camel-case format.
+func (settings *Settings) IsOutputFormatCamelCase() bool {
+	return settings.OutputFormat == OutputFormatCamelCase
 }

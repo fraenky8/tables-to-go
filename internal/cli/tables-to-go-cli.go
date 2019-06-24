@@ -1,30 +1,17 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
-	"go/format"
-	"io/ioutil"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
 	"github.com/fraenky8/tables-to-go/pkg/database"
-	"github.com/fraenky8/tables-to-go/pkg/database/mysql"
-	"github.com/fraenky8/tables-to-go/pkg/database/postgresql"
+	"github.com/fraenky8/tables-to-go/pkg/output"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
 )
 
 var (
-	// map of Tagger used
-	// key is a ascending sequence of i*2 to determine which tags to generate later
-	taggers = map[int]tagger.Tagger{
-		1: new(tagger.Db),
-		2: new(tagger.Mastermind),
-		4: new(tagger.SQL),
-	}
-
-	// means that the `db`-Tag is enabled by default
-	effectiveTags = 1
+	taggers tagger.Tagger
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
@@ -32,14 +19,9 @@ var (
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *config.Settings) (err error) {
+func Run(settings *settings.Settings, db database.Database, out output.Writer) (err error) {
 
-	db, err := newDatabase(settings)
-	if err != nil {
-		return err
-	}
-
-	createEffectiveTags(settings)
+	taggers = tagger.NewTaggers(settings)
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
@@ -72,8 +54,9 @@ func Run(settings *config.Settings) (err error) {
 
 		tableName, content := createTableStructString(settings, db, table)
 
-		if err = createStructFile(settings.OutputFilePath, tableName, content); err != nil {
-			return fmt.Errorf("could not create struct file for table %s: %v", table.Name, err)
+		err = out.Write(tableName, content)
+		if err != nil {
+			return fmt.Errorf("could not write struct for table %s: %v", table.Name, err)
 		}
 	}
 
@@ -82,60 +65,18 @@ func Run(settings *config.Settings) (err error) {
 	return nil
 }
 
-func newDatabase(settings *config.Settings) (database.Database, error) {
-
-	gdb := database.New(settings)
-
-	var db database.Database
-
-	switch settings.DbType {
-	case "mysql":
-		db = mysql.New(gdb)
-	case "pg":
-		fallthrough
-	default:
-		db = postgresql.New(gdb)
-	}
-
-	if err := db.Connect(); err != nil {
-		return nil, fmt.Errorf("could not connect to database: %v", err)
-	}
-
-	return db, nil
-}
-
-func createEffectiveTags(settings *config.Settings) {
-	if settings.TagsNoDb {
-		effectiveTags = 0
-	}
-	if settings.TagsMastermindStructable {
-		effectiveTags |= 2
-	}
-	if settings.TagsMastermindStructableOnly {
-		effectiveTags = 0
-		effectiveTags |= 2
-	}
-	if settings.TagsSQL {
-		effectiveTags |= 4
-	}
-	if settings.TagsSQLOnly {
-		effectiveTags = 0
-		effectiveTags |= 4
-	}
-	// last tag-"ONLY" wins if multiple specified
-}
-
 type columnInfo struct {
-	isTime              bool
+	isNullable          bool
+	isTemporal          bool
 	isNullablePrimitive bool
-	isNullableTime      bool
+	isNullableTemporal  bool
 }
 
 func (c columnInfo) hasTrue() bool {
-	return c.isTime || c.isNullableTime || c.isNullablePrimitive
+	return c.isNullable || c.isTemporal || c.isNullableTemporal || c.isNullablePrimitive
 }
 
-func createTableStructString(settings *config.Settings, db database.Database, table *database.Table) (string, string) {
+func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string) {
 
 	var structFields strings.Builder
 
@@ -145,13 +86,12 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	for _, column := range table.Columns {
 
 		columnName := strings.Title(column.Name)
-		if settings.OutputFormat == config.OutputFormatCamelCase {
+		if settings.IsOutputFormatCamelCase() {
 			columnName = camelCaseString(column.Name)
 		}
 		if settings.ShouldInitialism() {
 			columnName = toInitialisms(columnName)
 		}
-		columnType, isTimeType := mapDbColumnTypeToGoType(settings, db, column)
 
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
@@ -166,20 +106,25 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 			fmt.Printf("\t\t> %v\r\n", column.Name)
 		}
 
+		columnType, col := mapDbColumnTypeToGoType(settings, db, column)
+
+		// save that we saw types of columns at least once
+		if !columnInfo.isTemporal {
+			columnInfo.isTemporal = col.isTemporal
+		}
+		if !columnInfo.isNullableTemporal {
+			columnInfo.isNullableTemporal = col.isNullableTemporal
+		}
+		if !columnInfo.isNullablePrimitive {
+			columnInfo.isNullablePrimitive = col.isNullablePrimitive
+		}
+
 		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
-		structFields.WriteString(generateTags(db, column))
+		structFields.WriteString(" ")
+		structFields.WriteString(taggers.GenerateTag(db, column))
 		structFields.WriteString("\n")
-
-		// save some info for later use
-		columnInfo.isNullablePrimitive = db.IsNullable(column) && !db.IsTemporal(column)
-
-		// save that we saw a time type column at least once
-		if isTimeType {
-			columnInfo.isTime = true
-			columnInfo.isNullableTime = db.IsNullable(column)
-		}
 	}
 
 	if settings.IsMastermindStructableRecorder {
@@ -197,7 +142,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	generateImports(&fileContent, settings, db, columnInfo)
 
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
-	if settings.OutputFormat == config.OutputFormatCamelCase {
+	if settings.IsOutputFormatCamelCase() {
 		tableName = camelCaseString(tableName)
 	}
 
@@ -211,7 +156,7 @@ func createTableStructString(settings *config.Settings, db database.Database, ta
 	return tableName, fileContent.String()
 }
 
-func generateImports(content *strings.Builder, settings *config.Settings, db database.Database, columnInfo columnInfo) {
+func generateImports(content *strings.Builder, settings *settings.Settings, db database.Database, columnInfo columnInfo) {
 
 	if !columnInfo.hasTrue() && !settings.IsMastermindStructableRecorder {
 		return
@@ -223,107 +168,90 @@ func generateImports(content *strings.Builder, settings *config.Settings, db dat
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
-	if settings.IsMastermindStructableRecorder {
-		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+	if columnInfo.isTemporal {
+		content.WriteString("\t\"time\"\n")
 	}
 
-	if columnInfo.isTime {
-		if columnInfo.isNullableTime && settings.IsNullTypeSQL() {
-			content.WriteString("\t\n")
-			content.WriteString(db.GetDriverImportLibrary())
-			content.WriteString("\n")
-		} else {
-			content.WriteString("\t\"time\"\n")
-		}
+	if columnInfo.isNullableTemporal && settings.IsNullTypeSQL() {
+		content.WriteString("\t\n")
+		content.WriteString(db.GetDriverImportLibrary())
+		content.WriteString("\n")
+	}
+
+	if settings.IsMastermindStructableRecorder {
+		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 	}
 
 	content.WriteString(")\n\n")
 }
 
-func createStructFile(path, name, content string) error {
-
-	fileName := path + name + ".go"
-
-	// format it
-	formatedContent, err := format.Source([]byte(content))
-	if err != nil {
-		return fmt.Errorf("could not format file %s: %v", fileName, err)
-	}
-
-	// fight the symptom instead of the cause - if we didnt imported anything, remove it
-	formatedContent = bytes.ReplaceAll(formatedContent, []byte("\nimport ()\n"), []byte(""))
-
-	return ioutil.WriteFile(fileName, formatedContent, 0666)
-}
-
-func generateTags(db database.Database, column database.Column) (tags string) {
-	for t := 1; t <= effectiveTags; t *= 2 {
-		shouldTag := effectiveTags&t > 0
-		if shouldTag {
-			tags += taggers[t].GenerateTag(db, column) + " "
-		}
-	}
-	if len(tags) > 0 {
-		tags = " `" + strings.TrimSpace(tags) + "`"
-	}
-	return tags
-}
-
-func mapDbColumnTypeToGoType(settings *config.Settings, db database.Database, column database.Column) (goType string, isTime bool) {
-
-	isTime = false
-
+func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
 	if db.IsString(column) || db.IsText(column) {
 		goType = "string"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*string", "sql.NullString")
+			goType = getNullType(s, "*string", "sql.NullString")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsInteger(column) {
 		goType = "int"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*int", "sql.NullInt64")
+			goType = getNullType(s, "*int", "sql.NullInt64")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsFloat(column) {
 		goType = "float64"
 		if db.IsNullable(column) {
-			goType = getNullType(settings, "*float64", "sql.NullFloat64")
+			goType = getNullType(s, "*float64", "sql.NullFloat64")
+			columnInfo.isNullable = true
 		}
 	} else if db.IsTemporal(column) {
-		goType = "time.Time"
-		if db.IsNullable(column) {
-			goType = getNullType(settings, "*time.Time", db.GetTemporalDriverDataType())
+		if !db.IsNullable(column) {
+			goType = "time.Time"
+			columnInfo.isTemporal = true
+		} else {
+			goType = getNullType(s, "*time.Time", db.GetTemporalDriverDataType())
+			columnInfo.isTemporal = s.Null == settings.NullTypeNative
+			columnInfo.isNullableTemporal = true
+			columnInfo.isNullable = true
 		}
-		isTime = true
 	} else {
 		// TODO handle special data types
 		switch column.DataType {
 		case "boolean":
 			goType = "bool"
 			if db.IsNullable(column) {
-				goType = getNullType(settings, "*bool", "sql.NullBool")
+				goType = getNullType(s, "*bool", "sql.NullBool")
+				columnInfo.isNullable = true
 			}
 		default:
-			goType = getNullType(settings, "*string", "sql.NullString")
+			goType = getNullType(s, "*string", "sql.NullString")
 		}
 	}
 
-	return goType, isTime
+	columnInfo.isNullablePrimitive = columnInfo.isNullable && !db.IsTemporal(column)
+
+	return goType, columnInfo
 }
 
-func getNullType(settings *config.Settings, primitive string, sql string) string {
+func getNullType(settings *settings.Settings, primitive string, sql string) string {
 	if settings.IsNullTypeSQL() {
 		return sql
 	}
 	return primitive
 }
 
-func camelCaseString(s string) (cc string) {
+func camelCaseString(s string) string {
+	if s == "" {
+		return s
+	}
+
 	splitted := strings.Split(s, "_")
 
 	if len(splitted) == 1 {
 		return strings.Title(s)
 	}
 
+	var cc string
 	for _, part := range splitted {
 		cc += strings.Title(strings.ToLower(part))
 	}

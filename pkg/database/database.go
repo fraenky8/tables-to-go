@@ -6,20 +6,20 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fraenky8/tables-to-go/pkg/config"
+	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
 var (
 	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[string]string{
-		"pg":    "postgres",
-		"mysql": "mysql",
+	dbTypeToDriverMap = map[settings.DbType]string{
+		settings.DbTypePostgresql: "postgres",
+		settings.DbTypeMySQL:      "mysql",
 	}
 )
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *config.Settings) string
+	DSN(settings *settings.Settings) string
 	Connect() (err error)
 	Close() (err error)
 	GetDriverImportLibrary() string
@@ -78,16 +78,25 @@ type Column struct {
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*sqlx.DB
-	*config.Settings
+	*settings.Settings
 	driver string
 }
 
-// New creates a new GeneralDatabase
-func New(settings *config.Settings) *GeneralDatabase {
-	return &GeneralDatabase{
-		Settings: settings,
-		driver:   dbTypeToDriverMap[settings.DbType],
+// New creates a new Database based on the given type in the settings.
+func New(s *settings.Settings) Database {
+
+	var db Database
+
+	switch settings.DbType(s.DbType) {
+	case settings.DbTypeMySQL:
+		db = NewMySQL(s)
+	case settings.DbTypePostgresql:
+		fallthrough
+	default:
+		db = NewPostgresql(s)
 	}
+
+	return db
 }
 
 // Connect establishes a connection to the database with the given DSN.
@@ -100,7 +109,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 			usingPswd = "yes"
 		}
 		return fmt.Errorf(
-			"Connection to Database (type=%q, user=%q, database=%q, host='%v:%v' (using password: %v) failed:\r\n%v",
+			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %v",
 			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
 		)
 	}
