@@ -71,6 +71,10 @@ func (t *Taggers) enableTags() {
 // the tag for the struct field.
 func (t *Taggers) GenerateTag(db database.Database, column database.Column) (tags string) {
 	sb := stringPool.Get().(*strings.Builder)
+	defer func() {
+		sb.Reset()
+		stringPool.Put(sb)
+	}()
 
 	for bit := 1; bit <= t.enabledTags; bit *= 2 {
 		shouldTag := t.enabledTags&bit > 0
