@@ -49,6 +49,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 				return fmt.Errorf("could not get columns of table %s: %v", table.Name, err)
 			}
 			fmt.Printf("could not get columns of table %s: %v\n", table.Name, err)
+			continue
 		}
 
 		if settings.Verbose {

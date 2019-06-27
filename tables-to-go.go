@@ -87,7 +87,7 @@ func main() {
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
 	if err := cli.Run(cmdArgs.Settings, db, writer); err != nil {
-		fmt.Printf("run error: %v", err)
+		fmt.Printf("run error: %v\n", err)
 		os.Exit(1)
 	}
 }
