@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/pkg/database"
@@ -15,7 +16,8 @@ var (
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
-	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL"}
+	initialisms       = []string{"ID", "JSON", "XML", "HTTP", "URL"}
+	validVariableName = regexp.MustCompile("^[a-zA-Z_0-9]+$").MatchString
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
@@ -56,7 +58,14 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
-		tableName, content := createTableStructString(settings, db, table)
+		tableName, content, err := createTableStructString(settings, db, table)
+		if err != nil {
+			if !settings.Force {
+				return fmt.Errorf("could not create string for table %s: %v", table.Name, err)
+			}
+			fmt.Printf("could not create string for table %s: %v\n", table.Name, err)
+			continue
+		}
 
 		err = out.Write(tableName, content)
 		if err != nil {
@@ -83,9 +92,18 @@ func (c columnInfo) hasTrue() bool {
 	return c.isNullable || c.isTemporal || c.isNullableTemporal || c.isNullablePrimitive
 }
 
-func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string) {
+func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
 
 	var structFields strings.Builder
+
+	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
+	if settings.IsOutputFormatCamelCase() {
+		tableName = camelCaseString(tableName)
+	}
+	// Check that the table name doesn't contain any invalid characters for Go variables
+	if !validVariableName(tableName) {
+		return "", "", fmt.Errorf("Table name %q contains invalid characters", tableName)
+	}
 
 	columnInfo := columnInfo{}
 	columns := map[string]struct{}{}
@@ -99,7 +117,10 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		if settings.ShouldInitialism() {
 			columnName = toInitialisms(columnName)
 		}
-
+		// Check that the column name doesn't contain any invalid characters for Go variables
+		if !validVariableName(columnName) {
+			return "", "", fmt.Errorf("Column name %q in table %q contains invalid characters", columnName, tableName)
+		}
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
@@ -148,11 +169,6 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	// write imports
 	generateImports(&fileContent, settings, db, columnInfo)
 
-	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
-	if settings.IsOutputFormatCamelCase() {
-		tableName = camelCaseString(tableName)
-	}
-
 	// write struct with fields
 	fileContent.WriteString("type ")
 	fileContent.WriteString(tableName)
@@ -160,7 +176,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	fileContent.WriteString(structFields.String())
 	fileContent.WriteString("}")
 
-	return tableName, fileContent.String()
+	return tableName, fileContent.String(), nil
 }
 
 func generateImports(content *strings.Builder, settings *settings.Settings, db database.Database, columnInfo columnInfo) {
