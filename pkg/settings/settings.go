@@ -117,6 +117,7 @@ var (
 type Settings struct {
 	Verbose  bool
 	VVerbose bool
+	Force    bool // continue through errors
 
 	DbType DbType
 
@@ -158,6 +159,7 @@ func New() *Settings {
 	return &Settings{
 		Verbose:  false,
 		VVerbose: false,
+		Force:    false,
 
 		DbType:         DbTypePostgresql,
 		User:           "postgres",
