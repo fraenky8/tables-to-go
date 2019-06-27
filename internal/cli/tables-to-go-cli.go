@@ -45,7 +45,10 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 		}
 
 		if err = db.GetColumnsOfTable(table); err != nil {
-			return fmt.Errorf("could not get columns of table %s: %v", table.Name, err)
+			if !settings.Force {
+				return fmt.Errorf("could not get columns of table %s: %v", table.Name, err)
+			}
+			fmt.Printf("could not get columns of table %s: %v\n", table.Name, err)
 		}
 
 		if settings.Verbose {
@@ -56,7 +59,10 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 
 		err = out.Write(tableName, content)
 		if err != nil {
-			return fmt.Errorf("could not write struct for table %s: %v", table.Name, err)
+			if !settings.Force {
+				return fmt.Errorf("could not write struct for table %s: %v", table.Name, err)
+			}
+			fmt.Printf("could not write struct for table %s: %v\n", table.Name, err)
 		}
 	}
 
