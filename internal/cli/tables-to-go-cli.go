@@ -120,6 +120,14 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		if !validVariableName(columnName) {
 			return "", "", fmt.Errorf("Column name %q in table %q contains invalid characters", columnName, tableName)
 		}
+		// First character of an identifier in Go must be letter or _
+		// We want it to be an uppercase letter to be a public field
+		if !unicode.IsLetter([]rune(columnName)[0]) {
+			if settings.Verbose {
+				fmt.Printf("\t\t>Column %q in table %q doesn't start with a letter; prepending with X_\n", columnName, tableName)
+			}
+			columnName = "X_" + columnName
+		}
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
