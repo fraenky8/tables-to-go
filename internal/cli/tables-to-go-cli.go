@@ -101,7 +101,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	}
 	// Check that the table name doesn't contain any invalid characters for Go variables
 	if !validVariableName(tableName) {
-		return "", "", fmt.Errorf("Table name %q contains invalid characters", tableName)
+		return "", "", fmt.Errorf("Table name %q contains invalid characters", table.Name)
 	}
 
 	columnInfo := columnInfo{}
@@ -118,13 +118,13 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		}
 		// Check that the column name doesn't contain any invalid characters for Go variables
 		if !validVariableName(columnName) {
-			return "", "", fmt.Errorf("Column name %q in table %q contains invalid characters", columnName, tableName)
+			return "", "", fmt.Errorf("Column name %q in table %q contains invalid characters", column.Name, table.Name)
 		}
 		// First character of an identifier in Go must be letter or _
 		// We want it to be an uppercase letter to be a public field
 		if !unicode.IsLetter([]rune(columnName)[0]) {
 			if settings.Verbose {
-				fmt.Printf("\t\t>Column %q in table %q doesn't start with a letter; prepending with X_\n", columnName, tableName)
+				fmt.Printf("\t\t>Column %q in table %q doesn't start with a letter; prepending with X_\n", column.Name, table.Name)
 			}
 			columnName = "X_" + columnName
 		}
