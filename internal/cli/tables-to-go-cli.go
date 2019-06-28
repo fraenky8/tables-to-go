@@ -94,11 +94,13 @@ func (c columnInfo) hasTrue() bool {
 func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
 
 	var structFields strings.Builder
-
 	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
+	// Replace any whitespace with underscores
+	tableName = strings.Map(replaceSpace, tableName)
 	if settings.IsOutputFormatCamelCase() {
 		tableName = camelCaseString(tableName)
 	}
+
 	// Check that the table name doesn't contain any invalid characters for Go variables
 	if !validVariableName(tableName) {
 		return "", "", fmt.Errorf("Table name %q contains invalid characters", table.Name)
@@ -110,12 +112,15 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	for _, column := range table.Columns {
 
 		columnName := strings.Title(column.Name)
+		// Replace any whitespace with underscores
+		columnName = strings.Map(replaceSpace, columnName)
 		if settings.IsOutputFormatCamelCase() {
-			columnName = camelCaseString(column.Name)
+			columnName = camelCaseString(columnName)
 		}
 		if settings.ShouldInitialism() {
 			columnName = toInitialisms(columnName)
 		}
+
 		// Check that the column name doesn't contain any invalid characters for Go variables
 		if !validVariableName(columnName) {
 			return "", "", fmt.Errorf("Column name %q in table %q contains invalid characters", column.Name, table.Name)
@@ -314,4 +319,13 @@ func validVariableName(str string) bool {
 		}
 	}
 	return true
+}
+
+// ReplaceSpace swaps any Unicode space characters for underscores
+// to create valid Go identifiers
+func replaceSpace(r rune) rune {
+	if unicode.IsSpace(r) {
+		return '_'
+	}
+	return r
 }
