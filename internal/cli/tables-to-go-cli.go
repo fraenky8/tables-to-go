@@ -2,8 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
@@ -16,8 +16,7 @@ var (
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
-	initialisms       = []string{"ID", "JSON", "XML", "HTTP", "URL"}
-	validVariableName = regexp.MustCompile("^[a-zA-Z_0-9]+$").MatchString
+	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL"}
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
@@ -296,4 +295,15 @@ func toInitialisms(s string) string {
 func indexCaseInsensitive(s, substr string) int {
 	s, substr = strings.ToLower(s), strings.ToLower(substr)
 	return strings.Index(s, substr)
+}
+
+// ValidVariableName checks for the existence of any characters
+// outside of Unicode letters, numbers and underscore.
+func validVariableName(str string) bool {
+	for _, r := range str {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_') {
+			return false
+		}
+	}
+	return true
 }
