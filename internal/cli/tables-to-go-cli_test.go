@@ -1646,3 +1646,31 @@ func TestValidVariableName(t *testing.T) {
 		})
 	}
 }
+
+func TestReplaceSpace(t *testing.T) {
+	type testCase struct {
+		name     string
+		input    rune
+		expected rune
+	}
+	tests := []testCase{
+		{"letter", 'a', 'a'},
+		{"number", '7', '7'},
+		{"nonEnglish", '水', '水'},
+		{"space", ' ', '_'},
+		{"underscore", '_', '_'},
+		{"tab", '\t', '_'},
+		{"newline", '\n', '_'},
+		{"zeroWidthSpace", '​', '_'},
+		{"nonBreakingSpace", ' ', '_'},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			output := replaceSpace(tc.input)
+			if output != tc.expected {
+				t.Errorf("replaceSpace(%q) = %q, expected %q", tc.input, output, tc.expected)
+			}
+		})
+	}
+
+}

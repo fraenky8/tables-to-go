@@ -324,7 +324,7 @@ func validVariableName(str string) bool {
 // ReplaceSpace swaps any Unicode space characters for underscores
 // to create valid Go identifiers
 func replaceSpace(r rune) rune {
-	if unicode.IsSpace(r) {
+	if unicode.IsSpace(r) || r == '\u200B' {
 		return '_'
 	}
 	return r
