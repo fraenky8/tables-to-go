@@ -1623,3 +1623,26 @@ func TestRun_BooleanColumns(t *testing.T) {
 		})
 	}
 }
+
+func TestValidVariableName(t *testing.T) {
+	type testCase struct {
+		name     string
+		input    string
+		expected bool
+	}
+	tests := []testCase{
+		{"basic", "MyVariable_2", true},
+		{"specialChars", "MyVar;iable", false},
+		{"brackets", "MyVariabl(e)", false},
+		{"nonEnglish", "MyVαriαble", true},
+		{"spaces", "My Variable", false},
+		{"whitespace", "My		Variable", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if validVariableName(tc.input) != tc.expected {
+				t.Errorf("TestValidVariableName(%q) should be %t", tc.input, tc.expected)
+			}
+		})
+	}
+}
