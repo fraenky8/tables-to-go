@@ -312,8 +312,8 @@ func indexCaseInsensitive(s, substr string) int {
 
 // ValidVariableName checks for the existence of any characters
 // outside of Unicode letters, numbers and underscore.
-func validVariableName(str string) bool {
-	for _, r := range str {
+func validVariableName(s string) bool {
+	for _, r := range s {
 		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_') {
 			return false
 		}
