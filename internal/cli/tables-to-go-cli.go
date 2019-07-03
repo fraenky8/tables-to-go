@@ -110,29 +110,11 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	columns := map[string]struct{}{}
 
 	for _, column := range table.Columns {
-
-		columnName := strings.Title(column.Name)
-		// Replace any whitespace with underscores
-		columnName = strings.Map(replaceSpace, columnName)
-		if settings.IsOutputFormatCamelCase() {
-			columnName = camelCaseString(columnName)
-		}
-		if settings.ShouldInitialism() {
-			columnName = toInitialisms(columnName)
+		columnName, err := formatColumnName(settings, column.Name, table.Name)
+		if err != nil {
+			return "", "", err
 		}
 
-		// Check that the column name doesn't contain any invalid characters for Go variables
-		if !validVariableName(columnName) {
-			return "", "", fmt.Errorf("column name %q in table %q contains invalid characters", column.Name, table.Name)
-		}
-		// First character of an identifier in Go must be letter or _
-		// We want it to be an uppercase letter to be a public field
-		if !unicode.IsLetter([]rune(columnName)[0]) {
-			if settings.Verbose {
-				fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with X_\n", column.Name, table.Name)
-			}
-			columnName = "X_" + columnName
-		}
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
 		// Therefore we check if we already added a column with
@@ -328,4 +310,44 @@ func replaceSpace(r rune) rune {
 		return '_'
 	}
 	return r
+}
+
+// FormatColumnName checks for invalid characters and transforms a column name
+// according to the provided settings.
+func formatColumnName(settings *settings.Settings, column, table string) (string, error) {
+
+	// Columns that don't start with a capital letter must have one prefixed
+	// to be public fields
+	var prefix string
+	if settings.IsOutputFormatCamelCase() {
+		prefix = "X"
+	} else {
+		prefix = "X_"
+	}
+
+	// Replace any whitespace with underscores
+	columnName := strings.Map(replaceSpace, column)
+	columnName = strings.Title(columnName)
+
+	if settings.IsOutputFormatCamelCase() {
+		columnName = camelCaseString(columnName)
+	}
+	if settings.ShouldInitialism() {
+		columnName = toInitialisms(columnName)
+	}
+
+	// Check that the column name doesn't contain any invalid characters for Go variables
+	if !validVariableName(columnName) {
+		return "", fmt.Errorf("column name %q in table %q contains invalid characters", column, table)
+	}
+	// First character of an identifier in Go must be letter or _
+	// We want it to be an uppercase letter to be a public field
+	if !unicode.IsLetter([]rune(columnName)[0]) {
+		if settings.Verbose {
+			fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
+		}
+		columnName = prefix + columnName
+	}
+
+	return columnName, nil
 }
