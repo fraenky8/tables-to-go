@@ -316,15 +316,6 @@ func replaceSpace(r rune) rune {
 // according to the provided settings.
 func formatColumnName(settings *settings.Settings, column, table string) (string, error) {
 
-	// Columns that don't start with a capital letter must have one prefixed
-	// to be public fields
-	var prefix string
-	if settings.IsOutputFormatCamelCase() {
-		prefix = "X"
-	} else {
-		prefix = "X_"
-	}
-
 	// Replace any whitespace with underscores
 	columnName := strings.Map(replaceSpace, column)
 	columnName = strings.Title(columnName)
@@ -343,6 +334,10 @@ func formatColumnName(settings *settings.Settings, column, table string) (string
 	// First character of an identifier in Go must be letter or _
 	// We want it to be an uppercase letter to be a public field
 	if !unicode.IsLetter([]rune(columnName)[0]) {
+		prefix := "X_"
+		if settings.IsOutputFormatCamelCase() {
+			prefix = "X"
+		}
 		if settings.Verbose {
 			fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
 		}
