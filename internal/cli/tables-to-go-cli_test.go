@@ -1623,3 +1623,124 @@ func TestRun_BooleanColumns(t *testing.T) {
 		})
 	}
 }
+
+func TestValidVariableName(t *testing.T) {
+	type testCase struct {
+		name     string
+		input    string
+		expected bool
+	}
+	tests := []testCase{
+		{"basic", "MyVariable_2", true},
+		{"specialChars", "MyVar;iable", false},
+		{"brackets", "MyVariabl(e)", false},
+		{"nonEnglish", "MyVαriαble", true},
+		{"spaces", "My Variable", false},
+		{"whitespace", "My		Variable", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if validVariableName(tc.input) != tc.expected {
+				t.Errorf("TestValidVariableName(%q) should be %t", tc.input, tc.expected)
+			}
+		})
+	}
+}
+
+func TestReplaceSpace(t *testing.T) {
+	type testCase struct {
+		name     string
+		input    rune
+		expected rune
+	}
+	tests := []testCase{
+		{"letter", 'a', 'a'},
+		{"number", '7', '7'},
+		{"nonEnglish", '水', '水'},
+		{"space", ' ', '_'},
+		{"underscore", '_', '_'},
+		{"tab", '\t', '_'},
+		{"newline", '\n', '_'},
+		{"zeroWidthSpace", '​', '_'},
+		{"nonBreakingSpace", ' ', '_'},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			output := replaceSpace(tc.input)
+			if output != tc.expected {
+				t.Errorf("replaceSpace(%q) = %q, expected %q", tc.input, output, tc.expected)
+			}
+		})
+	}
+
+}
+
+func TestFormatColumnName(t *testing.T) {
+	// success and failure subtests
+	t.Run("pass", func(t *testing.T) {
+		type testCase struct {
+			name     string
+			input    string
+			original string
+			camel    string
+		}
+		tests := []testCase{
+			{"startWithNumber", "1fish2fish", "X_1fish2fish", "X1fish2fish"},
+			{"containsSpaces", "my column\twith\nmany​spaces", "My_column_with_many_spaces", "MyColumnWithManySpaces"},
+			{"titleCase", "MyColumn", "MyColumn", "MyColumn"},
+			{"snakeCase", "my_column", "My_column", "MyColumn"},
+			{"titleSnake", "My_Column", "My_Column", "MyColumn"},
+			{"numbersOnly", "123", "X_123", "X123"},
+			{"nonEnglish", "火", "火", "火"},
+			{"nonEnglishUpper", "Λλ", "Λλ", "Λλ"},
+		}
+		// subtests for camelCase and original settings
+		camelSettings := settings.New()
+		camelSettings.OutputFormat = settings.OutputFormatCamelCase
+		originalSettings := settings.New()
+		originalSettings.OutputFormat = settings.OutputFormatOriginal
+		t.Run("camelcase", func(t *testing.T) {
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					output, err := formatColumnName(camelSettings, tc.input, "MyTable")
+					if err != nil {
+						t.Error(err)
+					} else if output != tc.camel {
+						t.Errorf("camelcase format of %q = %q, expected %q", tc.input, output, tc.camel)
+					}
+				})
+			}
+		})
+		t.Run("original", func(t *testing.T) {
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					output, err := formatColumnName(originalSettings, tc.input, "MyTable")
+					if err != nil {
+						t.Error(err)
+					} else if output != tc.original {
+						t.Errorf("originalCase format of %q = %q, expected %q", tc.input, output, tc.original)
+					}
+				})
+			}
+		})
+	})
+	t.Run("fail", func(t *testing.T) {
+		type testCase struct {
+			name  string
+			input string
+		}
+		tests := []testCase{
+			{"semicolons", "MyColumn;"},
+			{"brackets", "MyColumn()"},
+		}
+		settings := settings.New()
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := formatColumnName(settings, tc.input, "MyTable")
+				if err == nil {
+					t.Errorf("formatColumnName(%q) should have thrown error but didn't", tc.input)
+				}
+			})
+		}
+	})
+}
