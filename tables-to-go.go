@@ -28,6 +28,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.Help, "help", false, "shows help and usage")
 	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
 	flag.BoolVar(&args.VVerbose, "vv", args.VVerbose, "more verbose output")
+	flag.BoolVar(&args.Force, "f", args.Force, "force; skip tables that encounter errors")
 
 	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
@@ -86,7 +87,7 @@ func main() {
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
 	if err := cli.Run(cmdArgs.Settings, db, writer); err != nil {
-		fmt.Printf("run error: %v", err)
+		fmt.Printf("run error: %v\n", err)
 		os.Exit(1)
 	}
 }

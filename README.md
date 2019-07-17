@@ -138,6 +138,8 @@ tables-to-go -help
   -?	shows help and usage
   -d string
     	database name (default "postgres")
+  -f
+        force, skip tables that encounter errors but construct all others
   -format string
     	format of struct fields (columns): camelCase (c) or original (o) (default "c")
   -h string
