@@ -20,7 +20,7 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 	return &Postgresql{
 		GeneralDatabase: &GeneralDatabase{
 			Settings: s,
-			driver:   dbTypeToDriverMap[settings.DbType(s.DbType)],
+			driver:   dbTypeToDriverMap[s.DbType],
 		},
 	}
 }

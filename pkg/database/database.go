@@ -14,6 +14,7 @@ var (
 	dbTypeToDriverMap = map[settings.DbType]string{
 		settings.DbTypePostgresql: "postgres",
 		settings.DbTypeMySQL:      "mysql",
+		settings.DbTypeSQLite:     "sqlite3",
 	}
 )
 
@@ -88,6 +89,8 @@ func New(s *settings.Settings) Database {
 	var db Database
 
 	switch settings.DbType(s.DbType) {
+	case settings.DbTypeSQLite:
+		db = NewSQLite(s)
 	case settings.DbTypeMySQL:
 		db = NewMySQL(s)
 	case settings.DbTypePostgresql:

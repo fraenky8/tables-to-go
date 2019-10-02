@@ -10,6 +10,7 @@ import (
 const (
 	DbTypePostgresql DbType = "pg"
 	DbTypeMySQL      DbType = "mysql"
+	DbTypeSQLite     DbType = "sqlite3"
 )
 
 // DbType represents a type of a database.
@@ -91,6 +92,7 @@ var (
 	SupportedDbTypes = map[DbType]bool{
 		DbTypePostgresql: true,
 		DbTypeMySQL:      true,
+		DbTypeSQLite:     true,
 	}
 
 	// supportedOutputFormats represents the supported output formats
@@ -103,6 +105,7 @@ var (
 	dbDefaultPorts = map[DbType]string{
 		DbTypePostgresql: "5432",
 		DbTypeMySQL:      "3306",
+		DbTypeSQLite:     "",
 	}
 
 	// supportedNullTypes represents the supported types of NULL types
