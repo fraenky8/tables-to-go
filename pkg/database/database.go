@@ -20,7 +20,7 @@ var (
 
 // Database interface for the concrete databases
 type Database interface {
-	DSN(settings *settings.Settings) string
+	DSN() string
 	Connect() (err error)
 	Close() (err error)
 	GetDriverImportLibrary() string
@@ -88,7 +88,7 @@ func New(s *settings.Settings) Database {
 
 	var db Database
 
-	switch settings.DbType(s.DbType) {
+	switch s.DbType {
 	case settings.DbTypeSQLite:
 		db = NewSQLite(s)
 	case settings.DbTypeMySQL:

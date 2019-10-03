@@ -27,13 +27,13 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 
 // Connect connects to the database by the given data source name (dsn) of the concrete database
 func (pg *Postgresql) Connect() error {
-	return pg.GeneralDatabase.Connect(pg.DSN(pg.Settings))
+	return pg.GeneralDatabase.Connect(pg.DSN())
 }
 
 // DSN creates the DSN String to connect to this database
-func (pg *Postgresql) DSN(settings *settings.Settings) string {
+func (pg *Postgresql) DSN() string {
 	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
-		settings.Host, settings.Port, settings.User, settings.DbName, settings.Pswd)
+		pg.Settings.Host, pg.Settings.Port, pg.Settings.User, pg.Settings.DbName, pg.Settings.Pswd)
 }
 
 // GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database

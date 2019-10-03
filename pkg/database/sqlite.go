@@ -26,11 +26,11 @@ func NewSQLite(s *settings.Settings) *SQLite {
 }
 
 func (s *SQLite) Connect() (err error) {
-	return s.GeneralDatabase.Connect(s.DSN(s.Settings))
+	return s.GeneralDatabase.Connect(s.DSN())
 }
 
-func (s *SQLite) DSN(settings *settings.Settings) string {
-	return fmt.Sprintf("%v", settings.DbName)
+func (s *SQLite) DSN() string {
+	return fmt.Sprintf("%v", s.Settings.DbName)
 }
 
 func (s *SQLite) GetDriverImportLibrary() string {
