@@ -165,7 +165,7 @@ func New() *Settings {
 		Force:    false,
 
 		DbType:         DbTypePostgresql,
-		User:           "postgres",
+		User:           "",
 		Pswd:           "",
 		DbName:         "postgres",
 		Schema:         "public",

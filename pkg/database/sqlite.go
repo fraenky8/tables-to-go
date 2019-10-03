@@ -3,11 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/fraenky8/tables-to-go/pkg/settings"
-
-	// sqlite3 database driver
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // SQLite implemenmts the Database interface with help of generalDatabase
@@ -30,7 +29,22 @@ func (s *SQLite) Connect() (err error) {
 }
 
 func (s *SQLite) DSN() string {
-	return fmt.Sprintf("%v", s.Settings.DbName)
+	if s.Settings.User == "" && s.Settings.Pswd == "" {
+		return fmt.Sprintf("%v", s.Settings.DbName)
+	}
+
+	u, err := url.Parse(s.DbName)
+	if err != nil {
+		return fmt.Sprintf("%v", s.Settings.DbName)
+	}
+
+	query := u.Query()
+	query.Set("_auth_user", s.Settings.User)
+	query.Set("_auth_pass", s.Settings.Pswd)
+	u.RawQuery = query.Encode()
+
+	// SQLite driver expects a empty `_auth` request param
+	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
 func (s *SQLite) GetDriverImportLibrary() string {

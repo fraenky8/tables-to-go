@@ -13,6 +13,8 @@ import (
 // Postgresql implemenmts the Database interface with help of generalDatabase
 type Postgresql struct {
 	*GeneralDatabase
+
+	defaultUserName string
 }
 
 // NewPostgresql creates a new Postgresql database
@@ -22,6 +24,7 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 			Settings: s,
 			driver:   dbTypeToDriverMap[s.DbType],
 		},
+		defaultUserName: "postgres",
 	}
 }
 
@@ -32,8 +35,12 @@ func (pg *Postgresql) Connect() error {
 
 // DSN creates the DSN String to connect to this database
 func (pg *Postgresql) DSN() string {
+	user := pg.defaultUserName
+	if pg.Settings.User != "" {
+		user = pg.Settings.User
+	}
 	return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
-		pg.Settings.Host, pg.Settings.Port, pg.Settings.User, pg.Settings.DbName, pg.Settings.Pswd)
+		pg.Settings.Host, pg.Settings.Port, user, pg.Settings.DbName, pg.Settings.Pswd)
 }
 
 // GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database
