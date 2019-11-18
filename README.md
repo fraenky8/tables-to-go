@@ -1,7 +1,8 @@
 # Tables-to-Go
 > convert your database tables to structs easily
 
-A small and helpful tool which helps during developing with a changing database schema.
+A small and convenient tool supporting development against a changing 
+database schema.
 
 **Tables change, run the tool, get your structs!**
 
@@ -9,11 +10,23 @@ A small and helpful tool which helps during developing with a changing database 
 [![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
 [![Code Coverage](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/?branch=master)
 
-## Installing
+## Install
+
+This project provides a make file but can also simply installed with the usual
+go-get command:
 
 ```
 go get github.com/fraenky8/tables-to-go
 ```
+
+To enable SQLite3 support, run the make file:
+
+```
+make sqlite3
+```
+
+See [this PR](https://github.com/fraenky8/tables-to-go/pull/23) why it's 
+disabled by default.
 
 ## Getting started
 
@@ -21,15 +34,18 @@ go get github.com/fraenky8/tables-to-go
 tables-to-go -v -of ../path/to/my/models
 ```
 
-This gets all tables of a local running PostgreSQL database. Therefore it uses the database `postgres`, schema `public` and user `postgres` with no password.
-Flag `-v` is verbose mode, `-of` is the output file path where the go files containing the structs will get created (default: current working directory).
+This gets all tables of a local running PostgreSQL database. Therefore it uses 
+the database `postgres`, schema `public` and user `postgres` with no password.
+Flag `-v` is verbose mode, `-of` is the output file path where the go files 
+containing the structs will get created (default: current working directory).
 
 ## Features
 
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formated files with imports
-* automatically typed struct fields, either with `sql.Null*` or primitve pointer types
+* automatically typed struct fields, either with `sql.Null*` or primitve 
+pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
   * only primary key & auto increment columns supported
@@ -40,10 +56,12 @@ Flag `-v` is verbose mode, `-of` is the output file path where the go files cont
 * **currently supported**:
   * PostgreSQL (9.5 tested)
   * MySQL (5.5+ tested)
+  * SQLite (3 tested)
 * currently the following basic data types are supported:
   * numeric: integer, serial, double, real, float
   * character: varying, text, char, varchar, binary, varbinary, blob
-  * date/time: timestamp, date, datetime, year, time with time zone, timestamp with time zone, time without time zone, timestamp without time zone
+  * date/time: timestamp, date, datetime, year, time with time zone, timestamp 
+  with time zone, time without time zone, timestamp without time zone
   * others: boolean
 
 ## Examples
@@ -65,7 +83,8 @@ Run the following command (default local PostgreSQL instance):
 tables-to-go
 ```
 
-The following file `SomeUserInfo.go` with default package `dto` (data transfer object) will be created:
+The following file `SomeUserInfo.go` with default package `dto` (data transfer 
+object) will be created:
 
 ```go
 package dto
@@ -83,8 +102,11 @@ type SomeUserInfo struct {
 ```
 
 The column `id` got autmatically converted to upper-case to follow the idiomatic
-go guidelines. See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) for more details. 
-Words which gets converted can be found [here](https://github.com/fraenky8/tables-to-go/blob/master/internal/cli/tables-to-go-cli.go#L31).
+go guidelines. 
+See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) 
+for more details. 
+Words which gets converted can be found 
+[here](https://github.com/fraenky8/tables-to-go/blob/master/internal/cli/tables-to-go-cli.go#L31).
 <br>
 This behaviour can be disabled by providing the command-line flag `-no-initialism`.
 
@@ -112,7 +134,8 @@ You can also specify the package or prefix and suffix.
 tables-to-go -v -t mysql -h 192.168.99.100 -d testdb -u root -p mysecretpassword -pn models -pre model_ -suf _model
 ```
 
-With same table given above, following file with Name `ModelSomeUserInfoModel.go` will be created:
+With same table given above, following file with Name `ModelSomeUserInfoModel.go`
+will be created:
 
 ```go
 package models
@@ -183,8 +206,23 @@ tables-to-go -help
 
 ## Contributing
 
-If you find any issues or missing a feature, feel free to contribute or make suggestions! 
-You can fork the repository and use a feature branch too. Feel free to send me a pull request.
+If you find any issues or missing a feature, feel free to contribute or make 
+suggestions! You can fork the repository and use a feature branch too. Feel free
+to send me a pull request. The PRs have to come with appropriate unit tests,
+documentation of the added functionality and updated README with optional
+examples.
+
+To start developing clone via `git` or use go's get command to fetch this 
+project.
+
+This project uses [go modules](https://github.com/golang/go/wiki/Modules) so
+make sure when adding new dependencies to update the `go.mod` file and the 
+vendor directory:
+
+```
+go mod tidy
+go mod vendor
+```
 
 ## Licensing
 
