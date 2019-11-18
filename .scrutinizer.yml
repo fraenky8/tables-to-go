@@ -4,9 +4,9 @@ checks:
 build:
   project_setup:
     override:
-      - go build .
+      - go build -mod=vendor .
   environment:
-    go: go1.12
+    go: go1.13
   nodes:
     analysis:
       tests:
@@ -18,7 +18,7 @@ build:
       tests:
         override:
           -
-            command: go test -coverprofile=cover.out ./...
+            command: go test -mod=vendor -coverprofile=cover.out ./...
             coverage:
               file: 'cover.out'
               format: 'go-cc'

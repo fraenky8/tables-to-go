@@ -9,7 +9,7 @@
 // Support for sqlite3 can be enabled by specifiying the tag while
 // building tables-to-go:
 //
-//		go {install/build} -tags sqlite3 .
+//		go {install/build} -mod=vendor -tags sqlite3 .
 //
 // Alternative the Makefile can be used which is an alias for the go command
 // above:

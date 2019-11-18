@@ -6,12 +6,12 @@ all: help
 help:                   ## Show this help
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-install:                ## Installs tables-to-go. Same behavior like `go install .`
-	go install .
+install:                ## Installs tables-to-go. Same behavior like `go install -mod=vendor .`
+	go install -mod=vendor .
 
 sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
                         ## User Authentication feature enabled. \
                         ## For more information see the documentation of the driver at \
                         ## - https://github.com/mattn/go-sqlite3#compilation \
                         ## - https://github.com/mattn/go-sqlite3#user-authentication
-	CGO_ENABLED=1 go install -tags="sqlite3 sqlite_userauth" .
+	CGO_ENABLED=1 go install -mod=vendor -tags="sqlite3 sqlite_userauth" .
