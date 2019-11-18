@@ -26,3 +26,5 @@ build:
 filter:
   excluded_paths:
     - "*/*_test.go"
+  dependency_paths:
+    - "vendor/"
