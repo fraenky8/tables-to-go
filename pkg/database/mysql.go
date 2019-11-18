@@ -20,20 +20,20 @@ func NewMySQL(s *settings.Settings) *MySQL {
 	return &MySQL{
 		GeneralDatabase: &GeneralDatabase{
 			Settings: s,
-			driver:   dbTypeToDriverMap[settings.DbType(s.DbType)],
+			driver:   dbTypeToDriverMap[s.DbType],
 		},
 	}
 }
 
 // Connect connects to the database by the given data source name (dsn) of the concrete database
 func (mysql *MySQL) Connect() error {
-	return mysql.GeneralDatabase.Connect(mysql.DSN(mysql.Settings))
+	return mysql.GeneralDatabase.Connect(mysql.DSN())
 }
 
 // DSN creates the DSN String to connect to this database
-func (mysql *MySQL) DSN(settings *settings.Settings) string {
+func (mysql *MySQL) DSN() string {
 	return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v",
-		settings.User, settings.Pswd, settings.Host, settings.Port, settings.DbName)
+		mysql.Settings.User, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName)
 }
 
 // GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database

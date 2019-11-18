@@ -122,6 +122,37 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 			},
 		},
+		settings.DbTypeSQLite: {
+			{
+				desc: "non PK column generates standard Mastermind-tag",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypeSQLite
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name: "column_name",
+				},
+				expected: `stbl:"column_name"`,
+			},
+			{
+				desc: "PK column generates Mastermind-tag with PK indicator and AI indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DbTypeSQLite
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name:      "column_name",
+					ColumnKey: "PK",
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
+			},
+		},
 	}
 
 	tagger := new(Mastermind)
