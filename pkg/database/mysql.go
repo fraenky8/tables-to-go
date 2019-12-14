@@ -45,7 +45,7 @@ func (mysql *MySQL) GetDriverImportLibrary() string {
 func (mysql *MySQL) GetTables() (tables []*Table, err error) {
 
 	err = mysql.Select(&tables, `
-		SELECT table_name
+		SELECT table_name AS table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = ?
@@ -67,15 +67,15 @@ func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
 
 	mysql.GetColumnsOfTableStmt, err = mysql.Preparex(`
 		SELECT
-		  ordinal_position,
-		  column_name,
-		  data_type,
-		  column_default,
-		  is_nullable,
-		  character_maximum_length,
-		  numeric_precision,
-		  column_key,
-		  extra
+		  ordinal_position AS ordinal_position,
+		  column_name AS column_name,
+		  data_type AS data_type,
+		  column_default AS column_default,
+		  is_nullable AS is_nullable,
+		  character_maximum_length AS character_maximum_length,
+		  numeric_precision AS numeric_precision,
+		  column_key AS column_key,
+		  extra AS extra
 		FROM information_schema.columns
 		WHERE table_name = ?
 		AND table_schema = ?

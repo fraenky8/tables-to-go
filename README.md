@@ -56,7 +56,7 @@ pointer types
     * with or without `structable.Recorder` 
 * **currently supported**:
   * PostgreSQL (9.5 tested)
-  * MySQL (5.5+ tested)
+  * MySQL (5.5+, 8 tested)
   * SQLite (3 tested)
 * currently the following basic data types are supported:
   * numeric: integer, serial, double, real, float
