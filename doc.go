@@ -83,6 +83,6 @@
 //            	more verbose output
 //
 //
-// For more details & exmaples refer to https://github.com/fraenky8/tables-to-go/blob/master/README.md
+// For more details & examples refer to https://github.com/fraenky8/tables-to-go/blob/master/README.md
 //
 package main
