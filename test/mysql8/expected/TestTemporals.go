@@ -6,7 +6,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-type Mysql8TestTemporals struct {
+type TestTemporals struct {
 	T    mysql.NullTime `db:"t"`
 	TNn  time.Time      `db:"t_nn"`
 	D    mysql.NullTime `db:"d"`
