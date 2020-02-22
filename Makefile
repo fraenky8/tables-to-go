@@ -1,4 +1,4 @@
-.PHONY: all build
+.PHONY: all install test
 
 TAG=$(shell git describe --abbrev=0 --tags 2>&1)
 TS=$(shell date '+%b %d %Y %T')
@@ -13,6 +13,12 @@ install:                ## Installs tables-to-go. Requires `git` to be installed
 	@go install -mod=vendor -ldflags \
     	"-X 'main.buildTimestamp=$(TS)' -X 'main.versionTag=$(TAG)'" \
     	.
+
+test:
+	go test -race ./...
+
+integration-test:
+	go test -race -tags=integration ./...
 
 sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
                         ## User Authentication feature enabled. \
