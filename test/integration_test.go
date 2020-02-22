@@ -1,6 +1,6 @@
 // +build integration
 
-package cli
+package test
 
 import (
 	"bytes"
@@ -18,14 +18,10 @@ import (
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/fraenky8/tables-to-go/internal/cli"
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
-)
-
-const (
-	expectedFilePath = "testdata/expected"
-	outputFilePath   = "testdata/output"
 )
 
 type cliWriter struct{}
@@ -43,16 +39,33 @@ type dbSettings struct {
 	env         []string
 }
 
+func (s *dbSettings) imageName() string {
+	return s.dockerImage + s.version
+}
+
+func (s *dbSettings) setSettings(ss *settings.Settings) {
+	s.Settings = ss
+	s.Settings.OutputFilePath = filepath.Join(s.imageName(), "output")
+}
+
+func (s *dbSettings) getTestdataFilepath() string {
+	return filepath.Join(s.imageName(), "testdata")
+}
+
+func (s *dbSettings) getExceptedFilepath() string {
+	return filepath.Join(s.imageName(), "expected")
+}
+
 func TestIntegration(t *testing.T) {
 	log.Println("running Tables-to-Go integration tests")
 
 	tests := []struct {
 		desc     string
-		settings func() dbSettings
+		settings *dbSettings
 	}{
 		{
 			desc: "mysql 8",
-			settings: func() dbSettings {
+			settings: func() *dbSettings {
 				s := settings.New()
 				s.DbType = settings.DbTypeMySQL
 				s.User = "root"
@@ -60,23 +73,29 @@ func TestIntegration(t *testing.T) {
 				s.DbName = "public"
 				s.Host = "localhost"
 				s.Port = "3306"
-				s.OutputFilePath = outputFilePath
 				//s.Verbose = true
 				//s.VVerbose = true
 
-				return dbSettings{
+				dbs := &dbSettings{
 					dockerImage: "mysql",
 					version:     "8",
-					env:         []string{"MYSQL_DATABASE=public", "MYSQL_ROOT_PASSWORD=mysecretpassword"},
-					Settings:    s,
+					env: []string{
+						"MYSQL_DATABASE=public",
+						"MYSQL_ROOT_PASSWORD=mysecretpassword",
+					},
+					Settings: s,
 				}
-			},
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			s := test.settings()
+			s := test.settings
 
 			db, purgeFn, err := setupDatabase(s)
 			if err != nil {
@@ -93,31 +112,32 @@ func TestIntegration(t *testing.T) {
 					}
 				}
 
-				_ = os.RemoveAll(outputFilePath)
-				_ = os.MkdirAll(outputFilePath, 0755)
+				// TODO need flag for not removing generated output but
+				//  save it into the expected directory
+				_ = os.RemoveAll(s.Settings.OutputFilePath)
+				_ = os.MkdirAll(s.Settings.OutputFilePath, 0755)
 			}()
 
-			writer := output.NewFileWriter(outputFilePath)
+			writer := output.NewFileWriter(s.Settings.OutputFilePath)
 			//writer := cliWriter{}
 
-			s.Settings.OutputFilePath = outputFilePath
-			prefix := strings.Title(s.dockerImage + s.version)
+			prefix := strings.Title(s.imageName())
 			s.Settings.Prefix = prefix + "_"
 
-			err = Run(s.Settings, db, writer)
+			err = cli.Run(s.Settings, db, writer)
 			assert.NoError(t, err)
 
-			checkFiles(t, prefix)
+			checkFiles(t, s)
 		})
 	}
 }
 
-func checkFiles(t *testing.T, prefix string) {
-	expectedPattern := filepath.Join(expectedFilePath, prefix+"*")
+func checkFiles(t *testing.T, s *dbSettings) {
+	expectedPattern := filepath.Join(s.getExceptedFilepath(), s.Settings.Prefix+"*")
 	expected, err := filepath.Glob(expectedPattern)
 	assert.NoError(t, err)
 
-	actualPattern := filepath.Join(outputFilePath, prefix+"*")
+	actualPattern := filepath.Join(s.Settings.OutputFilePath, s.Settings.Prefix+"*")
 	actual, err := filepath.Glob(actualPattern)
 	assert.NoError(t, err)
 
@@ -139,7 +159,7 @@ func checkFiles(t *testing.T, prefix string) {
 	}
 }
 
-func setupDatabase(settings dbSettings) (database.Database, func() error, error) {
+func setupDatabase(settings *dbSettings) (database.Database, func() error, error) {
 	log.Printf("spinning up Database %s:%s ...\n", settings.dockerImage, settings.version)
 	pool, err := dockertest.NewPool("")
 	if err != nil {
@@ -178,7 +198,7 @@ func setupDatabase(settings dbSettings) (database.Database, func() error, error)
 		return nil, purgeFn, fmt.Errorf("could not connect to Docker: %v", err)
 	}
 
-	err = createTestData(db.SQLDriver(), settings.dockerImage+settings.version)
+	err = populateData(db.SQLDriver(), settings)
 	if err != nil {
 		return nil, purgeFn, err
 	}
@@ -186,8 +206,10 @@ func setupDatabase(settings dbSettings) (database.Database, func() error, error)
 	return db, purgeFn, nil
 }
 
-func createTestData(db *sqlx.DB, dockerImage string) error {
-	data, err := ioutil.ReadFile("testdata/" + dockerImage + ".sql")
+func populateData(db *sqlx.DB, s *dbSettings) error {
+	// TODO account for multiple SQL files
+	f := filepath.Join(s.getTestdataFilepath(), s.imageName()+".sql")
+	data, err := ioutil.ReadFile(f)
 	if err != nil {
 		return fmt.Errorf("could not read sql testdata: %v", err)
 	}
