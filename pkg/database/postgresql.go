@@ -10,11 +10,19 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	PostgresqlColumnTypePrimaryKey    = "PRIMARY KEY"
+	PostgresqlColumnTypeAutoIncrement = "nextval"
+	PostgresqlColumnTypeSerial        = "serial"
+)
+
 // Postgresql implements the Database interface with help of GeneralDatabase.
 type Postgresql struct {
 	*GeneralDatabase
 
 	defaultUserName string
+
+	integerDataTypes map[string]struct{}
 }
 
 // NewPostgresql creates a new Postgresql database.
@@ -25,6 +33,21 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 			driver:   dbTypeToDriverMap[s.DbType],
 		},
 		defaultUserName: "postgres",
+
+		integerDataTypes: map[string]struct{}{
+			"smallint":    {},
+			"int2":        {},
+			"integer":     {},
+			"int4":        {},
+			"bigint":      {},
+			"int8":        {},
+			"smallserial": {},
+			"serial2":     {},
+			"serial":      {},
+			"serial4":     {},
+			"bigserial":   {},
+			"serial8":     {},
+		},
 	}
 }
 
@@ -46,6 +69,11 @@ func (pg *Postgresql) DSN() string {
 	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		user, pg.Settings.Pswd, pg.Settings.Host, pg.Settings.Port, pg.Settings.DbName, pg.Settings.SSLMode)
+}
+
+// GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database
+func (pg *Postgresql) GetDriverImportLibrary() string {
+	return "pg \"github.com/lib/pq\""
 }
 
 // GetTables gets all tables for a given schema by name.
@@ -117,12 +145,12 @@ func (pg *Postgresql) GetColumnsOfTable(table *Table) (err error) {
 
 // IsPrimaryKey checks if the column belongs to the primary key.
 func (pg *Postgresql) IsPrimaryKey(column Column) bool {
-	return strings.Contains(column.ConstraintType.String, "PRIMARY KEY")
+	return strings.Contains(column.ConstraintType.String, PostgresqlColumnTypePrimaryKey)
 }
 
 // IsAutoIncrement checks if the column is an auto_increment column.
 func (pg *Postgresql) IsAutoIncrement(column Column) bool {
-	return strings.Contains(column.DefaultValue.String, "nextval")
+	return strings.Contains(column.DefaultValue.String, PostgresqlColumnTypeAutoIncrement)
 }
 
 // GetStringDatatypes returns the string datatypes for the Postgresql database.
@@ -156,16 +184,16 @@ func (pg *Postgresql) IsText(column Column) bool {
 // GetIntegerDatatypes returns the integer datatypes for the Postgresql database.
 func (pg *Postgresql) GetIntegerDatatypes() []string {
 	return []string{
-		"smallint",
-		"integer",
-		"bigint",
-		"smallserial",
-		"serial",
-		"bigserial",
+		"smallint", "int2",
+		"integer", "int4",
+		"bigint", "int8",
+		"smallserial", "serial2",
+		"serial", "serial4",
+		"bigserial", "serial8",
 	}
 }
 
-// IsInteger returns true if colum is of type integer for the Postgresql database.
+// IsInteger returns true if column is of type integer for the Postgresql database.
 func (pg *Postgresql) IsInteger(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetIntegerDatatypes())
 }
@@ -173,6 +201,9 @@ func (pg *Postgresql) IsInteger(column Column) bool {
 // GetFloatDatatypes returns the float datatypes for the Postgresql database.
 func (pg *Postgresql) GetFloatDatatypes() []string {
 	return []string{
+		"float",
+		"float4",
+		"float8",
 		"numeric",
 		"decimal",
 		"real",
@@ -201,4 +232,9 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 // IsTemporal returns true if colum is of type temporal for the Postgresql database.
 func (pg *Postgresql) IsTemporal(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetTemporalDatatypes())
+}
+
+// GetTemporalDriverDataType returns the time data type specific for the Postgres database
+func (pg *Postgresql) GetTemporalDriverDataType() string {
+	return "pg.NullTime"
 }

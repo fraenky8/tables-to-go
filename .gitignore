@@ -30,3 +30,5 @@ _testmain.go
 .DS_Store
 
 tables-to-go
+
+test/*/output

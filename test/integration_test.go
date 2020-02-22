@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -23,13 +22,6 @@ import (
 	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
-
-type cliWriter struct{}
-
-func (c cliWriter) Write(tableName string, content string) error {
-	_, err := fmt.Println(content)
-	return err
-}
 
 type dbSettings struct {
 	*settings.Settings
@@ -80,8 +72,37 @@ func TestIntegration(t *testing.T) {
 					dockerImage: "mysql",
 					version:     "8",
 					env: []string{
-						"MYSQL_DATABASE=public",
-						"MYSQL_ROOT_PASSWORD=mysecretpassword",
+						"MYSQL_DATABASE=" + s.DbName,
+						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+					},
+					Settings: s,
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 10",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DbTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				//s.Verbose = true
+				//s.VVerbose = true
+
+				dbs := &dbSettings{
+					dockerImage: "postgres",
+					version:     "10",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
 					},
 					Settings: s,
 				}
@@ -94,7 +115,10 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
 			s := test.settings
 
 			db, purgeFn, err := setupDatabase(s)
@@ -114,15 +138,17 @@ func TestIntegration(t *testing.T) {
 
 				// TODO need flag for not removing generated output but
 				//  save it into the expected directory
-				_ = os.RemoveAll(s.Settings.OutputFilePath)
-				_ = os.MkdirAll(s.Settings.OutputFilePath, 0755)
+				if !t.Failed() {
+					_ = os.RemoveAll(s.Settings.OutputFilePath)
+				}
 			}()
 
-			writer := output.NewFileWriter(s.Settings.OutputFilePath)
-			//writer := cliWriter{}
+			err = os.MkdirAll(s.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
 
-			prefix := strings.Title(s.imageName())
-			s.Settings.Prefix = prefix + "_"
+			writer := output.NewFileWriter(s.Settings.OutputFilePath)
 
 			err = cli.Run(s.Settings, db, writer)
 			assert.NoError(t, err)
@@ -134,28 +160,27 @@ func TestIntegration(t *testing.T) {
 
 func checkFiles(t *testing.T, s *dbSettings) {
 	expectedPattern := filepath.Join(s.getExceptedFilepath(), s.Settings.Prefix+"*")
-	expected, err := filepath.Glob(expectedPattern)
+	expectedFiles, err := filepath.Glob(expectedPattern)
 	assert.NoError(t, err)
 
 	actualPattern := filepath.Join(s.Settings.OutputFilePath, s.Settings.Prefix+"*")
-	actual, err := filepath.Glob(actualPattern)
+	actualFiles, err := filepath.Glob(actualPattern)
 	assert.NoError(t, err)
 
-	if len(expected) != len(actual) {
+	if len(expectedFiles) != len(actualFiles) {
 		t.Fatalf("expected and actual files differ in length: %v (%d) vs. %v (%d)",
-			expected, len(expected), actual, len(actual))
+			expectedFiles, len(expectedFiles), actualFiles, len(actualFiles))
 	}
 
-	sort.Strings(expected)
-	sort.Strings(actual)
+	sort.Strings(expectedFiles)
+	sort.Strings(actualFiles)
 
-	for i, ef := range expected {
-		af := actual[i]
-		f1, err := ioutil.ReadFile(ef)
+	for i := range expectedFiles {
+		expectedFile, err := ioutil.ReadFile(expectedFiles[i])
 		assert.NoError(t, err)
-		f2, err := ioutil.ReadFile(af)
+		actualFile, err := ioutil.ReadFile(actualFiles[i])
 		assert.NoError(t, err)
-		assert.True(t, bytes.Equal(f1, f2))
+		assert.Equal(t, expectedFile, actualFile)
 	}
 }
 
@@ -165,13 +190,13 @@ func setupDatabase(settings *dbSettings) (database.Database, func() error, error
 	if err != nil {
 		return nil, nil, fmt.Errorf("error connecting to Docker: %v", err)
 	}
-	pool.MaxWait = 2 * time.Minute
+	pool.MaxWait = 1 * time.Minute
 
 	resource, err := pool.Run(settings.dockerImage, settings.version, settings.env)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not start resource: %s", err)
 	}
-	_ = resource.Expire(60)
+	_ = resource.Expire(45)
 
 	purgeFn := func() error {
 		if err := pool.Purge(resource); err != nil {
@@ -207,25 +232,31 @@ func setupDatabase(settings *dbSettings) (database.Database, func() error, error
 }
 
 func populateData(db *sqlx.DB, s *dbSettings) error {
-	// TODO account for multiple SQL files
-	f := filepath.Join(s.getTestdataFilepath(), s.imageName()+".sql")
-	data, err := ioutil.ReadFile(f)
+	dataPattern := filepath.Join(s.getTestdataFilepath(), "*.sql")
+	files, err := filepath.Glob(dataPattern)
 	if err != nil {
-		return fmt.Errorf("could not read sql testdata: %v", err)
+		return fmt.Errorf("could not find sql testdata: %v", err)
 	}
 
-	queries := bytes.Split(data, []byte(";"))
-
-	for _, query := range queries {
-		query = bytes.TrimSpace(query)
-		q := string(query)
-		if q == "" {
-			continue
+	for _, f := range files {
+		data, err := ioutil.ReadFile(f)
+		if err != nil {
+			return fmt.Errorf("could not read %q: %v", f, err)
 		}
 
-		_, err = db.Exec(q)
-		if err != nil {
-			return fmt.Errorf("could not insert testdata %q: %v", q, err)
+		queries := bytes.Split(data, []byte(";"))
+
+		for _, query := range queries {
+			query = bytes.TrimSpace(query)
+			q := string(query)
+			if q == "" {
+				continue
+			}
+
+			_, err = db.Exec(q)
+			if err != nil {
+				return fmt.Errorf("could not insert testdata %q: %v", q, err)
+			}
 		}
 	}
 
