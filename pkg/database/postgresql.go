@@ -202,7 +202,8 @@ func (pg *Postgresql) GetIntegerDatatypes() []string {
 
 // IsInteger returns true if column is of type integer for the Postgresql database.
 func (pg *Postgresql) IsInteger(column Column) bool {
-	return isStringInSlice(column.DataType, pg.GetIntegerDatatypes())
+	_, ok := pg.integerDataTypes[column.DataType]
+	return ok
 }
 
 // GetFloatDatatypes returns the float datatypes for the Postgresql database.
@@ -230,6 +231,7 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 		"timestamp",
 		"time with time zone",
 		"timestamp with time zone",
+		"timestamptz",
 		"time without time zone",
 		"timestamp without time zone",
 		"date",
