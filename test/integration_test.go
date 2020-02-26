@@ -168,8 +168,8 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	assert.NoError(t, err)
 
 	if len(expectedFiles) != len(actualFiles) {
-		t.Fatalf("expected and actual files differ in length: %v (%d) vs. %v (%d)",
-			expectedFiles, len(expectedFiles), actualFiles, len(actualFiles))
+		t.Fatalf("expected and actual files differ in length: %d vs. %d",
+			len(expectedFiles), len(actualFiles))
 	}
 
 	sort.Strings(expectedFiles)
