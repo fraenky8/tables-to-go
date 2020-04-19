@@ -6,7 +6,7 @@ build:
     override:
       - go build -mod=vendor .
   environment:
-    go: go1.13
+    go: go1.14
   nodes:
     analysis:
       tests:
