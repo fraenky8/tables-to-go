@@ -16,11 +16,17 @@ jobs:
           go-version: 1.14
         id: go
 
+      - name: Set up staticcheck
+        run: go get -v honnef.co/go/tools/cmd/staticcheck
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
+
+      - name: Run staticcheck
+        run: staticcheck ./...
 
       - name: Build
         run: go build -v -mod=vendor .
 
       - name: Test
-        run: go test -mod=vendor -race ./...
+        run: go test -v -mod=vendor -race ./...
