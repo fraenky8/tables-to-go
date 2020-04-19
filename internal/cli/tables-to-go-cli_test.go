@@ -1686,7 +1686,7 @@ func TestFormatColumnName(t *testing.T) {
 		}
 		tests := []testCase{
 			{"startWithNumber", "1fish2fish", "X_1fish2fish", "X1fish2fish"},
-			{"containsSpaces", "my column\twith\nmany​spaces", "My_column_with_many_spaces", "MyColumnWithManySpaces"},
+			{"containsSpaces", "my column\twith\nmany\u200bspaces", "My_column_with_many_spaces", "MyColumnWithManySpaces"},
 			{"titleCase", "MyColumn", "MyColumn", "MyColumn"},
 			{"snakeCase", "my_column", "My_column", "MyColumn"},
 			{"titleSnake", "My_Column", "My_Column", "MyColumn"},
