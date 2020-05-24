@@ -161,8 +161,14 @@ func (mysql *MySQL) IsString(column Column) bool {
 // GetTextDatatypes returns the text data types for the MySQL database.
 func (mysql *MySQL) GetTextDatatypes() []string {
 	return []string{
+		"tinytext",
 		"text",
+		"mediumtext",
+		"longtext",
+		"tinyblob",
 		"blob",
+		"mediumblob",
+		"longblob",
 	}
 }
 
