@@ -71,6 +71,16 @@ func (pg *Postgresql) DSN() string {
 		user, pg.Settings.Pswd, pg.Settings.Host, pg.Settings.Port, pg.Settings.DbName, pg.Settings.SSLMode)
 }
 
+// Version reports the actual version of the Postgres database.
+func (pg *Postgresql) Version() (string, error) {
+	var version string
+	err := pg.Get(&version, `SELECT version() as version`)
+	if err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
 // GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database
 func (pg *Postgresql) GetDriverImportLibrary() string {
 	return "pg \"github.com/lib/pq\""
@@ -153,7 +163,7 @@ func (pg *Postgresql) IsAutoIncrement(column Column) bool {
 	return strings.Contains(column.DefaultValue.String, PostgresqlColumnTypeAutoIncrement)
 }
 
-// GetStringDatatypes returns the string datatypes for the Postgresql database.
+// GetStringDatatypes returns the string data types for the Postgresql database.
 func (pg *Postgresql) GetStringDatatypes() []string {
 	return []string{
 		"character varying",
@@ -169,7 +179,7 @@ func (pg *Postgresql) IsString(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetStringDatatypes())
 }
 
-// GetTextDatatypes returns the text datatypes for the Postgresql database.
+// GetTextDatatypes returns the text data types for the Postgresql database.
 func (pg *Postgresql) GetTextDatatypes() []string {
 	return []string{
 		"text",
@@ -181,7 +191,7 @@ func (pg *Postgresql) IsText(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetTextDatatypes())
 }
 
-// GetIntegerDatatypes returns the integer datatypes for the Postgresql database.
+// GetIntegerDatatypes returns the integer data types for the Postgresql database.
 func (pg *Postgresql) GetIntegerDatatypes() []string {
 	return []string{
 		"smallint", "int2",
@@ -199,7 +209,7 @@ func (pg *Postgresql) IsInteger(column Column) bool {
 	return ok
 }
 
-// GetFloatDatatypes returns the float datatypes for the Postgresql database.
+// GetFloatDatatypes returns the float data types for the Postgresql database.
 func (pg *Postgresql) GetFloatDatatypes() []string {
 	return []string{
 		"float",
@@ -217,7 +227,7 @@ func (pg *Postgresql) IsFloat(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetFloatDatatypes())
 }
 
-// GetTemporalDatatypes returns the temporal datatypes for the Postgresql database.
+// GetTemporalDatatypes returns the temporal data types for the Postgresql database.
 func (pg *Postgresql) GetTemporalDatatypes() []string {
 	return []string{
 		"time",
