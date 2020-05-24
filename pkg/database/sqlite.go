@@ -50,6 +50,20 @@ func (s *SQLite) DSN() string {
 	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
+// Version reports the actual version of the Sqlite database.
+func (s *SQLite) Version() (string, error) {
+	var version string
+	err := s.Get(&version, `SELECT * FROM PRAGMA user_version`)
+	if err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
+func (s *SQLite) GetDriverImportLibrary() string {
+	return `"github.com/mattn/go-sqlite3"`
+}
+
 func (s *SQLite) GetTables() (tables []*Table, err error) {
 
 	err = s.Select(&tables, `

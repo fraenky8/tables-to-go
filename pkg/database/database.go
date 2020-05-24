@@ -22,12 +22,13 @@ var (
 type Database interface {
 	SQLDriver() *sqlx.DB
 	DSN() string
-	Connect() (err error)
-	Close() (err error)
+	Connect() error
+	Close() error
+	Version() (string, error)
 
-	GetTables() (tables []*Table, err error)
-	PrepareGetColumnsOfTableStmt() (err error)
-	GetColumnsOfTable(table *Table) (err error)
+	GetTables() ([]*Table, error)
+	PrepareGetColumnsOfTableStmt() error
+	GetColumnsOfTable(table *Table) error
 
 	IsPrimaryKey(column Column) bool
 	IsAutoIncrement(column Column) bool
