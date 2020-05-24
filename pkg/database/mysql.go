@@ -200,7 +200,7 @@ func (mysql *MySQL) GetFloatDatatypes() []string {
 		"decimal",
 		"float",
 		"real",
-		"double precision",
+		"double",
 	}
 }
 
