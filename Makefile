@@ -14,11 +14,11 @@ install:                ## Installs tables-to-go. Requires `git` to be installed
     	"-X 'main.buildTimestamp=$(TS)' -X 'main.versionTag=$(TAG)'" \
     	.
 
-test:
+test:                   ## Runs unit tests with race flag enabled
 	go test -mod=vendor -race ./...
 
-integration-test:
-	go test -mod=vendor -race -tags=integration ./...
+integration-test:       ## Runs integration tests
+	go test -mod=vendor -tags=integration ./test/...
 
 sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
                         ## User Authentication feature enabled. \
