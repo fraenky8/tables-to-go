@@ -168,7 +168,7 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	assert.NoError(t, err)
 
 	if len(expectedFiles) != len(actualFiles) {
-		t.Fatalf("expected and actual files differ in length: %d vs. %d",
+		t.Fatalf("count of expected and actual files differ: %d vs. %d",
 			len(expectedFiles), len(actualFiles))
 	}
 
@@ -184,15 +184,15 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	}
 }
 
-func setupDatabase(settings *dbSettings) (database.Database, func() error, error) {
-	log.Printf("spinning up Database %s:%s ...\n", settings.dockerImage, settings.version)
+func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
+	log.Printf("spinning up database %s:%s ...\n", s.dockerImage, s.version)
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error connecting to Docker: %v", err)
 	}
 	pool.MaxWait = 1 * time.Minute
 
-	resource, err := pool.Run(settings.dockerImage, settings.version, settings.env)
+	resource, err := pool.Run(s.dockerImage, s.version, s.env)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not start resource: %s", err)
 	}
@@ -209,21 +209,30 @@ func setupDatabase(settings *dbSettings) (database.Database, func() error, error
 
 	// give docker some time to spin up the database
 	// also reduce unnecessary output of packets.go:36: unexpected EOF errors when spinning up mysql
-	//time.Sleep(25 * time.Second)
+	if s.DbType == settings.DbTypeMySQL {
+		time.Sleep(25 * time.Second)
+	}
 
 	if err = pool.Retry(func() error {
-		s := settings.Settings
+		newSettings := s.Settings
 		port := resource.GetPort(s.Port + "/tcp")
 		if port != "" {
-			s.Port = port
+			newSettings.Port = port
 		}
-		db = database.New(s)
+		db = database.New(newSettings)
 		return db.Connect()
 	}); err != nil {
 		return nil, purgeFn, fmt.Errorf("could not connect to Docker: %v", err)
 	}
 
-	err = populateData(db.SQLDriver(), settings)
+	version, err := db.Version()
+	if err != nil {
+		log.Println("could not get version:", err)
+	} else {
+		log.Printf("running tests against database %s\n", version)
+	}
+
+	err = createTestData(db.SQLDriver(), s)
 	if err != nil {
 		return nil, purgeFn, err
 	}
@@ -231,7 +240,7 @@ func setupDatabase(settings *dbSettings) (database.Database, func() error, error
 	return db, purgeFn, nil
 }
 
-func populateData(db *sqlx.DB, s *dbSettings) error {
+func createTestData(db *sqlx.DB, s *dbSettings) error {
 	dataPattern := filepath.Join(s.getTestdataFilepath(), "*.sql")
 	files, err := filepath.Glob(dataPattern)
 	if err != nil {
@@ -255,7 +264,7 @@ func populateData(db *sqlx.DB, s *dbSettings) error {
 
 			_, err = db.Exec(q)
 			if err != nil {
-				return fmt.Errorf("could not insert testdata %q: %v", q, err)
+				return fmt.Errorf("could not create testdata %q: %v", q, err)
 			}
 		}
 	}
