@@ -26,6 +26,7 @@ type Database interface {
 	DSN() string
 	Connect() error
 	Close() error
+	Version() (string, error)
 
 	GetTables(tables ...string) ([]*Table, error)
 	PrepareGetColumnsOfTableStmt() error
