@@ -195,7 +195,6 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not start resource: %s", err)
 	}
-	_ = resource.Expire(45)
 
 	purgeFn := func() error {
 		if err := pool.Purge(resource); err != nil {
