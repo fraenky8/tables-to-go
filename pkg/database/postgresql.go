@@ -57,7 +57,7 @@ func (pg *Postgresql) Connect() error {
 	return pg.GeneralDatabase.Connect(pg.DSN())
 }
 
-// DSN creates the DSN String to connect to this database.
+// DSN creates the data source name string to connect to this database.
 func (pg *Postgresql) DSN() string {
 	user := pg.defaultUserName
 	if pg.Settings.User != "" {
@@ -81,7 +81,7 @@ func (pg *Postgresql) Version() (string, error) {
 	return version, nil
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database
+// GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database.
 func (pg *Postgresql) GetDriverImportLibrary() string {
 	return "pg \"github.com/lib/pq\""
 }
@@ -192,6 +192,7 @@ func (pg *Postgresql) IsText(column Column) bool {
 }
 
 // GetIntegerDatatypes returns the integer data types for the Postgresql database.
+// TODO remove these methods
 func (pg *Postgresql) GetIntegerDatatypes() []string {
 	return []string{
 		"smallint", "int2",
@@ -246,7 +247,7 @@ func (pg *Postgresql) IsTemporal(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetTemporalDatatypes())
 }
 
-// GetTemporalDriverDataType returns the time data type specific for the Postgres database
+// GetTemporalDriverDataType returns the time data type specific for the Postgres database.
 func (pg *Postgresql) GetTemporalDriverDataType() string {
 	return "pg.NullTime"
 }
