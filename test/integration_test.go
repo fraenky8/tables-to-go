@@ -23,29 +23,26 @@ import (
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
+const (
+	testdataDirectoryName = "testdata"
+	expectedDirectoryName = "expected"
+	outputDirectoryName   = "output"
+)
+
 type dbSettings struct {
 	*settings.Settings
+
+	// root filepath where the testdata and expected directories live
+	dataFilepath string
 
 	dockerImage string
 	version     string
 	env         []string
 }
 
-func (s *dbSettings) imageName() string {
-	return s.dockerImage + s.version
-}
-
 func (s *dbSettings) setSettings(ss *settings.Settings) {
 	s.Settings = ss
-	s.Settings.OutputFilePath = filepath.Join(s.imageName(), "output")
-}
-
-func (s *dbSettings) getTestdataFilepath() string {
-	return filepath.Join(s.imageName(), "testdata")
-}
-
-func (s *dbSettings) getExceptedFilepath() string {
-	return filepath.Join(s.imageName(), "expected")
+	s.Settings.OutputFilePath = filepath.Join(s.dataFilepath, outputDirectoryName)
 }
 
 func TestIntegration(t *testing.T) {
@@ -69,13 +66,16 @@ func TestIntegration(t *testing.T) {
 				//s.VVerbose = true
 
 				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "mysql8",
+
 					dockerImage: "mysql",
 					version:     "8",
 					env: []string{
 						"MYSQL_DATABASE=" + s.DbName,
 						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
 					},
-					Settings: s,
 				}
 
 				dbs.setSettings(s)
@@ -98,13 +98,80 @@ func TestIntegration(t *testing.T) {
 				//s.VVerbose = true
 
 				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "postgres",
+
 					dockerImage: "postgres",
 					version:     "10",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
 					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 11",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DbTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				//s.Verbose = true
+				//s.VVerbose = true
+
+				dbs := &dbSettings{
 					Settings: s,
+
+					dataFilepath: "postgres",
+
+					dockerImage: "postgres",
+					version:     "11",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 12",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DbTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				//s.Verbose = true
+				//s.VVerbose = true
+
+				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "postgres",
+
+					dockerImage: "postgres",
+					version:     "12",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
 				}
 
 				dbs.setSettings(s)
@@ -115,9 +182,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.desc, func(t *testing.T) {
-
 			s := test.settings
 
 			db, purgeFn, err := setupDatabase(s)
@@ -142,9 +207,25 @@ func TestIntegration(t *testing.T) {
 				}
 			}()
 
+			err = createTestData(db.SQLDriver(), s)
+			if err != nil {
+				t.Logf("could not create test data: %v", err)
+				t.Fail()
+				return
+			}
+
 			err = os.MkdirAll(s.Settings.OutputFilePath, 0755)
 			if err != nil {
-				t.Fatalf("could not create output file path: %v", err)
+				t.Logf("could not create output file path: %v", err)
+				t.Fail()
+				return
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				fmt.Printf("running tests against database %s\n", version)
 			}
 
 			writer := output.NewFileWriter(s.Settings.OutputFilePath)
@@ -158,28 +239,28 @@ func TestIntegration(t *testing.T) {
 }
 
 func checkFiles(t *testing.T, s *dbSettings) {
-	expectedPattern := filepath.Join(s.getExceptedFilepath(), s.Settings.Prefix+"*")
+	expectedPattern := filepath.Join(s.dataFilepath, expectedDirectoryName, s.Settings.Prefix+"*")
 	expectedFiles, err := filepath.Glob(expectedPattern)
 	assert.NoError(t, err)
 
-	actualPattern := filepath.Join(s.Settings.OutputFilePath, s.Settings.Prefix+"*")
-	actualFiles, err := filepath.Glob(actualPattern)
+	outputPattern := filepath.Join(s.Settings.OutputFilePath, s.Settings.Prefix+"*")
+	outputFiles, err := filepath.Glob(outputPattern)
 	assert.NoError(t, err)
 
-	if len(expectedFiles) != len(actualFiles) {
-		t.Fatalf("count of expected and actual files differ: %d vs. %d",
-			len(expectedFiles), len(actualFiles))
+	if len(expectedFiles) != len(outputFiles) {
+		t.Fatalf("number of expected and output files differ: %d vs. %d",
+			len(expectedFiles), len(outputFiles))
 	}
 
 	sort.Strings(expectedFiles)
-	sort.Strings(actualFiles)
+	sort.Strings(outputFiles)
 
 	for i := range expectedFiles {
 		expectedFile, err := ioutil.ReadFile(expectedFiles[i])
 		assert.NoError(t, err)
-		actualFile, err := ioutil.ReadFile(actualFiles[i])
+		outputFile, err := ioutil.ReadFile(outputFiles[i])
 		assert.NoError(t, err)
-		assert.Equal(t, expectedFile, actualFile)
+		assert.Equal(t, expectedFile, outputFile)
 	}
 }
 
@@ -206,7 +287,8 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 	var db database.Database
 
 	// give docker some time to spin up the database
-	// also reduce unnecessary output of packets.go:36: unexpected EOF errors when spinning up mysql
+	// also reduce unnecessary output of
+	// > packets.go:36: unexpected EOF errors when spinning up mysql
 	if s.DbType == settings.DbTypeMySQL {
 		time.Sleep(25 * time.Second)
 	}
@@ -223,24 +305,12 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 		return nil, purgeFn, fmt.Errorf("could not connect to Docker: %v", err)
 	}
 
-	version, err := db.Version()
-	if err != nil {
-		log.Println("could not get version:", err)
-	} else {
-		log.Printf("running tests against database %s\n", version)
-	}
-
-	err = createTestData(db.SQLDriver(), s)
-	if err != nil {
-		return nil, purgeFn, err
-	}
-
 	return db, purgeFn, nil
 }
 
 func createTestData(db *sqlx.DB, s *dbSettings) error {
-	dataPattern := filepath.Join(s.getTestdataFilepath(), "*.sql")
-	files, err := filepath.Glob(dataPattern)
+	testDataPattern := filepath.Join(s.dataFilepath, testdataDirectoryName, "*.sql")
+	files, err := filepath.Glob(testDataPattern)
 	if err != nil {
 		return fmt.Errorf("could not find sql testdata: %v", err)
 	}
