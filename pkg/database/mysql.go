@@ -34,7 +34,7 @@ func (mysql *MySQL) Connect() error {
 	return mysql.GeneralDatabase.Connect(mysql.DSN())
 }
 
-// DSN creates the DSN String to connect to this database.
+// DSN creates the data source name string to connect to this database.
 func (mysql *MySQL) DSN() string {
 	user := mysql.defaultUserName
 	if mysql.Settings.User != "" {
@@ -66,7 +66,7 @@ func (mysql *MySQL) Version() (string, error) {
 	return version, nil
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the MySQL database
+// GetDriverImportLibrary returns the golang sql driver specific for the MySQL database.
 func (mysql *MySQL) GetDriverImportLibrary() string {
 	return `"github.com/go-sql-driver/mysql"`
 }
@@ -223,4 +223,9 @@ func (mysql *MySQL) GetTemporalDatatypes() []string {
 // IsTemporal returns true if column is of type temporal for the MySQL database.
 func (mysql *MySQL) IsTemporal(column Column) bool {
 	return isStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
+}
+
+// GetTemporalDriverDataType returns the time data type specific for the MySQL database.
+func (mysql *MySQL) GetTemporalDriverDataType() string {
+	return "mysql.NullTime"
 }
