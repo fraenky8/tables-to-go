@@ -87,6 +87,29 @@ func (of OutputFormat) String() string {
 	return string(of)
 }
 
+const (
+	FileNameCasingCamelCase = "c"
+	FileNameCasingSnakeCase = "s"
+)
+
+// FileNameCasing represents a output filename casing
+type FileNameCasing string
+
+func (of *FileNameCasing) Set(s string) error {
+	*of = FileNameCasing(s)
+	if *of == "" {
+		*of = FileNameCasingCamelCase
+	}
+	if !supportedFileNameCasings[*of] {
+		return fmt.Errorf("output format %q not supported", *of)
+	}
+	return nil
+}
+
+func (of FileNameCasing) String() string {
+	return string(of)
+}
+
 var (
 	// SupportedDbTypes represents the supported databases
 	SupportedDbTypes = map[DbType]bool{
@@ -114,19 +137,12 @@ var (
 		NullTypeNative:    true,
 		NullTypePrimitive: true,
 	}
+
+	supportedFileNameCasings = map[FileNameCasing]bool{
+		FileNameCasingCamelCase: true,
+		FileNameCasingSnakeCase: true,
+	}
 )
-
-const (
-	FileNameCasingCamelCase = "c"
-	FileNameCasingSnakeCase = "s"
-)
-
-// FileNameCasing represents a output filename casing
-type FileNameCasing string
-
-func (of FileNameCasing) String() string {
-	return string(of)
-}
 
 // Settings stores the supported settings / command line arguments
 type Settings struct {
