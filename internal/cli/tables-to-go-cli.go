@@ -9,6 +9,7 @@ import (
 	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
+	"github.com/iancoleman/strcase"
 )
 
 var (
@@ -58,6 +59,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 		}
 
 		tableName, content, err := createTableStructString(settings, db, table)
+
 		if err != nil {
 			if !settings.Force {
 				return fmt.Errorf("could not create string for table %q: %v", table.Name, err)
@@ -66,7 +68,13 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 			continue
 		}
 
-		err = out.Write(tableName, content)
+		fileName := strcase.ToCamel(tableName)
+
+		if settings.IsFileNameCasingSnakeCase() {
+			fileName = strcase.ToSnake(fileName)
+		}
+
+		err = out.Write(fileName, content)
 		if err != nil {
 			if !settings.Force {
 				return fmt.Errorf("could not write struct for table %q: %v", table.Name, err)

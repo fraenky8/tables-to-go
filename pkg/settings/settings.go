@@ -116,6 +116,18 @@ var (
 	}
 )
 
+const (
+	FileNameCasingCamelCase = "c"
+	FileNameCasingSnakeCase = "s"
+)
+
+// FileNameCasing represents a output filename casing
+type FileNameCasing string
+
+func (of FileNameCasing) String() string {
+	return string(of)
+}
+
 // Settings stores the supported settings / command line arguments
 type Settings struct {
 	Verbose  bool
@@ -134,10 +146,11 @@ type Settings struct {
 	OutputFilePath string
 	OutputFormat   OutputFormat
 
-	PackageName string
-	Prefix      string
-	Suffix      string
-	Null        NullType
+	FileNameCasing FileNameCasing
+	PackageName    string
+	Prefix         string
+	Suffix         string
+	Null           NullType
 
 	NoInitialism bool
 
@@ -173,6 +186,7 @@ func New() *Settings {
 		Port:           "", // left blank -> is automatically determined if not set
 		OutputFilePath: dir,
 		OutputFormat:   OutputFormatCamelCase,
+		FileNameCasing: FileNameCasingCamelCase,
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
@@ -269,4 +283,9 @@ func (settings *Settings) ShouldInitialism() bool {
 // IsOutputFormatCamelCase returns if the type given by command line args is of camel-case format.
 func (settings *Settings) IsOutputFormatCamelCase() bool {
 	return settings.OutputFormat == OutputFormatCamelCase
+}
+
+// IsFileNameCasingSnakeCase returns if the type given by the command line args is snake-case format
+func (settings *Settings) IsFileNameCasingSnakeCase() bool {
+	return settings.FileNameCasing == FileNameCasingSnakeCase
 }
