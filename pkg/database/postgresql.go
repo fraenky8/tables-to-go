@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// These are the column types for the Postgresql database.
 const (
 	PostgresqlColumnTypePrimaryKey    = "PRIMARY KEY"
 	PostgresqlColumnTypeAutoIncrement = "nextval"
