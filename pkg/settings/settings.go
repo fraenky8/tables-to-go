@@ -96,6 +96,7 @@ const (
 // FileNameFormat represents a output filename format
 type FileNameFormat string
 
+// Set sets the datatype for the custom type for the flag package.
 func (of *FileNameFormat) Set(s string) error {
 	*of = FileNameFormat(s)
 	if *of == "" {
@@ -139,6 +140,7 @@ var (
 		NullTypePrimitive: true,
 	}
 
+	// supportedFileNameFormats represents the supported filename formats
 	supportedFileNameFormats = map[FileNameFormat]bool{
 		FileNameFormatCamelCase: true,
 		FileNameFormatSnakeCase: true,
