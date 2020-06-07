@@ -87,26 +87,27 @@ func (of OutputFormat) String() string {
 	return string(of)
 }
 
+// These are the filename format command line parameter.
 const (
-	FileNameCasingCamelCase = "c"
-	FileNameCasingSnakeCase = "s"
+	FileNameFormatCamelCase FileNameFormat = "c"
+	FileNameFormatSnakeCase FileNameFormat = "s"
 )
 
-// FileNameCasing represents a output filename casing
-type FileNameCasing string
+// FileNameFormat represents a output filename format
+type FileNameFormat string
 
-func (of *FileNameCasing) Set(s string) error {
-	*of = FileNameCasing(s)
+func (of *FileNameFormat) Set(s string) error {
+	*of = FileNameFormat(s)
 	if *of == "" {
-		*of = FileNameCasingCamelCase
+		*of = FileNameFormatCamelCase
 	}
-	if !supportedFileNameCasings[*of] {
-		return fmt.Errorf("output format %q not supported", *of)
+	if !supportedFileNameFormats[*of] {
+		return fmt.Errorf("filename format %q not supported", *of)
 	}
 	return nil
 }
 
-func (of FileNameCasing) String() string {
+func (of FileNameFormat) String() string {
 	return string(of)
 }
 
@@ -138,9 +139,9 @@ var (
 		NullTypePrimitive: true,
 	}
 
-	supportedFileNameCasings = map[FileNameCasing]bool{
-		FileNameCasingCamelCase: true,
-		FileNameCasingSnakeCase: true,
+	supportedFileNameFormats = map[FileNameFormat]bool{
+		FileNameFormatCamelCase: true,
+		FileNameFormatSnakeCase: true,
 	}
 )
 
@@ -162,7 +163,7 @@ type Settings struct {
 	OutputFilePath string
 	OutputFormat   OutputFormat
 
-	FileNameCasing FileNameCasing
+	FileNameFormat FileNameFormat
 	PackageName    string
 	Prefix         string
 	Suffix         string
@@ -202,7 +203,7 @@ func New() *Settings {
 		Port:           "", // left blank -> is automatically determined if not set
 		OutputFilePath: dir,
 		OutputFormat:   OutputFormatCamelCase,
-		FileNameCasing: FileNameCasingCamelCase,
+		FileNameFormat: FileNameFormatCamelCase,
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
@@ -301,7 +302,7 @@ func (settings *Settings) IsOutputFormatCamelCase() bool {
 	return settings.OutputFormat == OutputFormatCamelCase
 }
 
-// IsFileNameCasingSnakeCase returns if the type given by the command line args is snake-case format
-func (settings *Settings) IsFileNameCasingSnakeCase() bool {
-	return settings.FileNameCasing == FileNameCasingSnakeCase
+// IsFileNameFormatSnakeCase returns if the type given by the command line args is snake-case format
+func (settings *Settings) IsFileNameFormatSnakeCase() bool {
+	return settings.FileNameFormat == FileNameFormatSnakeCase
 }

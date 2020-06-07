@@ -41,7 +41,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
 	flag.Var(&args.OutputFormat, "format", "format of struct fields (columns): camelCase (c) or original (o)")
 
-	flag.Var(&args.FileNameCasing, "fnc", "casing for out filename")
+	flag.Var(&args.FileNameFormat, "fn-format", "format of the filename: camelCase (c, default) or snake_case (s)")
 	flag.StringVar(&args.Prefix, "pre", args.Prefix, "prefix for file- and struct names")
 	flag.StringVar(&args.Suffix, "suf", args.Suffix, "suffix for file- and struct names")
 	flag.StringVar(&args.PackageName, "pn", args.PackageName, "package name")

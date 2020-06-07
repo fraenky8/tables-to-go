@@ -44,6 +44,8 @@
 //            	force, skip tables that encounter errors but construct all others
 //          -format string
 //            	format of struct fields (columns): camelCase (c) or original (o) (default "c")
+//          -fn-format string
+//              format of the filename: camelCase (c, default) or snake_case (s)
 //          -h string
 //            	host of database (default "127.0.0.1")
 //          -help
