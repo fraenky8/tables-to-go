@@ -1733,10 +1733,10 @@ func TestFormatColumnName(t *testing.T) {
 			{"semicolons", "MyColumn;"},
 			{"brackets", "MyColumn()"},
 		}
-		settings := settings.New()
+		s := settings.New()
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := formatColumnName(settings, tc.input, "MyTable")
+				_, err := formatColumnName(s, tc.input, "MyTable")
 				if err == nil {
 					t.Errorf("formatColumnName(%q) should have thrown error but didn't", tc.input)
 				}

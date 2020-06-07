@@ -20,14 +20,16 @@ var (
 
 // Database interface for the concrete databases
 type Database interface {
+	SQLDriver() *sqlx.DB
 	DSN() string
-	Connect() (err error)
-	Close() (err error)
+	Connect() error
+	Close() error
+	Version() (string, error)
 	GetDriverImportLibrary() string
 
-	GetTables() (tables []*Table, err error)
-	PrepareGetColumnsOfTableStmt() (err error)
-	GetColumnsOfTable(table *Table) (err error)
+	GetTables() ([]*Table, error)
+	PrepareGetColumnsOfTableStmt() error
+	GetColumnsOfTable(table *Table) error
 
 	IsPrimaryKey(column Column) bool
 	IsAutoIncrement(column Column) bool
@@ -78,9 +80,10 @@ type Column struct {
 // it implements partly the Database interface
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
-	*sqlx.DB
+	driver                string
+
 	*settings.Settings
-	driver string
+	*sqlx.DB
 }
 
 // New creates a new Database based on the given type in the settings.
@@ -118,6 +121,11 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 	}
 
 	return gdb.Ping()
+}
+
+// SQLDriver returns the underlyig SQL driver
+func (gdb *GeneralDatabase) SQLDriver() *sqlx.DB {
+	return gdb.DB
 }
 
 // Close closes the database connection

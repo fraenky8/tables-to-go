@@ -6,7 +6,7 @@
 //
 // Default build of tables-to-go does NOT include sqlite3 support.
 //
-// Support for sqlite3 can be enabled by specifiying the tag while
+// Support for sqlite3 can be enabled by specifying the tag while
 // building tables-to-go:
 //
 //		go {install/build} -mod=vendor -tags sqlite3 .

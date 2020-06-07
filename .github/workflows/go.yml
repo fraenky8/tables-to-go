@@ -16,17 +16,41 @@ jobs:
           go-version: 1.14
         id: go
 
+      - name: Set up golint
+        run: go get -u -v golang.org/x/lint/golint
+
       - name: Set up staticcheck
-        run: go get -v honnef.co/go/tools/cmd/staticcheck
+        run: go get -u -v honnef.co/go/tools/cmd/staticcheck
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golint
+        run: |
+          golint -set_exit_status $(go list ./... | grep -v /test/ | cut -d: -f2)
+
       - name: Run staticcheck
         run: staticcheck ./...
 
-      - name: Build
+      - name: Build tables-to-go
         run: go build -v -mod=vendor .
 
-      - name: Test
+      - name: Run unit tests
         run: go test -v -mod=vendor -race ./...
+
+      - name: Run integration tests
+        # Run integration tests only on ubuntu-latest.
+        #
+        # Because there is no docker installed on MacOS, see here
+        # https://github.community/t5/GitHub-Actions/Why-is-Docker-not-installed-on-macOS/td-p/39364
+        #
+        # And on Windows we get this error:
+        #
+        # vendor\github.com\ory\dockertest\docker\pkg\system\filesys_windows.go:113:24:
+        #  cannot use uintptr(unsafe.Pointer(&sd[0])) (type uintptr) as type *"golang.org/x/sys/windows".SECURITY_DESCRIPTOR in assignment
+        #
+        if: matrix.platform == 'ubuntu-latest'
+        run: go test -v -mod=vendor -tags=integration ./test/...
