@@ -5,11 +5,12 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/iancoleman/strcase"
+
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 	"github.com/fraenky8/tables-to-go/pkg/tagger"
-	"github.com/iancoleman/strcase"
 )
 
 var (
