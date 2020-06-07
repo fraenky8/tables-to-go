@@ -69,7 +69,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 			continue
 		}
 
-		fileName := strcase.ToCamel(tableName)
+		fileName := camelCaseString(tableName)
 		if settings.IsFileNameFormatSnakeCase() {
 			fileName = strcase.ToSnake(fileName)
 		}
@@ -106,7 +106,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	// Replace any whitespace with underscores
 	tableName = strings.Map(replaceSpace, tableName)
 	if settings.IsOutputFormatCamelCase() {
-		tableName = strcase.ToCamel(tableName)
+		tableName = camelCaseString(tableName)
 	}
 
 	// Check that the table name doesn't contain any invalid characters for Go variables
@@ -258,6 +258,24 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 	return goType, columnInfo
 }
 
+func camelCaseString(s string) string {
+	if s == "" {
+		return s
+	}
+
+	splitted := strings.Split(s, "_")
+
+	if len(splitted) == 1 {
+		return strings.Title(s)
+	}
+
+	var cc string
+	for _, part := range splitted {
+		cc += strings.Title(strings.ToLower(part))
+	}
+	return cc
+}
+
 func getNullType(settings *settings.Settings, primitive string, sql string) string {
 	if settings.IsNullTypeSQL() {
 		return sql
@@ -311,7 +329,7 @@ func formatColumnName(settings *settings.Settings, column, table string) (string
 	columnName = strings.Title(columnName)
 
 	if settings.IsOutputFormatCamelCase() {
-		columnName = strcase.ToCamel(columnName)
+		columnName = camelCaseString(columnName)
 	}
 	if settings.ShouldInitialism() {
 		columnName = toInitialisms(columnName)
