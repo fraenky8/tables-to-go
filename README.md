@@ -153,16 +153,6 @@ type ModelSomeUserInfoModel struct {
 }
 ```
 
-If you want to add tags also, i.e. `json`, `xml`, etc you can try out [gomodifytags](https://github.com/fatih/gomodifytags).
-
-For example,
-
-```
-gomodifytags -file fileName -struct structName -add-tags json -w --skip-unexported
-```
-
-will add `json` tags for each struct generated.
-
 ### Command-line Flags
 
 Print usage with `-?` or `-help`
