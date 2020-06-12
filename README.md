@@ -29,7 +29,7 @@ make sqlite3
 See [this PR](https://github.com/fraenky8/tables-to-go/pull/23) why it's 
 disabled by default.
 
-## Getting started
+## Getting Started
 
 ```
 tables-to-go -v -of ../path/to/my/models
@@ -150,6 +150,33 @@ type ModelSomeUserInfoModel struct {
 	FirstName sql.NullString  `db:"first_name"`
 	LastName  string          `db:"last_name"`
 	Height    sql.NullFloat64 `db:"height"`
+}
+```
+
+### Where Are The JSON-Tags?
+
+This is a common question asked by contributors and bug reporters.
+
+Fetching data from a database and representation of this data in the end 
+(JSON, HTML template, cli, ...) are two different concerns and should be
+decoupled. Therefore, this tool will not generate `json` tags for the structs.
+
+There are tools like [gomodifytags](https://github.com/fatih/gomodifytags) which
+enables you to generate `json` tags for existing structs. 
+The call for this tool applied to the example above looks like the following:
+
+```
+gomodifytags -file SomeUserInfo.go -w -all -add-tags json
+```
+
+This adds the `json` tags directly to the file:
+
+```go
+type SomeUserInfo struct {
+	ID        int             `db:"id" json:"id"`
+	FirstName sql.NullString  `db:"first_name" json:"first_name"`
+	LastName  string          `db:"last_name" json:"last_name"`
+	Height    sql.NullFloat64 `db:"height" json:"height"`
 }
 ```
 
