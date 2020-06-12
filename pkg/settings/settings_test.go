@@ -211,6 +211,45 @@ func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
 	}
 }
 
+func TestSettings_IsFileNameFormatSnakeCase(t *testing.T) {
+	tests := []struct {
+		desc     string
+		settings func() *Settings
+		expected bool
+	}{
+		{
+			desc:     "in default settings camel case will be used",
+			settings: New,
+			expected: false,
+		},
+		{
+			desc: "use snake case",
+			settings: func() *Settings {
+				s := New()
+				s.FileNameFormat = FileNameFormatSnakeCase
+				return s
+			},
+			expected: true,
+		},
+		{
+			desc: "any other output format will converted to camel case",
+			settings: func() *Settings {
+				s := New()
+				s.FileNameFormat = FileNameFormat("any")
+				return s
+			},
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			settings := test.settings()
+			actual := settings.IsFileNameFormatSnakeCase()
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
 func TestDbType_Set(t *testing.T) {
 	tests := []struct {
 		desc     string
@@ -330,6 +369,48 @@ func TestOutputFormat_Set(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			actual := OutputFormatCamelCase
+			err := actual.Set(test.input)
+			test.isError(t, err)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestFileNameFormat_Set(t *testing.T) {
+	tests := []struct {
+		desc     string
+		input    string
+		expected FileNameFormat
+		isError  assert.ErrorAssertionFunc
+	}{
+		{
+			desc:     "typed supported filename type produces no error and gets set",
+			input:    string(FileNameFormatCamelCase),
+			expected: FileNameFormatCamelCase,
+			isError:  assert.NoError,
+		},
+		{
+			desc:     "string typed supported filename type produces no error and gets set",
+			input:    string("c"),
+			expected: FileNameFormatCamelCase,
+			isError:  assert.NoError,
+		},
+		{
+			desc:     "empty output type produces no error and gets default",
+			input:    "",
+			expected: FileNameFormatCamelCase,
+			isError:  assert.NoError,
+		},
+		{
+			desc:     "string typed unsupported output type produces error and invalid output type",
+			input:    string("invalid"),
+			expected: FileNameFormat("invalid"),
+			isError:  assert.Error,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			actual := FileNameFormatCamelCase
 			err := actual.Set(test.input)
 			test.isError(t, err)
 			assert.Equal(t, test.expected, actual)

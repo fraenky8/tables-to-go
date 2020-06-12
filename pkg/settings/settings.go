@@ -87,6 +87,31 @@ func (of OutputFormat) String() string {
 	return string(of)
 }
 
+// These are the filename format command line parameter.
+const (
+	FileNameFormatCamelCase FileNameFormat = "c"
+	FileNameFormatSnakeCase FileNameFormat = "s"
+)
+
+// FileNameFormat represents a output filename format
+type FileNameFormat string
+
+// Set sets the datatype for the custom type for the flag package.
+func (of *FileNameFormat) Set(s string) error {
+	*of = FileNameFormat(s)
+	if *of == "" {
+		*of = FileNameFormatCamelCase
+	}
+	if !supportedFileNameFormats[*of] {
+		return fmt.Errorf("filename format %q not supported", *of)
+	}
+	return nil
+}
+
+func (of FileNameFormat) String() string {
+	return string(of)
+}
+
 var (
 	// SupportedDbTypes represents the supported databases
 	SupportedDbTypes = map[DbType]bool{
@@ -114,6 +139,12 @@ var (
 		NullTypeNative:    true,
 		NullTypePrimitive: true,
 	}
+
+	// supportedFileNameFormats represents the supported filename formats
+	supportedFileNameFormats = map[FileNameFormat]bool{
+		FileNameFormatCamelCase: true,
+		FileNameFormatSnakeCase: true,
+	}
 )
 
 // Settings stores the supported settings / command line arguments
@@ -134,10 +165,11 @@ type Settings struct {
 	OutputFilePath string
 	OutputFormat   OutputFormat
 
-	PackageName string
-	Prefix      string
-	Suffix      string
-	Null        NullType
+	FileNameFormat FileNameFormat
+	PackageName    string
+	Prefix         string
+	Suffix         string
+	Null           NullType
 
 	NoInitialism bool
 
@@ -173,6 +205,7 @@ func New() *Settings {
 		Port:           "", // left blank -> is automatically determined if not set
 		OutputFilePath: dir,
 		OutputFormat:   OutputFormatCamelCase,
+		FileNameFormat: FileNameFormatCamelCase,
 		PackageName:    "dto",
 		Prefix:         "",
 		Suffix:         "",
@@ -269,4 +302,9 @@ func (settings *Settings) ShouldInitialism() bool {
 // IsOutputFormatCamelCase returns if the type given by command line args is of camel-case format.
 func (settings *Settings) IsOutputFormatCamelCase() bool {
 	return settings.OutputFormat == OutputFormatCamelCase
+}
+
+// IsFileNameFormatSnakeCase returns if the type given by the command line args is snake-case format
+func (settings *Settings) IsFileNameFormatSnakeCase() bool {
+	return settings.FileNameFormat == FileNameFormatSnakeCase
 }

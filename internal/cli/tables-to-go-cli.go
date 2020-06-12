@@ -5,6 +5,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/iancoleman/strcase"
+
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
 	"github.com/fraenky8/tables-to-go/pkg/settings"
@@ -58,6 +60,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 		}
 
 		tableName, content, err := createTableStructString(settings, db, table)
+
 		if err != nil {
 			if !settings.Force {
 				return fmt.Errorf("could not create string for table %q: %v", table.Name, err)
@@ -66,7 +69,12 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 			continue
 		}
 
-		err = out.Write(tableName, content)
+		fileName := camelCaseString(tableName)
+		if settings.IsFileNameFormatSnakeCase() {
+			fileName = strcase.ToSnake(fileName)
+		}
+
+		err = out.Write(fileName, content)
 		if err != nil {
 			if !settings.Force {
 				return fmt.Errorf("could not write struct for table %q: %v", table.Name, err)
@@ -250,13 +258,6 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 	return goType, columnInfo
 }
 
-func getNullType(settings *settings.Settings, primitive string, sql string) string {
-	if settings.IsNullTypeSQL() {
-		return sql
-	}
-	return primitive
-}
-
 func camelCaseString(s string) string {
 	if s == "" {
 		return s
@@ -273,6 +274,13 @@ func camelCaseString(s string) string {
 		cc += strings.Title(strings.ToLower(part))
 	}
 	return cc
+}
+
+func getNullType(settings *settings.Settings, primitive string, sql string) string {
+	if settings.IsNullTypeSQL() {
+		return sql
+	}
+	return primitive
 }
 
 func toInitialisms(s string) string {
