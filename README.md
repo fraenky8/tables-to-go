@@ -13,14 +13,14 @@ database schema.
 
 ## Install
 
-This project provides a make file but can also simply installed with the usual
+This project provides a make file but can also simply be installed with the usual
 go-get command:
 
 ```
 go get github.com/fraenky8/tables-to-go
 ```
 
-To enable SQLite3 support, run the make file:
+To enable SQLite3 support, clone the repo manually and run the make file:
 
 ```
 make sqlite3
@@ -35,7 +35,7 @@ disabled by default.
 tables-to-go -v -of ../path/to/my/models
 ```
 
-This gets all tables of a local running PostgreSQL database. Therefore it uses 
+This gets all tables of a local running PostgreSQL database. Therefore, it uses 
 the database `postgres`, schema `public` and user `postgres` with no password.
 Flag `-v` is verbose mode, `-of` is the output file path where the go files 
 containing the structs will get created (default: current working directory).
@@ -44,8 +44,8 @@ containing the structs will get created (default: current working directory).
 
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
-* properly formated files with imports
-* automatically typed struct fields, either with `sql.Null*` or primitve 
+* properly formatted files with imports
+* automatically typed struct fields, either with `sql.Null*` or primitive 
 pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
@@ -58,7 +58,7 @@ pointer types
   * PostgreSQL (9.5 tested)
   * MySQL (5.5+, 8 tested)
   * SQLite (3 tested)
-* currently the following basic data types are supported:
+* currently, the following basic data types are supported:
   * numeric: integer, serial, double, real, float
   * character: varying, text, char, varchar, binary, varbinary, blob
   * date/time: timestamp, date, datetime, year, time with time zone, timestamp 
@@ -102,7 +102,7 @@ type SomeUserInfo struct {
 }
 ```
 
-The column `id` got autmatically converted to upper-case to follow the idiomatic
+The column `id` got automatically converted to upper-case to follow the idiomatic
 go guidelines. 
 See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) 
 for more details. 
