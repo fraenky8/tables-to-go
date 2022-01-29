@@ -13,6 +13,8 @@ import (
 // MySQL implements the Database interface with help of GeneralDatabase.
 type MySQL struct {
 	*GeneralDatabase
+
+	defaultUserName string
 }
 
 // NewMySQL creates a new MySQL database.
@@ -22,6 +24,7 @@ func NewMySQL(s *settings.Settings) *MySQL {
 			Settings: s,
 			driver:   dbTypeToDriverMap[s.DbType],
 		},
+		defaultUserName: "root",
 	}
 }
 
@@ -33,12 +36,17 @@ func (mysql *MySQL) Connect() error {
 
 // DSN creates the DSN String to connect to this database.
 func (mysql *MySQL) DSN() string {
+	user := mysql.defaultUserName
+	if mysql.Settings.User != "" {
+		user = mysql.Settings.User
+	}
+
 	if mysql.Settings.Socket != "" {
 		return fmt.Sprintf("%s:%s@unix(%s)/%s",
-			mysql.Settings.User, mysql.Settings.Pswd, mysql.Settings.Socket, mysql.Settings.DbName)
+			user, mysql.Settings.Pswd, mysql.Settings.Socket, mysql.Settings.DbName)
 	}
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		mysql.Settings.User, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName)
+		user, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName)
 }
 
 // GetDriverImportLibrary returns the golang sql driver specific fot the
