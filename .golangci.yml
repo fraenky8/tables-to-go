@@ -1,0 +1,20 @@
+run:
+  timeout: 5m
+
+linters:
+  # We run with all default linters enabled and in addition the linters
+  # listed below.
+  enable:
+    - bodyclose
+    - errorlint
+    - exportloopref
+    - goimports
+    - gosec
+    - makezero
+    - revive
+    - unconvert
+    - wastedassign
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/fraenky8/tables-to-go
