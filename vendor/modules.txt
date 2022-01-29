@@ -1,7 +1,8 @@
 # github.com/davecgh/go-spew v1.1.0
+## explicit
 github.com/davecgh/go-spew/spew
 # github.com/go-sql-driver/mysql v1.5.0
-## explicit
+## explicit; go 1.10
 github.com/go-sql-driver/mysql
 # github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 ## explicit
@@ -19,12 +20,15 @@ github.com/lib/pq/scram
 ## explicit
 github.com/mattn/go-sqlite3
 # github.com/pmezard/go-difflib v1.0.0
+## explicit
 github.com/pmezard/go-difflib/difflib
 # github.com/stretchr/objx v0.1.0
+## explicit
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.5.1
-## explicit
+## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 # gopkg.in/yaml.v2 v2.2.2
+## explicit
 gopkg.in/yaml.v2
