@@ -9,12 +9,12 @@ import (
 	"github.com/fraenky8/tables-to-go/pkg/settings"
 )
 
-// SQLite implemenmts the Database interface with help of generalDatabase
+// SQLite implements the Database interface with help of GeneralDatabase.
 type SQLite struct {
 	*GeneralDatabase
 }
 
-// NewSQLite creates a new SQLite database
+// NewSQLite creates a new SQLite database.
 func NewSQLite(s *settings.Settings) *SQLite {
 	return &SQLite{
 		GeneralDatabase: &GeneralDatabase{
@@ -24,18 +24,21 @@ func NewSQLite(s *settings.Settings) *SQLite {
 	}
 }
 
+// Connect connects to the database by the given data source name (dsn) of the
+// concrete database.
 func (s *SQLite) Connect() (err error) {
 	return s.GeneralDatabase.Connect(s.DSN())
 }
 
+// DSN creates the DSN String to connect to this database.
 func (s *SQLite) DSN() string {
 	if s.Settings.User == "" && s.Settings.Pswd == "" {
-		return fmt.Sprintf("%v", s.Settings.DbName)
+		return fmt.Sprintf("%s", s.Settings.DbName)
 	}
 
 	u, err := url.Parse(s.DbName)
 	if err != nil {
-		return fmt.Sprintf("%v", s.Settings.DbName)
+		return fmt.Sprintf("%s", s.Settings.DbName)
 	}
 
 	query := u.Query()
@@ -47,6 +50,8 @@ func (s *SQLite) DSN() string {
 	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
+// GetDriverImportLibrary returns the golang sql driver specific fot the
+// SQLite database.
 func (s *SQLite) GetDriverImportLibrary() string {
 	return `"github.com/mattn/go-sqlite3"`
 }
@@ -186,7 +191,7 @@ func (s *SQLite) GetTemporalDatatypes() []string {
 	return []string{}
 }
 
-func (s *SQLite) IsTemporal(column Column) bool {
+func (s *SQLite) IsTemporal(_ Column) bool {
 	return false
 }
 
