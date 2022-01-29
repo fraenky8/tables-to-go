@@ -1,29 +1,29 @@
-name: Go
+name: Go & Lint
 on: [push]
+permissions:
+  contents: read
 jobs:
+  golangci:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
 
   build:
     name: Build & Test
     strategy:
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-
-      - name: Set up Go 1.17
-        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-        id: go
-
-      - name: Set up staticcheck
-        run: go get -v honnef.co/go/tools/cmd/staticcheck
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Run staticcheck
-        run: staticcheck ./...
 
       - name: Build
         run: go build -v -mod=vendor .

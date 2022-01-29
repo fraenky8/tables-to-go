@@ -1,7 +1,7 @@
 package output
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 )
 
@@ -42,7 +42,7 @@ func (w FileWriter) Write(tableName string, content string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(fileName, []byte(decorated), 0666)
+	return os.WriteFile(fileName, []byte(decorated), 0666)
 }
 
 // decorate applies some decorations like formatting and empty import removal.

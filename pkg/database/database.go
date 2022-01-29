@@ -112,7 +112,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 			usingPswd = "yes"
 		}
 		return fmt.Errorf(
-			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %v",
+			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %w",
 			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
 		)
 	}
