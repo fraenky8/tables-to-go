@@ -19,7 +19,7 @@ func TestPostgresql_DSN(t *testing.T) {
 			desc: "no username given, defaults to `postgres`",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypePostgresql
+				s.DbType = settings.DBTypePostgresql
 				return s
 			},
 			expected: func(s *settings.Settings) string {
@@ -31,7 +31,7 @@ func TestPostgresql_DSN(t *testing.T) {
 			desc: "with given username, default gets overwritten",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypePostgresql
+				s.DbType = settings.DBTypePostgresql
 				s.User = "my_custom_user"
 				return s
 			},

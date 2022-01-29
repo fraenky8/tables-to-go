@@ -37,6 +37,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Schema, "s", args.Schema, "schema name")
 	flag.StringVar(&args.Host, "h", args.Host, "host of database")
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
+	flag.StringVar(&args.Socket, "socket", args.Socket, "The socket file to use for connection. Takes precedence over host:port.")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
 	flag.Var(&args.OutputFormat, "format", "format of struct fields (columns): camelCase (c) or original (o)")
