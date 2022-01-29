@@ -33,12 +33,12 @@ func (s *SQLite) Connect() (err error) {
 // DSN creates the DSN String to connect to this database.
 func (s *SQLite) DSN() string {
 	if s.Settings.User == "" && s.Settings.Pswd == "" {
-		return fmt.Sprintf("%s", s.Settings.DbName)
+		return s.Settings.DbName
 	}
 
 	u, err := url.Parse(s.DbName)
 	if err != nil {
-		return fmt.Sprintf("%s", s.Settings.DbName)
+		return s.Settings.DbName
 	}
 
 	query := u.Query()
