@@ -202,9 +202,3 @@ func (mysql *MySQL) GetTemporalDatatypes() []string {
 func (mysql *MySQL) IsTemporal(column Column) bool {
 	return mysql.IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
 }
-
-// GetTemporalDriverDataType returns the time data type specific for the
-// MySQL database.
-func (mysql *MySQL) GetTemporalDriverDataType() string {
-	return "mysql.NullTime"
-}

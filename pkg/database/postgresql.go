@@ -207,9 +207,3 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 func (pg *Postgresql) IsTemporal(column Column) bool {
 	return pg.IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
 }
-
-// GetTemporalDriverDataType returns the time data type specific for the
-// Postgresql database.
-func (pg *Postgresql) GetTemporalDriverDataType() string {
-	return "pg.NullTime"
-}

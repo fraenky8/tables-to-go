@@ -1117,7 +1117,7 @@ func TestRun_TemporalColumns(t *testing.T) {
 							On(
 								"Write",
 								"TestTable",
-								"package dto\n\nimport (\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName "+dbType.String()+".NullTime `db:\"column_name\"`\n}",
+								"package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullTime `db:\"column_name\"`\n}",
 							)
 
 						err := Run(s, mdb, w)
@@ -1203,7 +1203,7 @@ func TestRun_TemporalColumns(t *testing.T) {
 							On(
 								"Write",
 								"TestTable",
-								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable struct {\nColumnName1 "+dbType.String()+".NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+								"package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName1 sql.NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
 							)
 
 						err := Run(s, mdb, w)
@@ -1311,12 +1311,12 @@ func TestRun_TemporalColumns(t *testing.T) {
 							On(
 								"Write",
 								"TestTable1",
-								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable1 struct {\nColumnName1 "+dbType.String()+".NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+								"package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable1 struct {\nColumnName1 sql.NullTime `db:\"column_name_1\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
 							).
 							On(
 								"Write",
 								"TestTable2",
-								"package dto\n\nimport (\n\t\"time\"\n\t\n"+db.GetDriverImportLibrary()+"\n)\n\ntype TestTable2 struct {\nColumnName1 time.Time `db:\"column_name_1\"`\nColumnName2 "+dbType.String()+".NullTime `db:\"column_name_2\"`\n}",
+								"package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable2 struct {\nColumnName1 time.Time `db:\"column_name_1\"`\nColumnName2 sql.NullTime `db:\"column_name_2\"`\n}",
 							)
 
 						err := Run(s, mdb, w)

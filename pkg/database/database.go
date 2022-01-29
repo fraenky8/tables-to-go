@@ -47,7 +47,6 @@ type Database interface {
 
 	GetTemporalDatatypes() []string
 	IsTemporal(column Column) bool
-	GetTemporalDriverDataType() string
 
 	// TODO pg: bitstrings, enum, range, other special types
 	// TODO mysql: bit, enums, set

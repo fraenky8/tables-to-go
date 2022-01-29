@@ -194,7 +194,3 @@ func (s *SQLite) GetTemporalDatatypes() []string {
 func (s *SQLite) IsTemporal(_ Column) bool {
 	return false
 }
-
-func (s *SQLite) GetTemporalDriverDataType() string {
-	return ""
-}
