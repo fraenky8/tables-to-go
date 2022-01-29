@@ -1,4 +1,4 @@
-// +build sqlite3
+//go:build sqlite3
 
 // Package database/sqlite_driver.go contains only the driver for the sqlite3
 // database. It will get only included in the build if the tag `sqlite3` is

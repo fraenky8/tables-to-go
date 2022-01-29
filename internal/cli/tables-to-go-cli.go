@@ -30,7 +30,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 
 	tables, err := db.GetTables()
 	if err != nil {
-		return fmt.Errorf("could not get tables: %v", err)
+		return fmt.Errorf("could not get tables: %w", err)
 	}
 
 	if settings.Verbose {
@@ -38,7 +38,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 	}
 
 	if err = db.PrepareGetColumnsOfTableStmt(); err != nil {
-		return fmt.Errorf("could not prepare the get-column-statement: %v", err)
+		return fmt.Errorf("could not prepare the get-column-statement: %w", err)
 	}
 
 	for _, table := range tables {
@@ -49,7 +49,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 
 		if err = db.GetColumnsOfTable(table); err != nil {
 			if !settings.Force {
-				return fmt.Errorf("could not get columns of table %q: %v", table.Name, err)
+				return fmt.Errorf("could not get columns of table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not get columns of table %q: %v\n", table.Name, err)
 			continue
@@ -63,7 +63,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 
 		if err != nil {
 			if !settings.Force {
-				return fmt.Errorf("could not create string for table %q: %v", table.Name, err)
+				return fmt.Errorf("could not create string for table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not create string for table %q: %v\n", table.Name, err)
 			continue
@@ -77,7 +77,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 		err = out.Write(fileName, content)
 		if err != nil {
 			if !settings.Force {
-				return fmt.Errorf("could not write struct for table %q: %v", table.Name, err)
+				return fmt.Errorf("could not write struct for table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not write struct for table %q: %v\n", table.Name, err)
 		}

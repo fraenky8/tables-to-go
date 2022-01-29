@@ -18,7 +18,7 @@ type FormatDecorator struct{}
 func (FormatDecorator) Decorate(content string) (string, error) {
 	formatted, err := format.Source([]byte(content))
 	if err != nil {
-		return content, fmt.Errorf("could not format content: %v", err)
+		return content, fmt.Errorf("could not format content: %w", err)
 	}
 	return string(formatted), nil
 }
