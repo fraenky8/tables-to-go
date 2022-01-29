@@ -48,12 +48,6 @@ func (pg *Postgresql) DSN() string {
 		pg.Settings.Host, pg.Settings.Port, user, pg.Settings.DbName, pg.Settings.Pswd)
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the
-// Postgresql database.
-func (pg *Postgresql) GetDriverImportLibrary() string {
-	return `pg "github.com/lib/pq"`
-}
-
 // GetTables gets all tables for a given schema by name.
 func (pg *Postgresql) GetTables() (tables []*Table, err error) {
 

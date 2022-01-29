@@ -23,7 +23,6 @@ type Database interface {
 	DSN() string
 	Connect() (err error)
 	Close() (err error)
-	GetDriverImportLibrary() string
 
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)

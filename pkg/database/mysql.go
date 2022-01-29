@@ -49,12 +49,6 @@ func (mysql *MySQL) DSN() string {
 		user, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName)
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the
-// MySQL database.
-func (mysql *MySQL) GetDriverImportLibrary() string {
-	return `"github.com/go-sql-driver/mysql"`
-}
-
 // GetTables gets all tables for a given database by name.
 func (mysql *MySQL) GetTables() (tables []*Table, err error) {
 
