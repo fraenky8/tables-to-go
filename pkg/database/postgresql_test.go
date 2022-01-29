@@ -23,7 +23,7 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
+				return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 					s.Host, s.Port, "postgres", s.DbName, s.Pswd)
 			},
 		},
@@ -36,8 +36,22 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
+				return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 					s.Host, s.Port, "my_custom_user", s.DbName, s.Pswd)
+			},
+		},
+		{
+			desc: "with given username and socket, default gets overwritten",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "my_custom_user"
+				s.Pswd = "mysecretpassword"
+				s.Socket = "/tmp"
+				return s
+			},
+			expected: func(s *settings.Settings) string {
+				return "host=/tmp user=my_custom_user dbname=postgres password=mysecretpassword"
 			},
 		},
 	}
