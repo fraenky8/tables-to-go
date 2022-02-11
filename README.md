@@ -185,24 +185,23 @@ type SomeUserInfo struct {
 Print usage with `-?` or `-help`
 
 ```
-tables-to-go -help
+Usage of tables-to-go:
   -?	shows help and usage
   -d string
     	database name (default "postgres")
-  -f
-      force, skip tables that encounter errors but construct all others
-  -format string
-    	format of struct fields (columns): camelCase (c) or original (o) (default "c")
+  -f	force; skip tables that encounter errors
   -fn-format string
-      format of the filename: camelCase (c, default) or snake_case (s)
+    	format of the filename: camelCase (c, default) or snake_case (s) (default c)
+  -format string
+    	format of struct fields (columns): camelCase (c) or original (o) (default c)
   -h string
     	host of database (default "127.0.0.1")
   -help
     	shows help and usage
   -no-initialism
-      	disable the conversion to upper-case words in column names
+    	disable the conversion to upper-case words in column names
   -null string
-       	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)  (default "sql")
+    	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) (default sql)
   -of string
     	output file path (default "current working directory")
   -p string
@@ -215,12 +214,14 @@ tables-to-go -help
     	prefix for file- and struct names
   -s string
     	schema name (default "public")
+  -socket string
+    	The socket file to use for connection. Takes precedence over host:port.
   -structable-recorder
     	generate a structable.Recorder field
   -suf string
     	suffix for file- and struct names
   -t string
-    	type of database to use, currently supported: [pg mysql] (default "pg")
+    	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
   -tags-no-db
     	do not create db-tags
   -tags-structable

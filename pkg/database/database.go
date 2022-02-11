@@ -10,15 +10,15 @@ import (
 )
 
 var (
-	// dbTypeToDriverMap maps the database type to the driver names
-	dbTypeToDriverMap = map[settings.DbType]string{
-		settings.DbTypePostgresql: "postgres",
-		settings.DbTypeMySQL:      "mysql",
-		settings.DbTypeSQLite:     "sqlite3",
+	// dbTypeToDriverMap maps the database type to the driver names.
+	dbTypeToDriverMap = map[settings.DBType]string{
+		settings.DBTypePostgresql: "postgres",
+		settings.DBTypeMySQL:      "mysql",
+		settings.DBTypeSQLite:     "sqlite3",
 	}
 )
 
-// Database interface for the concrete databases
+// Database interface for the concrete databases.
 type Database interface {
 	DSN() string
 	Connect() (err error)
@@ -53,13 +53,13 @@ type Database interface {
 	// TODO mysql: bit, enums, set
 }
 
-// Table has a name and a set (slice) of columns
+// Table has a name and a set (slice) of columns.
 type Table struct {
 	Name    string `db:"table_name"`
 	Columns []Column
 }
 
-// Column stores information about a column
+// Column stores information about a column.
 type Column struct {
 	OrdinalPosition        int            `db:"ordinal_position"`
 	Name                   string         `db:"column_name"`
@@ -74,8 +74,8 @@ type Column struct {
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
 }
 
-// GeneralDatabase represents a base "class" database - for all other concrete databases
-// it implements partly the Database interface
+// GeneralDatabase represents a base "class" database - for all other concrete
+// databases it implements partly the Database interface.
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
 	*sqlx.DB
@@ -89,11 +89,11 @@ func New(s *settings.Settings) Database {
 	var db Database
 
 	switch s.DbType {
-	case settings.DbTypeSQLite:
+	case settings.DBTypeSQLite:
 		db = NewSQLite(s)
-	case settings.DbTypeMySQL:
+	case settings.DBTypeMySQL:
 		db = NewMySQL(s)
-	case settings.DbTypePostgresql:
+	case settings.DBTypePostgresql:
 		fallthrough
 	default:
 		db = NewPostgresql(s)
@@ -120,17 +120,17 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 	return gdb.Ping()
 }
 
-// Close closes the database connection
+// Close closes the database connection.
 func (gdb *GeneralDatabase) Close() error {
 	return gdb.DB.Close()
 }
 
-// IsNullable returns true if column is a nullable one
+// IsNullable returns true if the column is a nullable column.
 func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
 }
 
-// IsStringInSlice checks if needle (string) is in haystack ([]string)
+// IsStringInSlice checks if needle (string) is in haystack ([]string).
 func (gdb *GeneralDatabase) IsStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {

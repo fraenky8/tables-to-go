@@ -18,13 +18,13 @@ func TestMastermind_GenerateTag(t *testing.T) {
 		expected string
 	}
 
-	tests := map[settings.DbType][]test{
-		settings.DbTypePostgresql: {
+	tests := map[settings.DBType][]test{
+		settings.DBTypePostgresql: {
 			{
 				desc: "non PK column generates standard Mastermind-tag",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypePostgresql
+					s.DbType = settings.DBTypePostgresql
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -38,7 +38,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				desc: "PK column generates Mastermind-tag with PK indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypePostgresql
+					s.DbType = settings.DBTypePostgresql
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -56,7 +56,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypePostgresql
+					s.DbType = settings.DBTypePostgresql
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -75,12 +75,12 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 			},
 		},
-		settings.DbTypeMySQL: {
+		settings.DBTypeMySQL: {
 			{
 				desc: "non PK column generates standard Mastermind-tag",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypeMySQL
+					s.DbType = settings.DBTypeMySQL
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -94,7 +94,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				desc: "PK column generates Mastermind-tag with PK indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypeMySQL
+					s.DbType = settings.DBTypeMySQL
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -109,7 +109,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypeMySQL
+					s.DbType = settings.DBTypeMySQL
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -122,12 +122,12 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
 			},
 		},
-		settings.DbTypeSQLite: {
+		settings.DBTypeSQLite: {
 			{
 				desc: "non PK column generates standard Mastermind-tag",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypeSQLite
+					s.DbType = settings.DBTypeSQLite
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s
@@ -141,7 +141,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				desc: "PK column generates Mastermind-tag with PK indicator and AI indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
-					s.DbType = settings.DbTypeSQLite
+					s.DbType = settings.DBTypeSQLite
 					s.TagsNoDb = true
 					s.TagsMastermindStructable = true
 					return s

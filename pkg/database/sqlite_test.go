@@ -20,7 +20,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "no username or password given, no authentication in DNS string",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				return s
 			},
@@ -31,7 +31,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "with given username, authentication is enabled in DNS string",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				s.User = "username"
 				return s
@@ -43,7 +43,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "with given password, authentication is enabled in DNS string",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				s.Pswd = "p4assw0rd"
 				return s
@@ -55,7 +55,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "with given username and password, authentication is enabled in DNS string",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				s.User = "username"
 				s.Pswd = "p4assw0rd"
@@ -68,7 +68,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "with existing username and password, authentication in DB name is overwritten",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd"
 				s.User = "new_username"
 				s.Pswd = "new_p4assw0rd"
@@ -82,7 +82,7 @@ func TestSQLite_DSN(t *testing.T) {
 				"authentication in DB name is overwritten and options are preserved",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd&cache=shared"
 				s.User = "new_username"
 				s.Pswd = "new_p4assw0rd"
@@ -96,7 +96,7 @@ func TestSQLite_DSN(t *testing.T) {
 				"authentication in DB name is overwritten and options are preserved",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db?cache=shared&_auth&_auth_user=username&_auth_pass=p4assw0rd"
 				s.User = "new_username"
 				s.Pswd = "new_p4assw0rd"
@@ -109,7 +109,7 @@ func TestSQLite_DSN(t *testing.T) {
 			desc: "invalid dns returns raw dns string",
 			settings: func() *settings.Settings {
 				s := settings.New()
-				s.DbType = settings.DbTypeSQLite
+				s.DbType = settings.DBTypeSQLite
 				s.DbName = ":123:456"
 				s.User = "new_username"
 				s.Pswd = "new_p4assw0rd"

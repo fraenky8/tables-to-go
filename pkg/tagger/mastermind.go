@@ -4,10 +4,10 @@ import (
 	"github.com/fraenky8/tables-to-go/pkg/database"
 )
 
-// Mastermind represents the Masterminds/structable "stbl"-tag
+// Mastermind represents the Masterminds/structable "stbl"-tag.
 type Mastermind struct{}
 
-// GenerateTag for Mastermind to satisfy the Tagger interface
+// GenerateTag for Mastermind to satisfy the Tagger interface.
 func (t Mastermind) GenerateTag(db database.Database, column database.Column) string {
 
 	isPk := ""

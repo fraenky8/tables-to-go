@@ -11,7 +11,7 @@ import (
 const (
 	tagsDisabled = 0
 
-	// number is a ascending sequence of i*2 to determine which tags to generate later
+	// number is an ascending sequence of i*2 to determine which tags to generate later
 	tagDb         = 1
 	tagMastermind = 2
 )
@@ -22,7 +22,7 @@ var stringPool = sync.Pool{
 	},
 }
 
-// Tagger interface for types of struct-tages
+// Tagger interface for types of struct-tags.
 type Tagger interface {
 	GenerateTag(db database.Database, column database.Column) string
 }
@@ -51,8 +51,8 @@ func NewTaggers(s *settings.Settings) *Taggers {
 	return t
 }
 
-// enableTags enables the tags to generate determined by the settings.
-// If multiple standlone tags where specified (the ones with "only" it its names)
+// enableTags enables the tags to generate as given by the settings.
+// If multiple, standalone tags where specified (the ones with "only" in their names),
 // the last specified standalone tag wins.
 func (t *Taggers) enableTags() {
 	if t.settings.TagsNoDb {
