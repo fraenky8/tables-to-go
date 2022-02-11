@@ -50,12 +50,6 @@ func (s *SQLite) DSN() string {
 	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the
-// SQLite database.
-func (s *SQLite) GetDriverImportLibrary() string {
-	return `"github.com/mattn/go-sqlite3"`
-}
-
 func (s *SQLite) GetTables() (tables []*Table, err error) {
 
 	err = s.Select(&tables, `
@@ -193,8 +187,4 @@ func (s *SQLite) GetTemporalDatatypes() []string {
 
 func (s *SQLite) IsTemporal(_ Column) bool {
 	return false
-}
-
-func (s *SQLite) GetTemporalDriverDataType() string {
-	return ""
 }

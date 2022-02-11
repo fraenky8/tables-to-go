@@ -23,7 +23,6 @@ type Database interface {
 	DSN() string
 	Connect() (err error)
 	Close() (err error)
-	GetDriverImportLibrary() string
 
 	GetTables() (tables []*Table, err error)
 	PrepareGetColumnsOfTableStmt() (err error)
@@ -47,7 +46,6 @@ type Database interface {
 
 	GetTemporalDatatypes() []string
 	IsTemporal(column Column) bool
-	GetTemporalDriverDataType() string
 
 	// TODO pg: bitstrings, enum, range, other special types
 	// TODO mysql: bit, enums, set

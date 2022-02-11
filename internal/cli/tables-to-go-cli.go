@@ -89,14 +89,12 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 }
 
 type columnInfo struct {
-	isNullable          bool
-	isTemporal          bool
-	isNullablePrimitive bool
-	isNullableTemporal  bool
+	isNullable bool
+	isTemporal bool
 }
 
-func (c columnInfo) hasTrue() bool {
-	return c.isNullable || c.isTemporal || c.isNullableTemporal || c.isNullablePrimitive
+func (c columnInfo) isNullableOrTemporal() bool {
+	return c.isNullable || c.isTemporal
 }
 
 func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
@@ -125,7 +123,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 
 		// ISSUE-4: if columns are part of multiple constraints
 		// then the sql returns multiple rows per column name.
-		// Therefore we check if we already added a column with
+		// Therefore, we check if we already added a column with
 		// that name to the struct, if so, skip.
 		if _, ok := columns[columnName]; ok {
 			continue
@@ -142,11 +140,8 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		if !columnInfo.isTemporal {
 			columnInfo.isTemporal = col.isTemporal
 		}
-		if !columnInfo.isNullableTemporal {
-			columnInfo.isNullableTemporal = col.isNullableTemporal
-		}
-		if !columnInfo.isNullablePrimitive {
-			columnInfo.isNullablePrimitive = col.isNullablePrimitive
+		if !columnInfo.isNullable {
+			columnInfo.isNullable = col.isNullable
 		}
 
 		structFields.WriteString(columnName)
@@ -169,7 +164,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	fileContent.WriteString("\n\n")
 
 	// write imports
-	generateImports(&fileContent, settings, db, columnInfo)
+	generateImports(&fileContent, settings, columnInfo)
 
 	// write struct with fields
 	fileContent.WriteString("type ")
@@ -181,26 +176,20 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	return tableName, fileContent.String(), nil
 }
 
-func generateImports(content *strings.Builder, settings *settings.Settings, db database.Database, columnInfo columnInfo) {
+func generateImports(content *strings.Builder, settings *settings.Settings, columnInfo columnInfo) {
 
-	if !columnInfo.hasTrue() && !settings.IsMastermindStructableRecorder {
+	if !columnInfo.isNullableOrTemporal() && !settings.IsMastermindStructableRecorder {
 		return
 	}
 
 	content.WriteString("import (\n")
 
-	if columnInfo.isNullablePrimitive && settings.IsNullTypeSQL() {
+	if columnInfo.isNullable && settings.IsNullTypeSQL() {
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
 	if columnInfo.isTemporal {
 		content.WriteString("\t\"time\"\n")
-	}
-
-	if columnInfo.isNullableTemporal && settings.IsNullTypeSQL() {
-		content.WriteString("\t\n")
-		content.WriteString(db.GetDriverImportLibrary())
-		content.WriteString("\n")
 	}
 
 	if settings.IsMastermindStructableRecorder {
@@ -234,9 +223,8 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 			goType = "time.Time"
 			columnInfo.isTemporal = true
 		} else {
-			goType = getNullType(s, "*time.Time", db.GetTemporalDriverDataType())
+			goType = getNullType(s, "*time.Time", "sql.NullTime")
 			columnInfo.isTemporal = s.Null == settings.NullTypeNative
-			columnInfo.isNullableTemporal = true
 			columnInfo.isNullable = true
 		}
 	} else {
@@ -252,8 +240,6 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 			goType = getNullType(s, "*string", "sql.NullString")
 		}
 	}
-
-	columnInfo.isNullablePrimitive = columnInfo.isNullable && !db.IsTemporal(column)
 
 	return goType, columnInfo
 }
