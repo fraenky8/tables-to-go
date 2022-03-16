@@ -11,13 +11,17 @@ database schema.
 [![Build & Test](https://github.com/fraenky8/tables-to-go/workflows/Go/badge.svg)](https://github.com/fraenky8/tables-to-go/actions)
 [![Code Coverage](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/?branch=master)
 
+## Requirements
+
+- Go 1.17+
+
 ## Install
 
-This project provides a make file but can also simply be installed with the usual
-go-get command:
+This project provides a make file but can also simply be installed with the
+go-install command:
 
 ```
-go get github.com/fraenky8/tables-to-go
+go install github.com/fraenky8/tables-to-go@master
 ```
 
 To enable SQLite3 support, clone the repo manually and run the make file:
