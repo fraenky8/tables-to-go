@@ -236,6 +236,12 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 				goType = getNullType(s, "*bool", "sql.NullBool")
 				columnInfo.isNullable = true
 			}
+		case "uuid":
+			goType = "string"
+			if db.IsNullable(column) {
+				goType = getNullType(s, "*string", "sql.NullString")
+				columnInfo.isNullable = true
+			}
 		default:
 			goType = getNullType(s, "*string", "sql.NullString")
 		}
