@@ -6,6 +6,8 @@ import (
 	"unicode"
 
 	"github.com/iancoleman/strcase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/fraenky8/tables-to-go/pkg/database"
 	"github.com/fraenky8/tables-to-go/pkg/output"
@@ -15,6 +17,7 @@ import (
 
 var (
 	taggers tagger.Tagger
+	caser   = cases.Title(language.English, cases.NoLower)
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
@@ -100,7 +103,7 @@ func (c columnInfo) isNullableOrTemporal() bool {
 func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
 
 	var structFields strings.Builder
-	tableName := strings.Title(settings.Prefix + table.Name + settings.Suffix)
+	tableName := caser.String(settings.Prefix + table.Name + settings.Suffix)
 	// Replace any whitespace with underscores
 	tableName = strings.Map(replaceSpace, tableName)
 	if settings.IsOutputFormatCamelCase() {
@@ -252,12 +255,12 @@ func camelCaseString(s string) string {
 	splitted := strings.Split(s, "_")
 
 	if len(splitted) == 1 {
-		return strings.Title(s)
+		return caser.String(s)
 	}
 
 	var cc string
 	for _, part := range splitted {
-		cc += strings.Title(strings.ToLower(part))
+		cc += caser.String(strings.ToLower(part))
 	}
 	return cc
 }
@@ -312,7 +315,7 @@ func formatColumnName(settings *settings.Settings, column, table string) (string
 
 	// Replace any whitespace with underscores
 	columnName := strings.Map(replaceSpace, column)
-	columnName = strings.Title(columnName)
+	columnName = caser.String(columnName)
 
 	if settings.IsOutputFormatCamelCase() {
 		columnName = camelCaseString(columnName)
@@ -325,12 +328,20 @@ func formatColumnName(settings *settings.Settings, column, table string) (string
 	if !validVariableName(columnName) {
 		return "", fmt.Errorf("column name %q in table %q contains invalid characters", column, table)
 	}
+
 	// First character of an identifier in Go must be letter or _
 	// We want it to be an uppercase letter to be a public field
-	if !unicode.IsLetter([]rune(columnName)[0]) {
+	if !unicode.IsLetter(rune(columnName[0])) {
 		prefix := "X_"
 		if settings.IsOutputFormatCamelCase() {
 			prefix = "X"
+		}
+		if settings.ShouldInitialism() {
+			// Note we use the original passed in name of the column here to
+			// avoid the Title'izing of the first non-digit character as done
+			// by cases.Caser. Eg: `1fish2fish` gets transformed to `X1Fish2fish`
+			// but we want `X1fish2fish`.
+			columnName = toInitialisms(column)
 		}
 		if settings.Verbose {
 			fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)

@@ -1676,7 +1676,6 @@ func TestReplaceSpace(t *testing.T) {
 }
 
 func TestFormatColumnName(t *testing.T) {
-	// success and failure subtests
 	t.Run("pass", func(t *testing.T) {
 		type testCase struct {
 			name     string
@@ -1694,11 +1693,9 @@ func TestFormatColumnName(t *testing.T) {
 			{"nonEnglish", "火", "火", "火"},
 			{"nonEnglishUpper", "Λλ", "Λλ", "Λλ"},
 		}
-		// subtests for camelCase and original settings
+
 		camelSettings := settings.New()
 		camelSettings.OutputFormat = settings.OutputFormatCamelCase
-		originalSettings := settings.New()
-		originalSettings.OutputFormat = settings.OutputFormatOriginal
 		t.Run("camelcase", func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
@@ -1711,6 +1708,9 @@ func TestFormatColumnName(t *testing.T) {
 				})
 			}
 		})
+
+		originalSettings := settings.New()
+		originalSettings.OutputFormat = settings.OutputFormatOriginal
 		t.Run("original", func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
@@ -1724,6 +1724,7 @@ func TestFormatColumnName(t *testing.T) {
 			}
 		})
 	})
+
 	t.Run("fail", func(t *testing.T) {
 		type testCase struct {
 			name  string
