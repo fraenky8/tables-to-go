@@ -132,6 +132,7 @@ func (pg *Postgresql) GetStringDatatypes() []string {
 		"varchar",
 		"character",
 		"char",
+		"uuid",
 	}
 }
 
