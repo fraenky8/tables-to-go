@@ -240,7 +240,11 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 				columnInfo.isNullable = true
 			}
 		default:
-			goType = getNullType(s, "*string", "sql.NullString")
+			if db.IsNullable(column) {
+				goType = getNullType(s, "*string", "sql.NullString")
+			} else {
+				goType = "string"
+			}
 		}
 	}
 
