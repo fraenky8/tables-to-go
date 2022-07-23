@@ -203,13 +203,7 @@ func generateImports(content *strings.Builder, settings *settings.Settings, colu
 }
 
 func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
-	if db.IsString(column) || db.IsText(column) {
-		goType = "string"
-		if db.IsNullable(column) {
-			goType = getNullType(s, "*string", "sql.NullString")
-			columnInfo.isNullable = true
-		}
-	} else if db.IsInteger(column) {
+	if db.IsInteger(column) {
 		goType = "int"
 		if db.IsNullable(column) {
 			goType = getNullType(s, "*int", "sql.NullInt64")
@@ -240,7 +234,12 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 				columnInfo.isNullable = true
 			}
 		default:
-			goType = getNullType(s, "*string", "sql.NullString")
+			// Everything else we cannot detect defaults to (nullable) string.
+			goType = "string"
+			if db.IsNullable(column) {
+				goType = getNullType(s, "*string", "sql.NullString")
+				columnInfo.isNullable = true
+			}
 		}
 	}
 
