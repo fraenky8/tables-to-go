@@ -133,7 +133,7 @@ func (mysql *MySQL) GetStringDatatypes() []string {
 
 // IsString returns true if the colum is of type string for the MySQL database.
 func (mysql *MySQL) IsString(column Column) bool {
-	return mysql.IsStringInSlice(column.DataType, mysql.GetStringDatatypes())
+	return isStringInSlice(column.DataType, mysql.GetStringDatatypes())
 }
 
 // GetTextDatatypes returns the text datatypes for the MySQL database.
@@ -146,7 +146,7 @@ func (mysql *MySQL) GetTextDatatypes() []string {
 
 // IsText returns true if colum is of type text for the MySQL database.
 func (mysql *MySQL) IsText(column Column) bool {
-	return mysql.IsStringInSlice(column.DataType, mysql.GetTextDatatypes())
+	return isStringInSlice(column.DataType, mysql.GetTextDatatypes())
 }
 
 // GetIntegerDatatypes returns the integer datatypes for the MySQL database.
@@ -162,7 +162,7 @@ func (mysql *MySQL) GetIntegerDatatypes() []string {
 
 // IsInteger returns true if colum is of type integer for the MySQL database.
 func (mysql *MySQL) IsInteger(column Column) bool {
-	return mysql.IsStringInSlice(column.DataType, mysql.GetIntegerDatatypes())
+	return isStringInSlice(column.DataType, mysql.GetIntegerDatatypes())
 }
 
 // GetFloatDatatypes returns the float datatypes for the MySQL database.
@@ -178,7 +178,7 @@ func (mysql *MySQL) GetFloatDatatypes() []string {
 
 // IsFloat returns true if colum is of type float for the MySQL database.
 func (mysql *MySQL) IsFloat(column Column) bool {
-	return mysql.IsStringInSlice(column.DataType, mysql.GetFloatDatatypes())
+	return isStringInSlice(column.DataType, mysql.GetFloatDatatypes())
 }
 
 // GetTemporalDatatypes returns the temporal datatypes for the MySQL database.
@@ -194,5 +194,5 @@ func (mysql *MySQL) GetTemporalDatatypes() []string {
 
 // IsTemporal returns true if colum is of type temporal for the MySQL database.
 func (mysql *MySQL) IsTemporal(column Column) bool {
-	return mysql.IsStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
+	return isStringInSlice(column.DataType, mysql.GetTemporalDatatypes())
 }

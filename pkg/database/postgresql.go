@@ -138,7 +138,7 @@ func (pg *Postgresql) GetStringDatatypes() []string {
 
 // IsString returns true if colum is of type string for the Postgresql database.
 func (pg *Postgresql) IsString(column Column) bool {
-	return pg.IsStringInSlice(column.DataType, pg.GetStringDatatypes())
+	return isStringInSlice(column.DataType, pg.GetStringDatatypes())
 }
 
 // GetTextDatatypes returns the text datatypes for the Postgresql database.
@@ -150,7 +150,7 @@ func (pg *Postgresql) GetTextDatatypes() []string {
 
 // IsText returns true if colum is of type text for the Postgresql database.
 func (pg *Postgresql) IsText(column Column) bool {
-	return pg.IsStringInSlice(column.DataType, pg.GetTextDatatypes())
+	return isStringInSlice(column.DataType, pg.GetTextDatatypes())
 }
 
 // GetIntegerDatatypes returns the integer datatypes for the Postgresql database.
@@ -167,7 +167,7 @@ func (pg *Postgresql) GetIntegerDatatypes() []string {
 
 // IsInteger returns true if colum is of type integer for the Postgresql database.
 func (pg *Postgresql) IsInteger(column Column) bool {
-	return pg.IsStringInSlice(column.DataType, pg.GetIntegerDatatypes())
+	return isStringInSlice(column.DataType, pg.GetIntegerDatatypes())
 }
 
 // GetFloatDatatypes returns the float datatypes for the Postgresql database.
@@ -182,7 +182,7 @@ func (pg *Postgresql) GetFloatDatatypes() []string {
 
 // IsFloat returns true if colum is of type float for the Postgresql database.
 func (pg *Postgresql) IsFloat(column Column) bool {
-	return pg.IsStringInSlice(column.DataType, pg.GetFloatDatatypes())
+	return isStringInSlice(column.DataType, pg.GetFloatDatatypes())
 }
 
 // GetTemporalDatatypes returns the temporal datatypes for the Postgresql database.
@@ -200,5 +200,5 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 
 // IsTemporal returns true if colum is of type temporal for the Postgresql database.
 func (pg *Postgresql) IsTemporal(column Column) bool {
-	return pg.IsStringInSlice(column.DataType, pg.GetTemporalDatatypes())
+	return isStringInSlice(column.DataType, pg.GetTemporalDatatypes())
 }
