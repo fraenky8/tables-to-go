@@ -128,8 +128,8 @@ func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 	return column.IsNullable == "YES"
 }
 
-// IsStringInSlice checks if needle (string) is in haystack ([]string).
-func (gdb *GeneralDatabase) IsStringInSlice(needle string, haystack []string) bool {
+// isStringInSlice checks if needle (string) is in haystack ([]string).
+func isStringInSlice(needle string, haystack []string) bool {
 	for _, s := range haystack {
 		if s == needle {
 			return true

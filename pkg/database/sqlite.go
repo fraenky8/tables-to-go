@@ -147,7 +147,7 @@ func (s *SQLite) GetStringDatatypes() []string {
 }
 
 func (s *SQLite) IsString(column Column) bool {
-	return s.IsStringInSlice(column.DataType, s.GetStringDatatypes())
+	return isStringInSlice(column.DataType, s.GetStringDatatypes())
 }
 
 func (s *SQLite) GetTextDatatypes() []string {
@@ -157,7 +157,7 @@ func (s *SQLite) GetTextDatatypes() []string {
 }
 
 func (s *SQLite) IsText(column Column) bool {
-	return s.IsStringInSlice(column.DataType, s.GetTextDatatypes())
+	return isStringInSlice(column.DataType, s.GetTextDatatypes())
 }
 
 func (s *SQLite) GetIntegerDatatypes() []string {
@@ -167,7 +167,7 @@ func (s *SQLite) GetIntegerDatatypes() []string {
 }
 
 func (s *SQLite) IsInteger(column Column) bool {
-	return s.IsStringInSlice(column.DataType, s.GetIntegerDatatypes())
+	return isStringInSlice(column.DataType, s.GetIntegerDatatypes())
 }
 
 func (s *SQLite) GetFloatDatatypes() []string {
@@ -178,7 +178,7 @@ func (s *SQLite) GetFloatDatatypes() []string {
 }
 
 func (s *SQLite) IsFloat(column Column) bool {
-	return s.IsStringInSlice(column.DataType, s.GetFloatDatatypes())
+	return isStringInSlice(column.DataType, s.GetFloatDatatypes())
 }
 
 func (s *SQLite) GetTemporalDatatypes() []string {
