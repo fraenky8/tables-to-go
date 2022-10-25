@@ -49,6 +49,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.Var(&args.Null, "null", "representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)")
 
 	flag.BoolVar(&args.NoInitialism, "no-initialism", args.NoInitialism, "disable the conversion to upper-case words in column names")
+	flag.StringVar(&args.CustomColumnRename, "ccr", args.CustomColumnRename, "add custom colum rename rules and ignore column renaming functions, skipping initialism and casing (format: providerId:ProviderID,123:abc)")
 
 	flag.BoolVar(&args.TagsNoDb, "tags-no-db", args.TagsNoDb, "do not create db-tags")
 

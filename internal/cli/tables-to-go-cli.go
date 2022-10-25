@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -273,19 +274,10 @@ func getNullType(settings *settings.Settings, primitive string, sql string) stri
 
 func toInitialisms(s string) string {
 	for _, substr := range initialisms {
-		idx := indexCaseInsensitive(s, substr)
-		if idx == -1 {
-			continue
-		}
-		toReplace := s[idx : idx+len(substr)]
-		s = strings.ReplaceAll(s, toReplace, substr)
+		m := regexp.MustCompile(`(?i)` + substr)
+		s = string(m.ReplaceAll([]byte(s), []byte(substr)))
 	}
 	return s
-}
-
-func indexCaseInsensitive(s, substr string) int {
-	s, substr = strings.ToLower(s), strings.ToLower(substr)
-	return strings.Index(s, substr)
 }
 
 // ValidVariableName checks for the existence of any characters
@@ -308,19 +300,37 @@ func replaceSpace(r rune) rune {
 	return r
 }
 
+// renameColumn changes the column name if the change rule
+// in settings applied, otherwise returns original string and false.
+func renameColumn(cfg *settings.Settings, s string) (string, bool) {
+	m := cfg.ParseCustomRenameRules()
+	r, ok := m[s]
+	if !ok {
+		return s, false
+	}
+
+	return r, true
+}
+
 // FormatColumnName checks for invalid characters and transforms a column name
 // according to the provided settings.
 func formatColumnName(settings *settings.Settings, column, table string) (string, error) {
-
-	// Replace any whitespace with underscores
-	columnName := strings.Map(replaceSpace, column)
-	columnName = caser.String(columnName)
-
-	if settings.IsOutputFormatCamelCase() {
-		columnName = camelCaseString(columnName)
+	var renamed bool
+	var columnName string
+	if settings.HasCustomRename() {
+		columnName, renamed = renameColumn(settings, column)
 	}
-	if settings.ShouldInitialism() {
-		columnName = toInitialisms(columnName)
+
+	if !renamed {
+		// Replace any whitespace with underscores
+		columnName = strings.Map(replaceSpace, column)
+		columnName = caser.String(columnName)
+		if settings.IsOutputFormatCamelCase() {
+			columnName = camelCaseString(columnName)
+		}
+		if settings.ShouldInitialism() {
+			columnName = toInitialisms(columnName)
+		}
 	}
 
 	// Check that the column name doesn't contain any invalid characters for Go variables
