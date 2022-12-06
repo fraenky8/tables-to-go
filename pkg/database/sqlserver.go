@@ -122,13 +122,13 @@ func (ss *Sqlserver) IsAutoIncrement(column Column) bool {
 }
 
 // GetStringDatatypes returns the string datatypes for the Sqlserver database.
+// https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16#character-strings
 func (ss *Sqlserver) GetStringDatatypes() []string {
 	return []string{
-		"character varying",
-		"varchar",
-		"character",
 		"char",
-		"uuid",
+		"varchar",
+		"nchar",
+		"nvarchar",
 	}
 }
 
@@ -138,9 +138,14 @@ func (ss *Sqlserver) IsString(column Column) bool {
 }
 
 // GetTextDatatypes returns the text datatypes for the Sqlserver database.
+// https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16#character-strings
 func (ss *Sqlserver) GetTextDatatypes() []string {
 	return []string{
 		"text",
+		"ntext",
+		"binary",
+		"varbinary",
+		"image",
 	}
 }
 
@@ -150,14 +155,14 @@ func (ss *Sqlserver) IsText(column Column) bool {
 }
 
 // GetIntegerDatatypes returns the integer datatypes for the Sqlserver database.
+// https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16#exact-numerics
 func (ss *Sqlserver) GetIntegerDatatypes() []string {
 	return []string{
-		"smallint",
-		"integer",
 		"bigint",
-		"smallserial",
-		"serial",
-		"bigserial",
+		"bit",
+		"smallint",
+		"int",
+		"tinyint",
 	}
 }
 
@@ -167,12 +172,13 @@ func (ss *Sqlserver) IsInteger(column Column) bool {
 }
 
 // GetFloatDatatypes returns the float datatypes for the Sqlserver database.
+// https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16#exact-numerics
 func (ss *Sqlserver) GetFloatDatatypes() []string {
 	return []string{
 		"numeric",
 		"decimal",
+		"float",
 		"real",
-		"double precision",
 	}
 }
 
@@ -182,15 +188,15 @@ func (ss *Sqlserver) IsFloat(column Column) bool {
 }
 
 // GetTemporalDatatypes returns the temporal datatypes for the Sqlserver database.
+// https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16#date-and-time
 func (ss *Sqlserver) GetTemporalDatatypes() []string {
 	return []string{
-		"time",
-		"timestamp",
-		"time with time zone",
-		"timestamp with time zone",
-		"time without time zone",
-		"timestamp without time zone",
 		"date",
+		"datetimeoffset",
+		"datetime2",
+		"smalldatetime",
+		"datetime",
+		"time",
 	}
 }
 
