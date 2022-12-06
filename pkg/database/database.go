@@ -15,6 +15,7 @@ var (
 		settings.DBTypePostgresql: "postgres",
 		settings.DBTypeMySQL:      "mysql",
 		settings.DBTypeSQLite:     "sqlite3",
+		settings.DBTypeSQLServer:  "sqlserver",
 	}
 )
 
@@ -91,6 +92,8 @@ func New(s *settings.Settings) Database {
 		db = NewSQLite(s)
 	case settings.DBTypeMySQL:
 		db = NewMySQL(s)
+	case settings.DBTypeSQLServer:
+		db = NewSqlserver(s)
 	case settings.DBTypePostgresql:
 		fallthrough
 	default:
