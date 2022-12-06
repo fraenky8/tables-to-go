@@ -10,14 +10,14 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-// Postgresql implements the Database interface with help of GeneralDatabase.
+// Sqlserver implements the Database interface with help of GeneralDatabase.
 type Sqlserver struct {
 	*GeneralDatabase
 
 	defaultUserName string
 }
 
-// NewPostgresql creates a new Postgresql database.
+// NewSqlserver creates a new Sqlserver database.
 func NewSqlserver(s *settings.Settings) *Sqlserver {
 	return &Sqlserver{
 		GeneralDatabase: &GeneralDatabase{
@@ -118,10 +118,10 @@ func (ss *Sqlserver) IsPrimaryKey(column Column) bool {
 
 // IsAutoIncrement checks if the column is an auto_increment column.
 func (ss *Sqlserver) IsAutoIncrement(column Column) bool {
-	return strings.Contains(column.DefaultValue.String, "nextval")
+	return strings.Contains(column.DefaultValue.String, "IDENTITY")
 }
 
-// GetStringDatatypes returns the string datatypes for the Postgresql database.
+// GetStringDatatypes returns the string datatypes for the Sqlserver database.
 func (ss *Sqlserver) GetStringDatatypes() []string {
 	return []string{
 		"character varying",
@@ -132,7 +132,7 @@ func (ss *Sqlserver) GetStringDatatypes() []string {
 	}
 }
 
-// IsString returns true if colum is of type string for the Postgresql database.
+// IsString returns true if colum is of type string for the Sqlserver database.
 func (ss *Sqlserver) IsString(column Column) bool {
 	return isStringInSlice(column.DataType, ss.GetStringDatatypes())
 }
