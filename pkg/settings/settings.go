@@ -14,6 +14,7 @@ const (
 	DBTypePostgresql DBType = "pg"
 	DBTypeMySQL      DBType = "mysql"
 	DBTypeSQLite     DBType = "sqlite3"
+	DBTypeSQLServer  DBType = "sqlserver"
 )
 
 // Set sets the datatype for the custom type for the flag package.
@@ -122,6 +123,7 @@ var (
 		DBTypePostgresql: true,
 		DBTypeMySQL:      true,
 		DBTypeSQLite:     true,
+		DBTypeSQLServer:  true,
 	}
 
 	// supportedOutputFormats represents the supported output formats
@@ -135,6 +137,7 @@ var (
 		DBTypePostgresql: "5432",
 		DBTypeMySQL:      "3306",
 		DBTypeSQLite:     "",
+		DBTypeSQLServer:  "1433",
 	}
 
 	// supportedNullTypes represents the supported types of NULL types
