@@ -52,6 +52,8 @@ func (ss *Sqlserver) GetTables() (tables []*Table, err error) {
             table_name
         FROM
             INFORMATION_SCHEMA.TABLES
+        WHERE
+            TABLE_SCHEMA = @p1
         ORDER BY TABLE_NAME
 	`, ss.Schema)
 
