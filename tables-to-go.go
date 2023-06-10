@@ -37,6 +37,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Schema, "s", args.Schema, "schema name")
 	flag.StringVar(&args.Host, "h", args.Host, "host of database")
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
+	flag.StringVar(&args.SSLMode, "sslmode", args.SSLMode, "connect to database using secure connection. Supported values: 'require' (default), 'verify-full', 'verify-ca', and 'disable'")
 	flag.StringVar(&args.Socket, "socket", args.Socket, "The socket file to use for connection. If specified, takes precedence over host:port.")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")

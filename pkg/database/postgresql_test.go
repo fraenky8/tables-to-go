@@ -23,8 +23,8 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
-					s.Host, s.Port, "postgres", s.DbName, s.Pswd)
+				return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+					"postgres", s.Pswd, s.Host, s.Port, s.DbName, s.SSLMode)
 			},
 		},
 		{
@@ -36,8 +36,8 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
-					s.Host, s.Port, "my_custom_user", s.DbName, s.Pswd)
+				return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+					"my_custom_user", s.Pswd, s.Host, s.Port, s.DbName, s.SSLMode)
 			},
 		},
 		{
@@ -51,7 +51,8 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return "host=/tmp user=my_custom_user dbname=postgres password=mysecretpassword"
+				return fmt.Sprintf("postgres://%s:%s@?%s&%s&sslmode=%s",
+					"my_custom_user", "mysecretpassword", "/tmp", s.Port, s.SSLMode)
 			},
 		},
 	}
