@@ -209,7 +209,7 @@ func New() *Settings {
 		Schema:         "public",
 		Host:           "127.0.0.1",
 		Port:           "", // left blank, automatically determined if not set
-		SSLMode:        "", // left blank, will set the default for Postgres to 'require'
+		SSLMode:        "", // left blank, will set the default for Postgres to 'disable'
 		Socket:         "",
 		OutputFilePath: dir,
 		OutputFormat:   OutputFormatCamelCase,
