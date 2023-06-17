@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,8 +22,10 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-					"postgres", s.Pswd, s.Host, s.Port, s.DbName, s.SSLMode)
+				expected := "postgres://postgres:"
+				expected += s.Pswd + "@" + s.Host + ":" + s.Port + "/"
+				expected += s.DbName + "?sslmode=" + s.SSLMode
+				return expected
 			},
 		},
 		{
@@ -36,8 +37,10 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-					"my_custom_user", s.Pswd, s.Host, s.Port, s.DbName, s.SSLMode)
+				expected := "postgres://my_custom_user:"
+				expected += s.Pswd + "@" + s.Host + ":" + s.Port + "/"
+				expected += s.DbName + "?sslmode=" + s.SSLMode
+				return expected
 			},
 		},
 		{
@@ -51,8 +54,9 @@ func TestPostgresql_DSN(t *testing.T) {
 				return s
 			},
 			expected: func(s *settings.Settings) string {
-				return fmt.Sprintf("postgres://%s:%s@?%s&%s&sslmode=%s",
-					"my_custom_user", "mysecretpassword", "/tmp", s.Port, s.SSLMode)
+				expected := "postgres://my_custom_user:mysecretpassword@"
+				expected += "?" + s.Socket + "&" + s.Port + "&sslmode=" + s.SSLMode
+				return expected
 			},
 		},
 	}

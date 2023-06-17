@@ -247,7 +247,7 @@ func (settings *Settings) Verify() (err error) {
 	}
 
 	if settings.SSLMode == "" {
-		settings.SSLMode = "require"
+		settings.SSLMode = "disable"
 	}
 
 	if settings.PackageName == "" {
