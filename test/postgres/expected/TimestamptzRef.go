@@ -1,9 +1,9 @@
 package dto
 
 import (
-	pg "github.com/lib/pq"
+	"database/sql"
 )
 
 type TimestamptzRef struct {
-	TimestamptzRef pg.NullTime `db:"timestamptz_ref"`
+	TimestamptzRef sql.NullTime `db:"timestamptz_ref"`
 }

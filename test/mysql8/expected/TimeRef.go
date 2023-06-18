@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"github.com/go-sql-driver/mysql"
+	"database/sql"
 )
 
 type TimeRef struct {
-	TimeRef mysql.NullTime `db:"time_ref"`
+	TimeRef sql.NullTime `db:"time_ref"`
 }
