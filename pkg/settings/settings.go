@@ -159,13 +159,14 @@ type Settings struct {
 
 	DbType DBType
 
-	User   string
-	Pswd   string
-	DbName string
-	Schema string
-	Host   string
-	Port   string
-	Socket string
+	User    string
+	Pswd    string
+	DbName  string
+	Schema  string
+	Host    string
+	Port    string
+	SSLMode string
+	Socket  string
 
 	OutputFilePath string
 	OutputFormat   OutputFormat
@@ -208,6 +209,7 @@ func New() *Settings {
 		Schema:         "public",
 		Host:           "127.0.0.1",
 		Port:           "", // left blank, automatically determined if not set
+		SSLMode:        "", // left blank, will set the default for Postgres to 'disable'
 		Socket:         "",
 		OutputFilePath: dir,
 		OutputFormat:   OutputFormatCamelCase,
@@ -242,6 +244,10 @@ func (settings *Settings) Verify() (err error) {
 
 	if settings.Port == "" {
 		settings.Port = dbDefaultPorts[settings.DbType]
+	}
+
+	if settings.SSLMode == "" {
+		settings.SSLMode = "disable"
 	}
 
 	if settings.PackageName == "" {

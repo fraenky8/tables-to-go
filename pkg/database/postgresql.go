@@ -41,11 +41,11 @@ func (pg *Postgresql) DSN() string {
 		user = pg.Settings.User
 	}
 	if pg.Settings.Socket != "" {
-		return fmt.Sprintf("host=%s user=%s dbname=%s password=%s",
-			pg.Settings.Socket, user, pg.Settings.DbName, pg.Settings.Pswd)
+		return fmt.Sprintf("postgres://%s:%s@?%s&%s&sslmode=%s",
+			user, pg.Settings.Pswd, pg.Settings.Socket, pg.Settings.Port, pg.Settings.SSLMode)
 	}
-	return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
-		pg.Settings.Host, pg.Settings.Port, user, pg.Settings.DbName, pg.Settings.Pswd)
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		user, pg.Settings.Pswd, pg.Settings.Host, pg.Settings.Port, pg.Settings.DbName, pg.Settings.SSLMode)
 }
 
 // GetTables gets all tables for a given schema by name.
