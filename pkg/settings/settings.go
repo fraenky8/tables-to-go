@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // DBType represents a type of a database.
@@ -177,7 +178,8 @@ type Settings struct {
 	Suffix         string
 	Null           NullType
 
-	NoInitialism bool
+	NoInitialism       bool
+	CustomColumnRename string
 
 	TagsNoDb bool
 
@@ -219,7 +221,8 @@ func New() *Settings {
 		Suffix:         "",
 		Null:           NullTypeSQL,
 
-		NoInitialism: false,
+		NoInitialism:       false,
+		CustomColumnRename: "",
 
 		TagsNoDb: false,
 
@@ -312,6 +315,37 @@ func (settings *Settings) IsNullTypeSQL() bool {
 // to initialisms or not.
 func (settings *Settings) ShouldInitialism() bool {
 	return !settings.NoInitialism
+}
+
+// HasCustomRename returns if the setting to rename columns with
+// custom rename rules is set.
+func (settings *Settings) HasCustomRename() bool {
+	return settings.CustomColumnRename != ""
+}
+
+const multiSplitter = ","
+const ruleSplitter = ":"
+
+// ParseCustomRenameRules reads a custom rename setting string
+// and returns a map for easier rule access.
+// customRenameRule example: column1:Column2,col10:column10.
+// multiple rules are split with comma
+func (settings *Settings) ParseCustomRenameRules() map[string]string {
+	if !settings.HasCustomRename() {
+		return nil
+	}
+
+	m := make(map[string]string, strings.Count(settings.CustomColumnRename, multiSplitter)+1)
+	for _, rule := range strings.Split(settings.CustomColumnRename, multiSplitter) {
+		r := strings.Split(rule, ruleSplitter)
+		if len(r) != 2 {
+			continue
+		}
+
+		m[r[0]] = r[1]
+	}
+
+	return m
 }
 
 // IsOutputFormatCamelCase returns if the type given by command line args is of
