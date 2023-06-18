@@ -8,6 +8,6 @@ import (
 type Db struct{}
 
 // GenerateTag for Db to satisfy the Tagger interface.
-func (t Db) GenerateTag(db database.Database, column database.Column) string {
+func (t Db) GenerateTag(_ database.Database, column database.Column) string {
 	return `db:"` + column.Name + `"`
 }
