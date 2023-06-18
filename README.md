@@ -49,7 +49,7 @@ containing the structs will get created (default: current working directory).
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formatted files with imports
-* automatically typed struct fields, either with `sql.Null*` or primitive 
+* automatically typed struct fields, either with `sql.Null*` or primitive `*builtinType`
 pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
@@ -59,7 +59,7 @@ pointer types
     * without `db`-tags
     * with or without `structable.Recorder` 
 * **currently supported**:
-  * PostgreSQL (9.5 tested)
+  * PostgreSQL (10, 11, 12 tested)
   * MySQL (5.5+, 8 tested)
   * SQLite (3 tested)
 * currently, the following basic data types are supported:
@@ -106,8 +106,8 @@ type SomeUserInfo struct {
 }
 ```
 
-The column `id` got automatically converted to upper-case to follow the idiomatic
-go guidelines. 
+The column `id` got automatically converted to upper-case to follow the 
+idiomatic go guidelines. 
 See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) 
 for more details. 
 Words which gets converted can be found 

@@ -1,4 +1,4 @@
-.PHONY: all build
+.PHONY: all install test
 
 all: help
 
@@ -8,6 +8,12 @@ help:                   ## Show this help
 
 install:                ## Installs tables-to-go. Same behavior like `go install -mod=vendor .`
 	go install -mod=vendor .
+
+test:                   ## Runs unit tests with race flag enabled
+	go test -mod=vendor -race ./...
+
+integration-test:       ## Runs integration tests
+	go test -mod=vendor -tags=integration ./test/...
 
 sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
                         ## User Authentication feature enabled. \
