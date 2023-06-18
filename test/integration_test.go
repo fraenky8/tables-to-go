@@ -1,11 +1,10 @@
-// +build integration
+//go:build integration
 
 package test
 
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -56,7 +55,7 @@ func TestIntegration(t *testing.T) {
 			desc: "mysql 8",
 			settings: func() *dbSettings {
 				s := settings.New()
-				s.DbType = settings.DbTypeMySQL
+				s.DbType = settings.DBTypeMySQL
 				s.User = "root"
 				s.Pswd = "mysecretpassword"
 				s.DbName = "public"
@@ -87,7 +86,7 @@ func TestIntegration(t *testing.T) {
 			desc: "postgres 10",
 			settings: func() *dbSettings {
 				s := settings.New()
-				s.DbType = settings.DbTypePostgresql
+				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
 				s.Pswd = "mysecretpassword"
 				s.DbName = "postgres"
@@ -119,7 +118,7 @@ func TestIntegration(t *testing.T) {
 			desc: "postgres 11",
 			settings: func() *dbSettings {
 				s := settings.New()
-				s.DbType = settings.DbTypePostgresql
+				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
 				s.Pswd = "mysecretpassword"
 				s.DbName = "postgres"
@@ -151,7 +150,7 @@ func TestIntegration(t *testing.T) {
 			desc: "postgres 12",
 			settings: func() *dbSettings {
 				s := settings.New()
-				s.DbType = settings.DbTypePostgresql
+				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
 				s.Pswd = "mysecretpassword"
 				s.DbName = "postgres"
@@ -256,11 +255,11 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	sort.Strings(outputFiles)
 
 	for i := range expectedFiles {
-		expectedFile, err := ioutil.ReadFile(expectedFiles[i])
+		expectedFile, err := os.ReadFile(expectedFiles[i])
 		assert.NoError(t, err)
-		outputFile, err := ioutil.ReadFile(outputFiles[i])
+		outputFile, err := os.ReadFile(outputFiles[i])
 		assert.NoError(t, err)
-		assert.Equal(t, expectedFile, outputFile)
+		assert.Equal(t, string(expectedFile), string(outputFile), "file %q", expectedFiles[i])
 	}
 }
 
@@ -289,7 +288,7 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 	// give docker some time to spin up the database
 	// also reduce unnecessary output of
 	// > packets.go:36: unexpected EOF errors when spinning up mysql
-	if s.DbType == settings.DbTypeMySQL {
+	if s.DbType == settings.DBTypeMySQL {
 		time.Sleep(25 * time.Second)
 	}
 
@@ -316,7 +315,7 @@ func createTestData(db *sqlx.DB, s *dbSettings) error {
 	}
 
 	for _, f := range files {
-		data, err := ioutil.ReadFile(f)
+		data, err := os.ReadFile(f)
 		if err != nil {
 			return fmt.Errorf("could not read %q: %v", f, err)
 		}
