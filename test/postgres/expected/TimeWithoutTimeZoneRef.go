@@ -1,9 +1,9 @@
 package dto
 
 import (
-	pg "github.com/lib/pq"
+	"database/sql"
 )
 
 type TimeWithoutTimeZoneRef struct {
-	TimeWithoutTimeZoneRef pg.NullTime `db:"time_without_time_zone_ref"`
+	TimeWithoutTimeZoneRef sql.NullTime `db:"time_without_time_zone_ref"`
 }
