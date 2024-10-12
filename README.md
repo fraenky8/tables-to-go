@@ -194,9 +194,9 @@ Usage of tables-to-go:
   -d string
     	database name (default "postgres")
   -f	force; skip tables that encounter errors
-  -fn-format string
+  -fn-format value
     	format of the filename: camelCase (c, default) or snake_case (s) (default c)
-  -format string
+  -format value
     	format of struct fields (columns): camelCase (c) or original (o) (default c)
   -h string
     	host of database (default "127.0.0.1")
@@ -204,10 +204,10 @@ Usage of tables-to-go:
     	shows help and usage
   -no-initialism
     	disable the conversion to upper-case words in column names
-  -null string
+  -null value
     	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) (default sql)
   -of string
-    	output file path (default "current working directory")
+    	output file path, default is current working directory (default "/Users/zalora_user/Coding/Go/src/github.com/fraenky8/tables-to-go")
   -p string
     	password of user
   -pn string
@@ -219,13 +219,17 @@ Usage of tables-to-go:
   -s string
     	schema name (default "public")
   -socket string
-    	The socket file to use for connection. Takes precedence over host:port.
+    	The socket file to use for connection. If specified, takes precedence over host:port.
+  -sslmode string
+    	Connect to database using secure connection. (default "disable")
+    	The value will be passed as is to the underlying driver.
+    	Refer to this site for supported values: https://www.postgresql.org/docs/current/libpq-ssl.html
   -structable-recorder
     	generate a structable.Recorder field
   -suf string
     	suffix for file- and struct names
-  -t string
-    	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
+  -t value
+    	type of database to use, currently supported: [mysql sqlite3 pg] (default pg)
   -tags-no-db
     	do not create db-tags
   -tags-structable
@@ -233,8 +237,10 @@ Usage of tables-to-go:
   -tags-structable-only
     	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
   -u string
-    	user to connect to the database (default "postgres")
+    	user to connect to the database
   -v	verbose output
+  -version
+    	show version and build information
   -vv
     	more verbose output
 ```
