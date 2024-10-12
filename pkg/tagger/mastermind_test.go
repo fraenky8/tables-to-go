@@ -11,6 +11,8 @@ import (
 )
 
 func TestMastermind_GenerateTag(t *testing.T) {
+	t.Parallel()
+
 	type test struct {
 		desc     string
 		settings func() *settings.Settings

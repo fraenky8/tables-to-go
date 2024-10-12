@@ -7,6 +7,8 @@ import (
 )
 
 func TestFormatDecorator_Decorate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -45,6 +47,8 @@ type Bar struct {
 }
 
 func TestImportDecorator_Decorate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string

@@ -9,6 +9,8 @@ import (
 )
 
 func TestPostgresql_DSN(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *settings.Settings

@@ -9,6 +9,8 @@ import (
 )
 
 func TestSettings_Verify(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *Settings
@@ -68,6 +70,8 @@ func TestSettings_Verify(t *testing.T) {
 }
 
 func TestSettings_IsNullTypeSQL(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *Settings
@@ -125,6 +129,8 @@ func TestSettings_IsNullTypeSQL(t *testing.T) {
 }
 
 func TestSettings_ShouldInitialism(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *Settings
@@ -164,6 +170,8 @@ func TestSettings_ShouldInitialism(t *testing.T) {
 }
 
 func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *Settings
@@ -212,6 +220,8 @@ func TestSettings_IsOutputFormatCamelCase(t *testing.T) {
 }
 
 func TestSettings_IsFileNameFormatSnakeCase(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *Settings
@@ -251,6 +261,8 @@ func TestSettings_IsFileNameFormatSnakeCase(t *testing.T) {
 }
 
 func TestDbType_Set(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -293,6 +305,8 @@ func TestDbType_Set(t *testing.T) {
 }
 
 func TestNullType_Set(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -335,6 +349,8 @@ func TestNullType_Set(t *testing.T) {
 }
 
 func TestOutputFormat_Set(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -377,6 +393,8 @@ func TestOutputFormat_Set(t *testing.T) {
 }
 
 func TestFileNameFormat_Set(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -419,6 +437,8 @@ func TestFileNameFormat_Set(t *testing.T) {
 }
 
 func TestSprintfSupportedDbTypes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		expected int
@@ -440,6 +460,8 @@ func TestSprintfSupportedDbTypes(t *testing.T) {
 }
 
 func TestSprintfSupportedNullTypes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		expected int
