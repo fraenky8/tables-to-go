@@ -1,29 +1,77 @@
 name: Go & Lint
-on: [push]
+
+on:
+  push:
+    # Run on all branches but not on tags.
+    # https://github.com/orgs/community/discussions/25615
+    branches:
+      - "**"
+    tags:
+      - "!**"
+  workflow_dispatch:
+
 permissions:
   contents: read
+
+# We limit the concurrent runs of this workflow on per branch (ref) level.
+# https://docs.github.com/en/enterprise-cloud@latest/actions/using-jobs/using-concurrency#example-using-concurrency-and-the-default-behavior
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # This is the Go version.
+  #
+  GOLANG_VERSION: "1.23"
+
+  # This is the golangci-lint version we use.
+  #
+  # Take a look at the official docs to check if there is a newer version
+  # available:
+  #
+  # https://github.com/golangci/golangci-lint/releases
+  #
+  GOLANGCI_LINT_VERSION: "v1.61.0"
+
 jobs:
-  golangci:
-    name: Checks
+  checks-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
+      - uses: actions/checkout@v4
 
-  build:
-    name: Build & Test
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOLANG_VERSION }}
+
+      - name: Check gofmt
+        run: |
+          files=$(go fmt -mod=vendor ./...)
+          [ -z "$files" ] && exit 0
+
+          echo "Files not formatted:"
+          echo
+          for f in $files; do
+              echo "  $f"
+          done
+
+          exit 1
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+
+  build-test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.20'
+          go-version: ${{ env.GOLANG_VERSION }}
 
       - name: Build
         run: go build -v -mod=vendor .
