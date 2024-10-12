@@ -9,6 +9,8 @@ import (
 )
 
 func TestFileWriter_Write(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc      string
 		tableName string

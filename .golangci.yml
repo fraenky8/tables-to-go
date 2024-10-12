@@ -1,7 +1,5 @@
 run:
   timeout: 5m
-  skip-dirs:
-    - _test
 
 linters:
   # We run with all default linters enabled and in addition the linters
@@ -9,13 +7,18 @@ linters:
   enable:
     - bodyclose
     - errorlint
-    - exportloopref
+    - copyloopvar
     - goimports
     - gosec
     - makezero
     - revive
     - unconvert
+    - unparam
     - wastedassign
+
+issues:
+  exclude-dirs:
+    - _test
 
 linters-settings:
   goimports:

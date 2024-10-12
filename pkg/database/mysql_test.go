@@ -9,6 +9,8 @@ import (
 )
 
 func TestMySQL_DSN(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *settings.Settings
@@ -24,7 +26,7 @@ func TestMySQL_DSN(t *testing.T) {
 				s.Port = "3306"
 				return s
 			},
-			expected: func(s *settings.Settings) string {
+			expected: func(*settings.Settings) string {
 				return "root:mysecretpassword@tcp(127.0.0.1:3306)/my-cool-db"
 			},
 		},
@@ -39,7 +41,7 @@ func TestMySQL_DSN(t *testing.T) {
 				s.Socket = "/tmp/mysql.sock"
 				return s
 			},
-			expected: func(s *settings.Settings) string {
+			expected: func(*settings.Settings) string {
 				return "admin:mysecretpassword@unix(/tmp/mysql.sock)/my-cool-db"
 			},
 		},

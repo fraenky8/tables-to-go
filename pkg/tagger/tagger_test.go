@@ -10,6 +10,8 @@ import (
 )
 
 func TestTaggers_GenerateTags(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		settings func() *settings.Settings
