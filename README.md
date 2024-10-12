@@ -8,7 +8,7 @@ database schema.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go)
 [![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
-[![Build & Test](https://github.com/fraenky8/tables-to-go/workflows/Go/badge.svg)](https://github.com/fraenky8/tables-to-go/actions)
+[![Build & Test](https://github.com/fraenky8/tables-to-go/actions/workflows/go.yml/badge.svg)](https://github.com/fraenky8/tables-to-go/actions)
 [![Code Coverage](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fraenky8/tables-to-go/?branch=master)
 
 ## Requirements
@@ -21,7 +21,7 @@ This project provides a make file but can also simply be installed with the
 go-install command:
 
 ```
-go install github.com/fraenky8/tables-to-go@latest
+go install github.com/fraenky8/tables-to-go/v2@latest
 ```
 
 To enable SQLite3 support, clone the repo manually and run the make file:
