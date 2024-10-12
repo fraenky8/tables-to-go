@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fraenky8/tables-to-go/pkg/settings"
+	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
 // SQLite implements the Database interface with help of GeneralDatabase.
