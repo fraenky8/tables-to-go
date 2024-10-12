@@ -91,6 +91,42 @@ func TestCamelCaseString(t *testing.T) {
 	}
 }
 
+func TestCustomRenameRuleParser(t *testing.T) {
+	tests := []struct {
+		desc     string
+		input    string
+		expected map[string]string
+	}{
+		{
+			desc:     "no rules",
+			input:    "",
+			expected: nil,
+		},
+		{
+			desc:  "single rule",
+			input: "rule1:Rule1",
+			expected: map[string]string{
+				"rule1": "Rule1",
+			},
+		},
+		{
+			desc:  "multiple rules",
+			input: "rule1:Rule1,hello:world",
+			expected: map[string]string{
+				"rule1": "Rule1",
+				"hello": "world",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			s := settings.New()
+			s.CustomColumnRename = tt.input
+			actual := s.ParseCustomRenameRules()
+			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
+		})
+	}
+}
 func TestToInitialisms(t *testing.T) {
 	t.Parallel()
 
@@ -138,6 +174,11 @@ func TestToInitialisms(t *testing.T) {
 			desc:     "replacements only in the string should be return original string",
 			input:    "IdjsonuRlHtTp",
 			expected: "IDJSONURLHTTP",
+		},
+		{
+			desc:     "different cases of initialism (id/Id or json/jSon)",
+			input:    "providerId",
+			expected: "provIDerID",
 		},
 	}
 	for _, tt := range tests {
@@ -2030,10 +2071,15 @@ func TestFormatColumnName(t *testing.T) {
 			{"numbersOnly", "123", "X_123", "X123"},
 			{"nonEnglish", "火", "火", "火"},
 			{"nonEnglishUpper", "Λλ", "Λλ", "Λλ"},
+			{"customRenameRule", "12345", "abc", "abc"},
+			{"customRenameRuleWithInitialism", "providerId", "ProviderID", "ProviderID"},
 		}
+
+		const customRenameRules = "12345:abc,providerId:ProviderID"
 
 		camelSettings := settings.New()
 		camelSettings.OutputFormat = settings.OutputFormatCamelCase
+		camelSettings.CustomColumnRename = customRenameRules
 		t.Run("camelcase", func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
@@ -2049,6 +2095,7 @@ func TestFormatColumnName(t *testing.T) {
 
 		originalSettings := settings.New()
 		originalSettings.OutputFormat = settings.OutputFormatOriginal
+		originalSettings.CustomColumnRename = customRenameRules
 		t.Run("original", func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {

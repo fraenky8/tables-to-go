@@ -191,6 +191,8 @@ Print usage with `-?` or `-help`
 ```
 Usage of tables-to-go:
   -?	shows help and usage
+  -ccr  string
+    	add custom colum rename rules and ignore column renaming functions, skipping initialism and casing (format: providerId:ProviderID,123:abc)
   -d string
     	database name (default "postgres")
   -f	force; skip tables that encounter errors
