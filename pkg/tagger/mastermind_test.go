@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/fraenky8/tables-to-go/pkg/database"
-	"github.com/fraenky8/tables-to-go/pkg/settings"
+	"github.com/fraenky8/tables-to-go/v2/pkg/database"
+	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
 func TestMastermind_GenerateTag(t *testing.T) {

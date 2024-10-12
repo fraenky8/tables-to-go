@@ -1,7 +1,7 @@
 package tagger
 
 import (
-	"github.com/fraenky8/tables-to-go/pkg/database"
+	"github.com/fraenky8/tables-to-go/v2/pkg/database"
 )
 
 // Db is the standard "db"-tag.

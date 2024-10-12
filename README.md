@@ -21,7 +21,7 @@ This project provides a make file but can also simply be installed with the
 go-install command:
 
 ```
-go install github.com/fraenky8/tables-to-go@master
+go install github.com/fraenky8/tables-to-go@latest
 ```
 
 To enable SQLite3 support, clone the repo manually and run the make file:

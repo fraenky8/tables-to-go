@@ -4,16 +4,25 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/debug"
 
-	"github.com/fraenky8/tables-to-go/internal/cli"
-	"github.com/fraenky8/tables-to-go/pkg/database"
-	"github.com/fraenky8/tables-to-go/pkg/output"
-	"github.com/fraenky8/tables-to-go/pkg/settings"
+	"github.com/fraenky8/tables-to-go/v2/internal/cli"
+	"github.com/fraenky8/tables-to-go/v2/pkg/database"
+	"github.com/fraenky8/tables-to-go/v2/pkg/output"
+	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
+)
+
+var (
+	revision       = "master"
+	versionTag     = ""
+	buildTimestamp = ""
 )
 
 // CmdArgs represents the supported command line args
 type CmdArgs struct {
-	Help bool
+	Help    bool
+	Version bool
 	*settings.Settings
 }
 
@@ -28,6 +37,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.BoolVar(&args.Help, "help", false, "shows help and usage")
 	flag.BoolVar(&args.Verbose, "v", args.Verbose, "verbose output")
 	flag.BoolVar(&args.VVerbose, "vv", args.VVerbose, "more verbose output")
+	flag.BoolVar(&args.Version, "version", args.Version, "show version and build information")
 	flag.BoolVar(&args.Force, "f", args.Force, "force; skip tables that encounter errors")
 
 	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
@@ -75,6 +85,11 @@ func main() {
 		os.Exit(0)
 	}
 
+	if cmdArgs.Version {
+		printVersion()
+		os.Exit(0)
+	}
+
 	if err := cmdArgs.Verify(); err != nil {
 		fmt.Print(err)
 		os.Exit(1)
@@ -93,4 +108,27 @@ func main() {
 		fmt.Printf("run error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func printVersion() {
+	info, ok := debug.ReadBuildInfo()
+	if ok {
+		if versionTag == "" {
+			versionTag = info.Main.Version
+		}
+		for _, s := range info.Settings {
+			if s.Key == "vcs.revision" {
+				revision = s.Value[:8]
+			}
+		}
+	}
+
+	fmt.Printf("tables-to-go/%s-%s %s/%s built with %s", versionTag, revision,
+		runtime.GOOS, runtime.GOARCH, runtime.Version())
+
+	//goland:noinspection GoBoolExpressions
+	if buildTimestamp != "" {
+		fmt.Printf(" on %s", buildTimestamp)
+	}
+	fmt.Println()
 }
