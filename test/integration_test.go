@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
@@ -43,6 +44,11 @@ func (s *dbSettings) setSettings(ss *settings.Settings) {
 	s.Settings = ss
 	s.Settings.OutputFilePath = filepath.Join(s.dataFilepath, outputDirectoryName)
 }
+
+// nopLogger is used to silence MySQL logs of "packets.go:36: unexpected EOF".
+type nopLogger struct{}
+
+func (nopLogger) Print(...any) {}
 
 func TestIntegration(t *testing.T) {
 	log.Println("running Tables-to-Go integration tests")
@@ -79,6 +85,9 @@ func TestIntegration(t *testing.T) {
 
 				dbs.setSettings(s)
 
+				// Suppress logs of "packets.go:36: unexpected EOF"
+				_ = mysql.SetLogger(nopLogger{})
+
 				return dbs
 			}(),
 		},
@@ -93,6 +102,7 @@ func TestIntegration(t *testing.T) {
 				s.Schema = "public"
 				s.Host = "localhost"
 				s.Port = "5432"
+				s.SSLMode = "disable"
 				//s.Verbose = true
 				//s.VVerbose = true
 
@@ -125,6 +135,7 @@ func TestIntegration(t *testing.T) {
 				s.Schema = "public"
 				s.Host = "localhost"
 				s.Port = "5432"
+				s.SSLMode = "disable"
 				//s.Verbose = true
 				//s.VVerbose = true
 
@@ -157,6 +168,7 @@ func TestIntegration(t *testing.T) {
 				s.Schema = "public"
 				s.Host = "localhost"
 				s.Port = "5432"
+				s.SSLMode = "disable"
 				//s.Verbose = true
 				//s.VVerbose = true
 
@@ -167,6 +179,39 @@ func TestIntegration(t *testing.T) {
 
 					dockerImage: "postgres",
 					version:     "12",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 17",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+				//s.Verbose = true
+				//s.VVerbose = true
+
+				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "postgres",
+
+					dockerImage: "postgres",
+					version:     "17",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -269,7 +314,7 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("error connecting to Docker: %v", err)
 	}
-	pool.MaxWait = 1 * time.Minute
+	pool.MaxWait = 5 * time.Minute
 
 	resource, err := pool.Run(s.dockerImage, s.version, s.env)
 	if err != nil {
@@ -299,7 +344,14 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 			newSettings.Port = port
 		}
 		db = database.New(newSettings)
-		return db.Connect()
+		err := db.Connect()
+		if err != nil {
+			if newSettings.Verbose {
+				fmt.Println(err.Error())
+			}
+			return err
+		}
+		return nil
 	}); err != nil {
 		return nil, purgeFn, fmt.Errorf("could not connect to Docker: %v", err)
 	}
