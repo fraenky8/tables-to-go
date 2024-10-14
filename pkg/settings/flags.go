@@ -2,6 +2,7 @@ package settings
 
 import (
 	"fmt"
+	"strings"
 )
 
 // DBType represents a type of a database.
@@ -126,6 +127,7 @@ func (s *StringsFlag) String() string {
 
 // Set sets the value for the StringsFlag.
 func (s *StringsFlag) Set(val string) error {
-	*s = append(*s, val)
+	vals := strings.Split(val, ",")
+	*s = append(*s, vals...)
 	return nil
 }
