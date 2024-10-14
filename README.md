@@ -49,8 +49,7 @@ containing the structs will get created (default: current working directory).
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formatted files with imports
-* automatically typed struct fields, either with `sql.Null*` or primitive 
-pointer types
+* automatically typed struct fields, either with `sql.Null*` or primitive pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
   * only primary key & auto increment columns supported
@@ -157,6 +156,12 @@ type ModelSomeUserInfoModel struct {
 }
 ```
 
+Filter for specific tables via (multiple) `-table` flags:
+
+```
+tables-to-go -v -of ../path/to/my/models -table foobar -table foo,bar,baz
+```
+
 ### Where Are The JSON-Tags?
 
 This is a common question asked by contributors and bug reporters.
@@ -229,7 +234,9 @@ Usage of tables-to-go:
   -suf string
     	suffix for file- and struct names
   -t value
-    	type of database to use, currently supported: [mysql sqlite3 pg] (default pg)
+    	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
+  -table value
+    	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
   -tags-no-db
     	do not create db-tags
   -tags-structable

@@ -49,7 +49,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
 	flag.StringVar(&args.SSLMode, "sslmode", args.SSLMode, "Connect to database using secure connection. (default \"disable\")\nThe value will be passed as is to the underlying driver.\nRefer to this site for supported values: https://www.postgresql.org/docs/current/libpq-ssl.html")
 	flag.StringVar(&args.Socket, "socket", args.Socket, "The socket file to use for connection. If specified, takes precedence over host:port.")
-	flag.Var(&args.Tables, "table", "only generate structs for the specified table(s)")
+	flag.Var(&args.Tables, "table", "Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
 	flag.Var(&args.OutputFormat, "format", "format of struct fields (columns): camelCase (c) or original (o)")
