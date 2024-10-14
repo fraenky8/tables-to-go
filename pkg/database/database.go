@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 
@@ -21,12 +23,12 @@ var (
 // Database interface for the concrete databases.
 type Database interface {
 	DSN() string
-	Connect() (err error)
-	Close() (err error)
+	Connect() error
+	Close() error
 
-	GetTables() (tables []*Table, err error)
-	PrepareGetColumnsOfTableStmt() (err error)
-	GetColumnsOfTable(table *Table) (err error)
+	GetTables(tables ...string) ([]*Table, error)
+	PrepareGetColumnsOfTableStmt() error
+	GetColumnsOfTable(table *Table) error
 
 	IsPrimaryKey(column Column) bool
 	IsAutoIncrement(column Column) bool
@@ -136,4 +138,17 @@ func isStringInSlice(needle string, haystack []string) bool {
 		}
 	}
 	return false
+}
+
+func (*GeneralDatabase) andInClause(field string, params []string, args *[]any) string {
+	if field == "" || len(params) == 0 {
+		return ""
+	}
+
+	*args = slices.Grow(*args, len(params))
+	for i := range params {
+		*args = append(*args, params[i])
+	}
+
+	return "AND " + field + " IN (?" + strings.Repeat(",?", len(params)-1) + ")"
 }

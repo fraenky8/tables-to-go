@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
@@ -49,15 +51,20 @@ func (pg *Postgresql) DSN() string {
 }
 
 // GetTables gets all tables for a given schema by name.
-func (pg *Postgresql) GetTables() (tables []*Table, err error) {
+func (pg *Postgresql) GetTables(tables ...string) ([]*Table, error) {
 
-	err = pg.Select(&tables, `
+	args := []any{pg.Schema}
+	in := pg.andInClause("table_name", tables, &args)
+
+	var dbTables []*Table
+	err := pg.Select(&dbTables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = $1
+		`+in+`
 		ORDER BY table_name
-	`, pg.Schema)
+	`, args...)
 
 	if pg.Verbose {
 		if err != nil {
@@ -66,7 +73,7 @@ func (pg *Postgresql) GetTables() (tables []*Table, err error) {
 		}
 	}
 
-	return tables, err
+	return dbTables, err
 }
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
@@ -201,4 +208,30 @@ func (pg *Postgresql) GetTemporalDatatypes() []string {
 // IsTemporal returns true if colum is of type temporal for the Postgresql database.
 func (pg *Postgresql) IsTemporal(column Column) bool {
 	return isStringInSlice(column.DataType, pg.GetTemporalDatatypes())
+}
+
+func (*Postgresql) andInClause(field string, params []string, args *[]any) string {
+	if field == "" || len(params) == 0 {
+		return ""
+	}
+	narg := len(*args)
+	nparam := len(params)
+	last := nparam - 1
+
+	var sb strings.Builder
+	sb.Grow(nparam*3 - 1) // 3 ==> len("$n,") == 3 and -1 for the skipped last comma
+	for i := 1; i <= nparam; i++ {
+		n := strconv.Itoa(narg + i)
+		sb.WriteString("$" + n)
+		if i <= last {
+			sb.WriteString(",")
+		}
+	}
+
+	*args = slices.Grow(*args, nparam)
+	for i := range params {
+		*args = append(*args, params[i])
+	}
+
+	return "AND " + field + " IN (" + sb.String() + ")"
 }

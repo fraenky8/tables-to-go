@@ -29,8 +29,13 @@ func (db *mockDB) Close() error {
 	return args.Error(0)
 }
 
-func (db *mockDB) GetTables() ([]*database.Table, error) {
-	args := db.Called()
+func (db *mockDB) GetTables(tables ...string) ([]*database.Table, error) {
+	var args mock.Arguments
+	if len(tables) == 0 {
+		args = db.Called()
+	} else {
+		args = db.Called(tables)
+	}
 	err := args.Error(1)
 	if err != nil {
 		return nil, err

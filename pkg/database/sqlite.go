@@ -50,13 +50,18 @@ func (s *SQLite) DSN() string {
 	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
-func (s *SQLite) GetTables() (tables []*Table, err error) {
+func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
-	err = s.Select(&tables, `
+	var args []any
+	in := s.andInClause("name", tables, &args)
+
+	var dbTables []*Table
+	err := s.Select(&dbTables, `
 		SELECT name AS table_name
 		FROM sqlite_master
 		WHERE type = 'table'
-		AND name NOT LIKE 'sqlite?_%' escape '?'
+		AND name NOT LIKE 'sqlite?_%' ESCAPE '?'
+		`+in+`
 	`)
 
 	if s.Verbose {
@@ -66,7 +71,7 @@ func (s *SQLite) GetTables() (tables []*Table, err error) {
 		}
 	}
 
-	return tables, err
+	return dbTables, err
 }
 
 func (s *SQLite) PrepareGetColumnsOfTableStmt() (err error) {
