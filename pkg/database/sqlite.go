@@ -62,7 +62,7 @@ func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 		WHERE type = 'table'
 		AND name NOT LIKE 'sqlite?_%' ESCAPE '?'
 		`+in+`
-	`)
+	`, args...)
 
 	if s.Verbose {
 		if err != nil {
