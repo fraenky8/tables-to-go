@@ -50,15 +50,20 @@ func (mysql *MySQL) DSN() string {
 }
 
 // GetTables gets all tables for a given database by name.
-func (mysql *MySQL) GetTables() (tables []*Table, err error) {
+func (mysql *MySQL) GetTables(tables ...string) ([]*Table, error) {
 
-	err = mysql.Select(&tables, `
+	args := []any{mysql.DbName}
+	in := mysql.andInClause("table_name", tables, &args)
+
+	var dbTables []*Table
+	err := mysql.Select(&dbTables, `
 		SELECT table_name AS table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = ?
+		`+in+`
 		ORDER BY table_name
-	`, mysql.DbName)
+	`, args...)
 
 	if mysql.Verbose {
 		if err != nil {
@@ -67,7 +72,7 @@ func (mysql *MySQL) GetTables() (tables []*Table, err error) {
 		}
 	}
 
-	return tables, err
+	return dbTables, err
 }
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the

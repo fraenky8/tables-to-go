@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
@@ -49,6 +50,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
 	flag.StringVar(&args.SSLMode, "sslmode", args.SSLMode, "Connect to database using secure connection. (default \"disable\")\nThe value will be passed as is to the underlying driver.\nRefer to this site for supported values: https://www.postgresql.org/docs/current/libpq-ssl.html")
 	flag.StringVar(&args.Socket, "socket", args.Socket, "The socket file to use for connection. If specified, takes precedence over host:port.")
+	flag.Var(&args.Tables, "table", "Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz")
 
 	flag.StringVar(&args.OutputFilePath, "of", args.OutputFilePath, "output file path, default is current working directory")
 	flag.Var(&args.OutputFormat, "format", "format of struct fields (columns): camelCase (c) or original (o)")
@@ -111,12 +113,20 @@ func main() {
 }
 
 func printVersion() {
+	var withSQLite bool
+
 	info, ok := debug.ReadBuildInfo()
 	if ok {
 		if versionTag == "" {
 			versionTag = info.Main.Version
 		}
 		for _, s := range info.Settings {
+			switch s.Key {
+			case "vcs.revision":
+				revision = s.Value[:8]
+			case "-tags":
+				withSQLite = strings.Contains(s.Value, "sqlite3")
+			}
 			if s.Key == "vcs.revision" {
 				revision = s.Value[:8]
 			}
@@ -125,6 +135,11 @@ func printVersion() {
 
 	fmt.Printf("tables-to-go/%s-%s %s/%s built with %s", versionTag, revision,
 		runtime.GOOS, runtime.GOARCH, runtime.Version())
+
+	//goland:noinspection GoDfaConstantCondition
+	if withSQLite {
+		fmt.Printf(" with sqlite3 support")
+	}
 
 	//goland:noinspection GoBoolExpressions
 	if buildTimestamp != "" {

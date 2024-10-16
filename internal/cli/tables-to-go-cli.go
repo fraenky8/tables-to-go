@@ -31,7 +31,7 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
-	tables, err := db.GetTables()
+	tables, err := db.GetTables(settings.Tables...)
 	if err != nil {
 		return fmt.Errorf("could not get tables: %w", err)
 	}
