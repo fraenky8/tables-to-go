@@ -54,7 +54,7 @@ func (pg *Postgresql) DSN() string {
 func (pg *Postgresql) GetTables(tables ...string) ([]*Table, error) {
 
 	args := []any{pg.Schema}
-	in := pg.andInClause("table_name", tables, &args)
+	in := pg.andInClause("LOWER(table_name)", tables, &args)
 
 	var dbTables []*Table
 	err := pg.Select(&dbTables, `
@@ -230,7 +230,7 @@ func (*Postgresql) andInClause(field string, params []string, args *[]any) strin
 
 	*args = slices.Grow(*args, nparam)
 	for i := range params {
-		*args = append(*args, params[i])
+		*args = append(*args, strings.ToLower(params[i]))
 	}
 
 	return "AND " + field + " IN (" + sb.String() + ")"
