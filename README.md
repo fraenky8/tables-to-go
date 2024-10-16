@@ -18,10 +18,18 @@ database schema.
 ## Install
 
 This project provides a make file but can also simply be installed with the
-go-install command:
+go-install command.
+
+Get the latest stable release version:
 
 ```
 go install github.com/fraenky8/tables-to-go/v2@latest
+```
+
+Get the latest changes from master:
+
+```
+go install github.com/fraenky8/tables-to-go/v2@master
 ```
 
 To enable SQLite3 support, clone the repo manually and run the make file:
