@@ -20,10 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # This is the Go version.
-  #
-  GOLANG_VERSION: "1.23"
-
   # This is the golangci-lint version we use.
   #
   # Take a look at the official docs to check if there is a newer version
@@ -31,17 +27,17 @@ env:
   #
   # https://github.com/golangci/golangci-lint/releases
   #
-  GOLANGCI_LINT_VERSION: "v1.61.0"
+  GOLANGCI_LINT_VERSION: "v2.10.1"
 
 jobs:
   checks-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ env.GOLANG_VERSION }}
+          go-version-file: go.mod
 
       - name: Check gofmt
         run: |
@@ -57,9 +53,16 @@ jobs:
           exit 1
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
+
+      # Directly taken from https://github.com/rhysd/actionlint/blob/main/docs/usage.md#use-actionlint-on-github-actions
+      - name: Check Github workflow files
+        shell: bash
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -shellcheck=""
 
   build-test:
     strategy:
@@ -67,14 +70,21 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ env.GOLANG_VERSION }}
+          go-version-file: go.mod
 
       - name: Build
         run: go build -v -mod=vendor .
 
       - name: Test
-        run: go test -v -mod=vendor -race ./...
+        shell: bash
+        run: go test -v -mod=vendor -race -coverprofile=coverage.txt ./...
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

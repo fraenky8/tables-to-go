@@ -50,6 +50,7 @@ func (s *SQLite) DSN() string {
 	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
 }
 
+// GetTables gets all tables for a given database by name.
 func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
 	var args []any
@@ -74,10 +75,14 @@ func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 	return dbTables, err
 }
 
+// PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
+// columns of a specific table for a given database.
 func (s *SQLite) PrepareGetColumnsOfTableStmt() (err error) {
 	return nil
 }
 
+// GetColumnsOfTable executes the statement for retrieving the columns of a
+// specific table for a given database.
 func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 
 	rows, err := s.Queryx(`
@@ -137,44 +142,53 @@ func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 	return nil
 }
 
+// IsPrimaryKey checks if the column belongs to the primary key.
 func (s *SQLite) IsPrimaryKey(column Column) bool {
 	return column.ColumnKey == "PK"
 }
 
+// IsAutoIncrement checks if the column is an auto_increment column.
 func (s *SQLite) IsAutoIncrement(column Column) bool {
 	return column.ColumnKey == "PK"
 }
 
+// GetStringDatatypes returns the string datatypes for the SQLite database.
 func (s *SQLite) GetStringDatatypes() []string {
 	return []string{
 		"text",
 	}
 }
 
+// IsString returns true if the colum is of type string for the SQLite database.
 func (s *SQLite) IsString(column Column) bool {
 	return isStringInSlice(column.DataType, s.GetStringDatatypes())
 }
 
+// GetTextDatatypes returns the text datatypes for the SQLite database.
 func (s *SQLite) GetTextDatatypes() []string {
 	return []string{
 		"text",
 	}
 }
 
+// IsText returns true if colum is of type text for the SQLite database.
 func (s *SQLite) IsText(column Column) bool {
 	return isStringInSlice(column.DataType, s.GetTextDatatypes())
 }
 
+// GetIntegerDatatypes returns the integer datatypes for the SQLite database.
 func (s *SQLite) GetIntegerDatatypes() []string {
 	return []string{
 		"integer",
 	}
 }
 
+// IsInteger returns true if colum is of type integer for the SQLite database.
 func (s *SQLite) IsInteger(column Column) bool {
 	return isStringInSlice(column.DataType, s.GetIntegerDatatypes())
 }
 
+// GetFloatDatatypes returns the float datatypes for the SQLite database.
 func (s *SQLite) GetFloatDatatypes() []string {
 	return []string{
 		"real",
@@ -182,14 +196,17 @@ func (s *SQLite) GetFloatDatatypes() []string {
 	}
 }
 
+// IsFloat returns true if colum is of type float for the SQLite database.
 func (s *SQLite) IsFloat(column Column) bool {
 	return isStringInSlice(column.DataType, s.GetFloatDatatypes())
 }
 
+// GetTemporalDatatypes returns the temporal datatypes for the SQLite database.
 func (s *SQLite) GetTemporalDatatypes() []string {
 	return []string{}
 }
 
+// IsTemporal returns true if colum is of type temporal for the SQLite database.
 func (s *SQLite) IsTemporal(_ Column) bool {
 	return false
 }
