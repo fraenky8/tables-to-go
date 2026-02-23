@@ -1,29 +1,48 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  # We run with all default linters enabled and in addition the linters
-  # listed below.
   enable:
     - bodyclose
-    - errorlint
     - copyloopvar
-    - goimports
+    - errorlint
     - gosec
     - makezero
+    - paralleltest
+    - perfsprint
     - revive
     - unconvert
     - unparam
     - wastedassign
+  settings:
+    gosec:
+      config:
+        G306: "0666"
+  exclusions:
+    paths:
+      - _test
+    rules:
+      - linters:
+          - revive
+        text: 'package-comments: should have a package comment'
+
+      - linters:
+          - staticcheck
+        # Ignoring "could remove embedded field <FIELD> from selector"
+        # Stick to current behavior and being explicit of the method to call of the embedded struct.
+        text: 'QF1008:'
 
 issues:
-  exclude-dirs:
-    - _test
+  # Maximum count of issues with the same text.
+  # Set to 0 to disable.
+  # Default: 3
+  max-same-issues: 0
 
-linters-settings:
-  goimports:
-    local-prefixes: github.com/fraenky8/tables-to-go/v2
-
-  gosec:
-    config:
-      G306: "0666"
+formatters:
+  enable:
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/fraenky8/tables-to-go/v2
+  exclusions:
+    paths:
+      - _test

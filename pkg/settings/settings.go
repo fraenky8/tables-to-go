@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -142,7 +143,7 @@ func (settings *Settings) Verify() (err error) {
 	}
 
 	if settings.PackageName == "" {
-		return fmt.Errorf("name of package can not be empty")
+		return errors.New("name of package can not be empty")
 	}
 
 	if settings.VVerbose {
