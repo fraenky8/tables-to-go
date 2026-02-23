@@ -132,12 +132,7 @@ func (gdb *GeneralDatabase) IsNullable(column Column) bool {
 
 // isStringInSlice checks if needle (string) is in haystack ([]string).
 func isStringInSlice(needle string, haystack []string) bool {
-	for _, s := range haystack {
-		if s == needle {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(haystack, needle)
 }
 
 func (*GeneralDatabase) andInClause(field string, params []string, args *[]any) string {

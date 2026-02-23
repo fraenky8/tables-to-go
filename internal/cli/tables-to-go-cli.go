@@ -257,11 +257,11 @@ func camelCaseString(s string) string {
 		return caser.String(s)
 	}
 
-	var cc string
+	var cc strings.Builder
 	for _, part := range splitted {
-		cc += caser.String(strings.ToLower(part))
+		cc.WriteString(caser.String(strings.ToLower(part)))
 	}
-	return cc
+	return cc.String()
 }
 
 func getNullType(settings *settings.Settings, primitive string, sql string) string {
