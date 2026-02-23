@@ -80,4 +80,11 @@ jobs:
         run: go build -v -mod=vendor .
 
       - name: Test
-        run: go test -v -mod=vendor -race ./...
+        shell: bash
+        run: go test -v -mod=vendor -race -coverprofile=coverage.txt ./...
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
