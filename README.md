@@ -13,7 +13,7 @@ database schema.
 
 ## Requirements
 
-- Go 1.23+
+- Go 1.26+
 
 ## Install
 
