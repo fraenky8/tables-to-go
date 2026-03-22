@@ -1,20 +1,23 @@
 //go:build integration
 
-package test
+package integration_tests
 
 import (
 	"bytes"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"syscall"
 	"testing"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
@@ -27,6 +30,16 @@ const (
 	testdataDirectoryName = "testdata"
 	expectedDirectoryName = "expected"
 	outputDirectoryName   = "output"
+)
+
+const (
+	// Note: The more integration tests, the higher we have to set this time.
+	// Otherwise, the resources might be purged before your tests are finished.
+	resourceExpirationSeconds = 300
+)
+
+var (
+	pool *dockertest.Pool
 )
 
 type dbSettings struct {
@@ -50,9 +63,91 @@ type nopLogger struct{}
 
 func (nopLogger) Print(...any) {}
 
-func TestIntegration(t *testing.T) {
-	log.Println("running Tables-to-Go integration tests")
+var (
+	isCI bool
+)
 
+func init() {
+	isCI, _ = strconv.ParseBool(os.Getenv("CI"))
+
+	// Suppress logs of "packets.go:36: unexpected EOF"
+	_ = mysql.SetLogger(nopLogger{})
+}
+
+func TestMain(m *testing.M) {
+	logMsg := "running Tables-to-Go integration tests"
+	if isCI {
+		logMsg += " on CI"
+	}
+	log.Println(logMsg)
+
+	log.Println("creating Docker pool...")
+
+	var err error
+	pool, err = newPool()
+	if err != nil {
+		log.Fatalf("error connecting to Docker: %v", err)
+	}
+
+	os.Exit(m.Run())
+}
+
+func newPool() (*dockertest.Pool, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("os.UserHomeDir failed: %w", err)
+	}
+
+	endpoints := []string{
+		"", // first try dockertest's default based on env vars
+		"unix://" + filepath.Join(home, ".docker/run/docker.sock"),     // In case the symlink is missing.
+		"unix://" + filepath.Join(home, ".rd/docker.sock"),             // Rancher Desktop
+		"unix://" + filepath.Join(home, ".colima/default/docker.sock"), // Colima
+	}
+	for _, endpoint := range endpoints {
+		pool, err := dockertest.NewPool(endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("dockertest.NewPool failed: %w", err)
+		}
+
+		// Our "ping" function
+		_, err = pool.NetworksByName("none")
+		if err != nil {
+			log.Println("docker:", err)
+			continue
+		}
+
+		log.Printf("using %q", endpoint)
+		return pool, nil
+	}
+
+	return nil, fmt.Errorf("could not create pool from any given endpoint")
+}
+
+func registerCleanupSignalHandler(t *testing.T, container string) chan struct{} {
+	signals := []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGKILL}
+	terminate := make(chan os.Signal, len(signals))
+	done := make(chan struct{})
+	signal.Notify(terminate, signals...)
+	go func() {
+		select {
+		case <-done:
+			return
+		case s := <-terminate:
+			t.Log()
+			t.Log("got signal:", s.String())
+			t.Logf("removing container %q", container)
+			_ = pool.RemoveContainerByName(container)
+			// Ignoring error here because it might be called multiple times due
+			// to multiple signals arriving. The first of them will remove the
+			// container already leading subsequent calls error. But we are not
+			// interested in an error saying that the container does not exist (anymore).
+		}
+	}()
+	return done
+}
+
+func TestIntegration(t *testing.T) {
 	tests := []struct {
 		desc     string
 		settings *dbSettings
@@ -67,8 +162,8 @@ func TestIntegration(t *testing.T) {
 				s.DbName = "public"
 				s.Host = "localhost"
 				s.Port = "3306"
-				//s.Verbose = true
-				//s.VVerbose = true
+				// s.Verbose = true
+				// s.VVerbose = true
 
 				dbs := &dbSettings{
 					Settings: s,
@@ -85,9 +180,6 @@ func TestIntegration(t *testing.T) {
 
 				dbs.setSettings(s)
 
-				// Suppress logs of "packets.go:36: unexpected EOF"
-				_ = mysql.SetLogger(nopLogger{})
-
 				return dbs
 			}(),
 		},
@@ -103,8 +195,8 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				//s.Verbose = true
-				//s.VVerbose = true
+				// s.Verbose = true
+				// s.VVerbose = true
 
 				dbs := &dbSettings{
 					Settings: s,
@@ -136,8 +228,8 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				//s.Verbose = true
-				//s.VVerbose = true
+				// s.Verbose = true
+				// s.VVerbose = true
 
 				dbs := &dbSettings{
 					Settings: s,
@@ -169,8 +261,8 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				//s.Verbose = true
-				//s.VVerbose = true
+				// s.Verbose = true
+				// s.VVerbose = true
 
 				dbs := &dbSettings{
 					Settings: s,
@@ -202,8 +294,8 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				//s.Verbose = true
-				//s.VVerbose = true
+				// s.Verbose = true
+				// s.VVerbose = true
 
 				dbs := &dbSettings{
 					Settings: s,
@@ -223,20 +315,46 @@ func TestIntegration(t *testing.T) {
 				return dbs
 			}(),
 		},
+		{
+			desc: "postgres 18",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+				// s.Verbose = true
+				// s.VVerbose = true
+
+				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "postgres",
+
+					dockerImage: "postgres",
+					version:     "18",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			s := test.settings
 
-			db, purgeFn, err := setupDatabase(s)
-			if err != nil {
-				if purgeFn != nil {
-					t.Log(err)
-					t.Fatal(purgeFn())
-				}
-				t.Fatal(err)
-			}
+			db, purgeFn := setupDatabase(t, s)
 			defer func() {
 				if purgeFn != nil {
 					if err := purgeFn(); err != nil {
@@ -251,17 +369,11 @@ func TestIntegration(t *testing.T) {
 				}
 			}()
 
-			err = createTestData(db.SQLDriver(), s)
-			if err != nil {
-				t.Logf("could not create test data: %v", err)
-				t.Fail()
-				return
-			}
+			loadTestData(t, db.SQLDriver(), s)
 
-			err = os.MkdirAll(s.Settings.OutputFilePath, 0755)
+			err := os.MkdirAll(s.Settings.OutputFilePath, 0755)
 			if err != nil {
-				t.Logf("could not create output file path: %v", err)
-				t.Fail()
+				t.Errorf("could not create output file path: %v", err)
 				return
 			}
 
@@ -269,7 +381,7 @@ func TestIntegration(t *testing.T) {
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
-				fmt.Printf("running tests against database %s\n", version)
+				t.Logf("running tests against database %s\n", version)
 			}
 
 			writer := output.NewFileWriter(s.Settings.OutputFilePath)
@@ -308,34 +420,42 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	}
 }
 
-func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
-	log.Printf("spinning up database %s:%s ...\n", s.dockerImage, s.version)
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error connecting to Docker: %v", err)
-	}
-	pool.MaxWait = 5 * time.Minute
+func setupDatabase(t *testing.T, s *dbSettings) (database.Database, func() error) {
+	t.Logf("spinning up database %s:%s ...\n", s.dockerImage, s.version)
 
-	resource, err := pool.Run(s.dockerImage, s.version, s.env)
+	containerName := fmt.Sprintf("tables_to_go_%s_%s_integration", s.dockerImage, s.version)
+
+	// Note: registering before the resource gets created because it happens that
+	// the resource gets created but for some reason we cannot figure out if it's
+	// ready or not. Using CTRL+C then would result in existing resource not
+	// being cleaned up.
+	done := registerCleanupSignalHandler(t, containerName)
+
+	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
+		Name:       containerName,
+		Repository: s.dockerImage,
+		Tag:        s.version,
+		Env:        s.env,
+	}, func(config *docker.HostConfig) {
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not start resource: %s", err)
+		t.Fatalf("could not start resource: %v", err)
 	}
+	_ = resource.Expire(resourceExpirationSeconds)
 
 	purgeFn := func() error {
 		if err := pool.Purge(resource); err != nil {
-			return fmt.Errorf("could not purge resource: %v", err)
+			return fmt.Errorf("could not purge MySQL: %w", err)
 		}
+		done <- struct{}{}
 		return nil
 	}
 
 	var db database.Database
-
-	// give docker some time to spin up the database
-	// also reduce unnecessary output of
-	// > packets.go:36: unexpected EOF errors when spinning up mysql
-	if s.DbType == settings.DBTypeMySQL {
-		time.Sleep(25 * time.Second)
-	}
 
 	if err = pool.Retry(func() error {
 		newSettings := s.Settings
@@ -347,29 +467,31 @@ func setupDatabase(s *dbSettings) (database.Database, func() error, error) {
 		err := db.Connect()
 		if err != nil {
 			if newSettings.Verbose {
-				fmt.Println(err.Error())
+				t.Log(err.Error())
 			}
 			return err
 		}
 		return nil
 	}); err != nil {
-		return nil, purgeFn, fmt.Errorf("could not connect to Docker: %v", err)
+		t.Logf("could not connect to database: %v", err)
 	}
 
-	return db, purgeFn, nil
+	return db, purgeFn
 }
 
-func createTestData(db *sqlx.DB, s *dbSettings) error {
+func loadTestData(t *testing.T, db *sqlx.DB, s *dbSettings) {
 	testDataPattern := filepath.Join(s.dataFilepath, testdataDirectoryName, "*.sql")
 	files, err := filepath.Glob(testDataPattern)
 	if err != nil {
-		return fmt.Errorf("could not find sql testdata: %v", err)
+		t.Errorf("could not find sql testdata: %v", err)
+		return
 	}
 
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
-			return fmt.Errorf("could not read %q: %v", f, err)
+			t.Errorf("could not read %q: %v", f, err)
+			return
 		}
 
 		queries := bytes.Split(data, []byte(";"))
@@ -383,10 +505,9 @@ func createTestData(db *sqlx.DB, s *dbSettings) error {
 
 			_, err = db.Exec(q)
 			if err != nil {
-				return fmt.Errorf("could not create testdata %q: %v", q, err)
+				t.Errorf("could not create testdata %q: %v", f, err)
+				return
 			}
 		}
 	}
-
-	return nil
 }

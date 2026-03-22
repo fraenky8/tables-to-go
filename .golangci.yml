@@ -23,10 +23,6 @@ linters:
       - linters:
           - revive
         text: 'package-comments: should have a package comment'
-      - linters:
-          - revive
-        path: 'test'
-        text: 'exported: exported type'
 
       - linters:
           - staticcheck
