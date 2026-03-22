@@ -67,7 +67,7 @@ pointer types
     * without `db`-tags
     * with or without `structable.Recorder` 
 * **currently supported**:
-  * PostgreSQL (10, 11, 12 tested)
+  * PostgreSQL (10, 11, 12, 17, 18 tested)
   * MySQL (5.5+, 8 tested)
   * SQLite (3 tested)
 * currently, the following basic data types are supported:
@@ -115,7 +115,7 @@ type SomeUserInfo struct {
 ```
 
 The column `id` got automatically converted to upper-case to follow the 
-idiomatic go guidelines. 
+idiomatic Go guidelines. 
 See [here](https://github.com/golang/go/wiki/CodeReviewComments#initialisms) 
 for more details. 
 Words which gets converted can be found 

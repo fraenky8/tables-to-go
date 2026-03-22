@@ -107,7 +107,8 @@ func newPool() (*dockertest.Pool, error) {
 	for _, endpoint := range endpoints {
 		pool, err := dockertest.NewPool(endpoint)
 		if err != nil {
-			return nil, fmt.Errorf("dockertest.NewPool failed: %w", err)
+			log.Println("dockertest.NewPool failed:", err)
+			continue
 		}
 
 		// Our "ping" function
@@ -451,7 +452,7 @@ func setupDatabase(t *testing.T, s *dbSettings) (database.Database, func() error
 		if err := pool.Purge(resource); err != nil {
 			return fmt.Errorf("could not purge MySQL: %w", err)
 		}
-		done <- struct{}{}
+		close(done)
 		return nil
 	}
 
@@ -473,7 +474,8 @@ func setupDatabase(t *testing.T, s *dbSettings) (database.Database, func() error
 		}
 		return nil
 	}); err != nil {
-		t.Logf("could not connect to database: %v", err)
+		_ = purgeFn()
+		t.Fatalf("could not connect to database: %v", err)
 	}
 
 	return db, purgeFn

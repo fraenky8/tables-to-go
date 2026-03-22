@@ -1,4 +1,4 @@
-.PHONY: all install test
+.PHONY: all install test integration-test
 
 TAG=$(shell git describe --abbrev=0 --tags 2>&1)
 TS=$(shell date '+%b %d %Y %T')
@@ -18,7 +18,7 @@ test:                   ## Runs unit tests with race flag enabled
 	go test -mod=vendor -race ./...
 
 integration-test:       ## Runs integration tests
-	go test -mod=vendor -tags=integration ./test/...
+	go test -mod=vendor -tags=integration ./internal/integration_tests/...
 
 sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
                         ## User Authentication feature enabled. \
