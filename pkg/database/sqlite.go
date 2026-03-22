@@ -53,7 +53,7 @@ func (s *SQLite) DSN() string {
 // Version reports the actual version of the Sqlite database.
 func (s *SQLite) Version() (string, error) {
 	var version string
-	err := s.Get(&version, `SELECT * FROM PRAGMA user_version`)
+	err := s.Get(&version, `SELECT sqlite_version()`)
 	if err != nil {
 		return "", err
 	}
