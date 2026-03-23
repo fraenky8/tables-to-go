@@ -97,6 +97,11 @@ jobs:
   #
   integration-test:
     runs-on: ubuntu-latest
+    services:
+      dind:
+        image: public.ecr.aws/docker/library/docker:24.0-dind-rootless
+        ports:
+          - 2375:2375
     steps:
       - uses: actions/checkout@v6
 
@@ -106,7 +111,7 @@ jobs:
 
       - name: Run all tests with coverage
         run: |
-          go test -v -mod=vendor -tags=integration -covermode=atomic -coverprofile=coverage.txt ./...
+          go test -v -mod=vendor -tags=integration -covermode=atomic -coverpkg=./... -coverprofile=coverage.txt ./...
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v5

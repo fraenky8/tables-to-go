@@ -118,7 +118,7 @@ func newPool() (*dockertest.Pool, error) {
 			continue
 		}
 
-		log.Printf("using %q", endpoint)
+		log.Printf("using Docker endpoint %q", endpoint)
 		return pool, nil
 	}
 
