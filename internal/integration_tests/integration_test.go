@@ -42,24 +42,6 @@ var (
 	pool *dockertest.Pool
 )
 
-type testSettings struct {
-	*settings.Settings
-
-	// root filepath where the test can store its testdata and any (expected) output
-	filepath string
-	// the actual directory for that particular test under the filepath root
-	testDirectory string
-
-	dockerImage string
-	version     string
-	env         []string
-}
-
-func (s *testSettings) setSettings(ss *settings.Settings) {
-	s.Settings = ss
-	s.Settings.OutputFilePath = filepath.Join(s.filepath, s.testDirectory, outputDirectoryName)
-}
-
 // nopLogger is used to silence MySQL logs of "packets.go:36: unexpected EOF".
 type nopLogger struct{}
 
@@ -81,6 +63,73 @@ func init() {
 
 	// Suppress logs of "packets.go:36: unexpected EOF"
 	_ = mysql.SetLogger(nopLogger{})
+}
+
+type testSettings struct {
+	*settings.Settings
+
+	// root filepath where the test can store its testdata and any (expected) output
+	filepath string
+	// the actual directory for that particular test under the filepath root
+	testDirectory string
+
+	dockerImage string
+	version     string
+	env         []string
+}
+
+// TODO remove once Postgres is migrated
+func (s *testSettings) setSettings(ss *settings.Settings) {
+	s.Settings = ss
+	s.Settings.OutputFilePath = filepath.Join(s.filepath, s.testDirectory, outputDirectoryName)
+}
+
+func newMySQLSettings(version, path, testDirectory string) *testSettings {
+	s := settings.New()
+	s.DbType = settings.DBTypeMySQL
+	s.User = "root"
+	s.Pswd = "mysecretpassword"
+	s.DbName = "public"
+	s.Host = "localhost"
+	s.Port = "3306"
+	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
+
+	return &testSettings{
+		Settings:      s,
+		filepath:      path,
+		testDirectory: testDirectory,
+		dockerImage:   "mysql",
+		version:       version,
+		env: []string{
+			"MYSQL_DATABASE=" + s.DbName,
+			"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+		},
+	}
+}
+
+func newPostgresSettings(version, path, testDirectory string) *testSettings {
+	s := settings.New()
+	s.DbType = settings.DBTypePostgresql
+	s.User = "postgres"
+	s.Pswd = "mysecretpassword"
+	s.DbName = "postgres"
+	s.Schema = "public"
+	s.Host = "localhost"
+	s.Port = "5432"
+	s.SSLMode = "disable"
+	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
+
+	return &testSettings{
+		Settings:      s,
+		filepath:      path,
+		testDirectory: testDirectory,
+		dockerImage:   "postgres",
+		version:       version,
+		env: []string{
+			"POSTGRES_DB=" + s.DbName,
+			"POSTGRES_PASSWORD=" + s.Pswd,
+		},
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -173,203 +222,32 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 		settings *testSettings
 	}{
 		{
-			desc: "mysql 5",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypeMySQL
-				s.User = "root"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "public"
-				s.Host = "localhost"
-				s.Port = "3306"
-
-				dbs := &testSettings{
-					filepath:      "mysql5",
-					testDirectory: testDirectory,
-					dockerImage:   "mysql",
-					version:       "5",
-					env: []string{
-						"MYSQL_DATABASE=" + s.DbName,
-						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "mysql 5",
+			settings: newMySQLSettings("5", "mysql5", testDirectory),
 		},
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypeMySQL
-				s.User = "root"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "public"
-				s.Host = "localhost"
-				s.Port = "3306"
-
-				dbs := &testSettings{
-					filepath:      "mysql8",
-					testDirectory: testDirectory,
-					dockerImage:   "mysql",
-					version:       "8",
-					env: []string{
-						"MYSQL_DATABASE=" + s.DbName,
-						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 		},
 		{
-			desc: "postgres 10",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "10",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "postgres 10",
+			settings: newPostgresSettings("10", "postgres", testDirectory),
 		},
 		{
-			desc: "postgres 11",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "11",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "postgres 11",
+			settings: newPostgresSettings("11", "postgres", testDirectory),
 		},
 		{
-			desc: "postgres 12",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "12",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "postgres 12",
+			settings: newPostgresSettings("12", "postgres", testDirectory),
 		},
 		{
-			desc: "postgres 17",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "17",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "postgres 17",
+			settings: newPostgresSettings("17", "postgres", testDirectory),
 		},
 		{
-			desc: "postgres 18",
-			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "18",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
-				return dbs
-			}(),
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
 		},
 	}
 
@@ -377,8 +255,6 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			db := setupDatabase(t, test.settings)
 			defer func() {
-				// TODO need flag for not removing generated output but
-				//  save it into the expected directory
 				if !t.Failed() {
 					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
 				}
@@ -418,213 +294,56 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		{
 			desc: "mysql 5",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypeMySQL
-				s.User = "root"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "public"
-				s.Host = "localhost"
-				s.Port = "3306"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "mysql5",
-					testDirectory: testDirectory,
-					dockerImage:   "mysql",
-					version:       "5",
-					env: []string{
-						"MYSQL_DATABASE=" + s.DbName,
-						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newMySQLSettings("5", "mysql5", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "mysql 8",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypeMySQL
-				s.User = "root"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "public"
-				s.Host = "localhost"
-				s.Port = "3306"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "mysql8",
-					testDirectory: testDirectory,
-					dockerImage:   "mysql",
-					version:       "8",
-					env: []string{
-						"MYSQL_DATABASE=" + s.DbName,
-						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newMySQLSettings("8", "mysql8", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "postgres 10",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "10",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newPostgresSettings("10", "postgres", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "postgres 11",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "11",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newPostgresSettings("11", "postgres", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "postgres 12",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "12",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newPostgresSettings("12", "postgres", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "postgres 17",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "17",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newPostgresSettings("17", "postgres", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
 		{
 			desc: "postgres 18",
 			settings: func() *testSettings {
-				s := settings.New()
-				s.DbType = settings.DBTypePostgresql
-				s.User = "postgres"
-				s.Pswd = "mysecretpassword"
-				s.DbName = "postgres"
-				s.Schema = "public"
-				s.Host = "localhost"
-				s.Port = "5432"
-				s.SSLMode = "disable"
-
-				s.Null = settings.NullTypePrimitive
-
-				dbs := &testSettings{
-					filepath:      "postgres",
-					testDirectory: testDirectory,
-					dockerImage:   "postgres",
-					version:       "18",
-					env: []string{
-						"POSTGRES_DB=" + s.DbName,
-						"POSTGRES_PASSWORD=" + s.Pswd,
-					},
-				}
-
-				dbs.setSettings(s)
-
+				dbs := newPostgresSettings("18", "postgres", testDirectory)
+				dbs.Null = settings.NullTypePrimitive
 				return dbs
 			}(),
 		},
@@ -634,8 +353,6 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			db := setupDatabase(t, test.settings)
 			defer func() {
-				// TODO need flag for not removing generated output but
-				//  save it into the expected directory
 				if !t.Failed() {
 					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
 				}
