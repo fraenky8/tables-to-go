@@ -440,15 +440,46 @@ func checkFiles(t *testing.T, s *dbSettings) {
 			len(expectedFiles), len(outputFiles))
 	}
 
-	sort.Strings(expectedFiles)
-	sort.Strings(outputFiles)
+	expectedByName := make(map[string]string, len(expectedFiles))
+	for _, expectedFile := range expectedFiles {
+		fileName := filepath.Base(expectedFile)
+		if _, ok := expectedByName[fileName]; ok {
+			t.Fatalf("duplicate expected file %q", fileName)
+		}
+		expectedByName[fileName] = expectedFile
+	}
 
-	for i := range expectedFiles {
-		expectedFile, err := os.ReadFile(expectedFiles[i])
+	for _, outputFile := range outputFiles {
+		fileName := filepath.Base(outputFile)
+
+		expectedFile, ok := expectedByName[fileName]
+		if !ok {
+			t.Fatalf("unexpected output file %q", outputFile)
+		}
+		delete(expectedByName, fileName)
+
+		expectedInfo, err := os.Stat(expectedFile)
 		assert.NoError(t, err)
-		outputFile, err := os.ReadFile(outputFiles[i])
+		outputInfo, err := os.Stat(outputFile)
 		assert.NoError(t, err)
-		assert.Equal(t, string(expectedFile), string(outputFile), "file %q", expectedFiles[i])
+
+		assert.Equal(t, expectedInfo.Size(), outputInfo.Size(), "file %q differs in size", fileName)
+
+		expectedContent, err := os.ReadFile(expectedFile)
+		assert.NoError(t, err)
+		outputContent, err := os.ReadFile(outputFile)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedContent, outputContent, "file %q differs in content", fileName)
+	}
+
+	if len(expectedByName) > 0 {
+		missingFiles := make([]string, 0, len(expectedByName))
+		for fileName := range expectedByName {
+			missingFiles = append(missingFiles, fileName)
+		}
+		sort.Strings(missingFiles)
+		t.Fatalf("missing output files for expected files: %v", missingFiles)
 	}
 }
 
