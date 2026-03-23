@@ -1,16 +1,19 @@
 DROP TABLE IF EXISTS numeric_ref CASCADE;
-CREATE TABLE numeric_ref (
+CREATE TABLE numeric_ref
+(
     numeric_ref numeric UNIQUE
 );
 
 DROP TABLE IF EXISTS numeric;
-CREATE TABLE numeric (
-    numeric numeric,
-    numeric_prec numeric(10),
+CREATE TABLE numeric
+(
+    numeric            numeric,
+    numeric_prec       numeric(10),
     numeric_prec_scale numeric(10, 5),
-    numeric_nn numeric NOT NULL,
-    numeric_nn_unique numeric NOT NULL UNIQUE,
-    numeric_nn_check numeric NOT NULL CHECK ( numeric > 0 ),
+    numeric_nn         numeric NOT NULL,
+    numeric_nn_unique  numeric NOT NULL UNIQUE,
+    numeric_nn_check   numeric NOT NULL CHECK ( numeric > 0
+) ,
     numeric_nn_ref numeric NOT NULL REFERENCES numeric_ref(numeric_ref),
     numeric_nn_def_const numeric NOT NULL DEFAULT 42,
     numeric_nn_def_func numeric NOT NULL DEFAULT pi(),
@@ -40,76 +43,91 @@ CREATE TABLE numeric (
 );
 
 DROP TABLE IF EXISTS numeric_pk;
-CREATE TABLE numeric_pk (
+CREATE TABLE numeric_pk
+(
     numeric_pk numeric PRIMARY KEY
 );
 
 DROP TABLE IF EXISTS numeric_pk_ref;
-CREATE TABLE numeric_pk_ref (
-    numeric_pk_ref numeric PRIMARY KEY REFERENCES numeric_ref(numeric_ref)
+CREATE TABLE numeric_pk_ref
+(
+    numeric_pk_ref numeric PRIMARY KEY REFERENCES numeric_ref (numeric_ref)
 );
 
 DROP TABLE IF EXISTS numeric_pk_def_const;
-CREATE TABLE numeric_pk_def_const (
+CREATE TABLE numeric_pk_def_const
+(
     numeric_pk_def_const numeric PRIMARY KEY DEFAULT 42
 );
 
 DROP TABLE IF EXISTS numeric_pk_def_func;
-CREATE TABLE numeric_pk_def_func (
+CREATE TABLE numeric_pk_def_func
+(
     numeric_pk_def_func numeric PRIMARY KEY DEFAULT pi()
 );
 
 DROP TABLE IF EXISTS numeric_nn_pk;
-CREATE TABLE numeric_nn_pk (
+CREATE TABLE numeric_nn_pk
+(
     numeric_nn_pk numeric NOT NULL PRIMARY KEY
 );
 
 DROP TABLE IF EXISTS numeric_nn_unique_check_pk;
-CREATE TABLE numeric_nn_unique_check_pk (
+CREATE TABLE numeric_nn_unique_check_pk
+(
     numeric_nn_unique_check_pk numeric PRIMARY KEY NOT NULL UNIQUE CHECK ( numeric_nn_unique_check_pk > 0)
 );
 
 DROP TABLE IF EXISTS numeric_nn_unique_check_pk_ref;
-CREATE TABLE numeric_nn_unique_check_pk_ref (
-    numeric_nn_unique_check_pk_ref numeric PRIMARY KEY NOT NULL UNIQUE CHECK ( numeric_nn_unique_check_pk_ref > 0) REFERENCES numeric_ref(numeric_ref)
+CREATE TABLE numeric_nn_unique_check_pk_ref
+(
+    numeric_nn_unique_check_pk_ref numeric PRIMARY KEY NOT NULL UNIQUE CHECK ( numeric_nn_unique_check_pk_ref > 0) REFERENCES numeric_ref (numeric_ref)
 );
 
 DROP TABLE IF EXISTS numeric_unique_pk;
-CREATE TABLE numeric_unique_pk (
+CREATE TABLE numeric_unique_pk
+(
     numeric_unique_pk numeric PRIMARY KEY UNIQUE
 );
 
 DROP TABLE IF EXISTS numeric_unique_check_pk;
-CREATE TABLE numeric_unique_check_pk (
+CREATE TABLE numeric_unique_check_pk
+(
     numeric_unique_check_pk numeric PRIMARY KEY UNIQUE CHECK ( numeric_unique_check_pk > 0 )
 );
 
 DROP TABLE IF EXISTS numeric_unique_check_pk_ref;
-CREATE TABLE numeric_unique_check_pk_ref (
-    numeric_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_unique_check_pk_ref > 0) REFERENCES numeric_ref(numeric_ref)
+CREATE TABLE numeric_unique_check_pk_ref
+(
+    numeric_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_unique_check_pk_ref > 0) REFERENCES numeric_ref (numeric_ref)
 );
 
 DROP TABLE IF EXISTS numeric_check_pk;
-CREATE TABLE numeric_check_pk (
+CREATE TABLE numeric_check_pk
+(
     numeric_check_pk numeric PRIMARY KEY CHECK ( numeric_check_pk > 0 )
 );
 
 DROP TABLE IF EXISTS numeric_def_const_unique_check_pk;
-CREATE TABLE numeric_def_const_unique_check_pk (
+CREATE TABLE numeric_def_const_unique_check_pk
+(
     numeric_def_const_unique_check_pk numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_const_unique_check_pk > 0 ) DEFAULT 42
 );
 
 DROP TABLE IF EXISTS numeric_def_const_unique_check_pk_ref;
-CREATE TABLE numeric_def_const_unique_check_pk_ref (
-    numeric_def_const_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_const_unique_check_pk_ref > 0 ) DEFAULT 42 REFERENCES numeric_ref(numeric_ref)
+CREATE TABLE numeric_def_const_unique_check_pk_ref
+(
+    numeric_def_const_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_const_unique_check_pk_ref > 0 ) DEFAULT 42 REFERENCES numeric_ref (numeric_ref)
 );
 
 DROP TABLE IF EXISTS numeric_def_func_unique_check_pk;
-CREATE TABLE numeric_def_func_unique_check_pk (
+CREATE TABLE numeric_def_func_unique_check_pk
+(
     numeric_def_func_unique_check_pk numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_func_unique_check_pk > 0 ) DEFAULT pi()
 );
 
 DROP TABLE IF EXISTS numeric_def_func_unique_check_pk_ref;
-CREATE TABLE numeric_def_func_unique_check_pk_ref (
-    numeric_def_func_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_func_unique_check_pk_ref > 0 ) DEFAULT pi() REFERENCES numeric_ref(numeric_ref)
+CREATE TABLE numeric_def_func_unique_check_pk_ref
+(
+    numeric_def_func_unique_check_pk_ref numeric PRIMARY KEY UNIQUE CHECK ( numeric_def_func_unique_check_pk_ref > 0 ) DEFAULT pi() REFERENCES numeric_ref (numeric_ref)
 );

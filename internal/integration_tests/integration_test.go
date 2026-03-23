@@ -154,6 +154,37 @@ func TestIntegration(t *testing.T) {
 		settings *dbSettings
 	}{
 		{
+			desc: "mysql 5",
+			settings: func() *dbSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypeMySQL
+				s.User = "root"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "public"
+				s.Host = "localhost"
+				s.Port = "3306"
+				// s.Verbose = true
+				// s.VVerbose = true
+
+				dbs := &dbSettings{
+					Settings: s,
+
+					dataFilepath: "mysql5",
+
+					dockerImage: "mysql",
+					version:     "5",
+					env: []string{
+						"MYSQL_DATABASE=" + s.DbName,
+						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
 			desc: "mysql 8",
 			settings: func() *dbSettings {
 				s := settings.New()
