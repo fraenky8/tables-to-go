@@ -264,7 +264,7 @@ func camelCaseString(s string) string {
 	return cc.String()
 }
 
-func getNullType(settings *settings.Settings, primitive string, sql string) string {
+func getNullType(settings *settings.Settings, primitive, sql string) string {
 	if settings.IsNullTypeSQL() {
 		return sql
 	}

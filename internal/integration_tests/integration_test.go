@@ -42,26 +42,35 @@ var (
 	pool *dockertest.Pool
 )
 
-type dbSettings struct {
+type testSettings struct {
 	*settings.Settings
 
-	// root filepath where the testdata and expected directories live
-	dataFilepath string
+	// root filepath where the test can store its testdata and any (expected) output
+	filepath string
+	// the actual directory for that particular test under the filepath root
+	testDirectory string
 
 	dockerImage string
 	version     string
 	env         []string
 }
 
-func (s *dbSettings) setSettings(ss *settings.Settings) {
+func (s *testSettings) setSettings(ss *settings.Settings) {
 	s.Settings = ss
-	s.Settings.OutputFilePath = filepath.Join(s.dataFilepath, outputDirectoryName)
+	s.Settings.OutputFilePath = filepath.Join(s.filepath, s.testDirectory, outputDirectoryName)
 }
 
 // nopLogger is used to silence MySQL logs of "packets.go:36: unexpected EOF".
 type nopLogger struct{}
 
 func (nopLogger) Print(...any) {}
+
+// purgeFn is a function which can purge resources.
+type purgeFn func() error
+
+var (
+	purgeFns []purgeFn
+)
 
 var (
 	isCI bool
@@ -89,7 +98,15 @@ func TestMain(m *testing.M) {
 		log.Fatalf("error connecting to Docker: %v", err)
 	}
 
-	os.Exit(m.Run())
+	code := m.Run()
+
+	for i := range purgeFns {
+		if err := purgeFns[i](); err != nil {
+			log.Println(err.Error())
+		}
+	}
+
+	os.Exit(code)
 }
 
 func newPool() (*dockertest.Pool, error) {
@@ -148,14 +165,16 @@ func registerCleanupSignalHandler(t *testing.T, container string) chan struct{} 
 	return done
 }
 
-func TestIntegration(t *testing.T) {
+func TestIntegrationDefaultSettings(t *testing.T) {
+	const testDirectory = "defaultsettings"
+
 	tests := []struct {
 		desc     string
-		settings *dbSettings
+		settings *testSettings
 	}{
 		{
 			desc: "mysql 5",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypeMySQL
 				s.User = "root"
@@ -163,16 +182,12 @@ func TestIntegration(t *testing.T) {
 				s.DbName = "public"
 				s.Host = "localhost"
 				s.Port = "3306"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "mysql5",
-
-					dockerImage: "mysql",
-					version:     "5",
+				dbs := &testSettings{
+					filepath:      "mysql5",
+					testDirectory: testDirectory,
+					dockerImage:   "mysql",
+					version:       "5",
 					env: []string{
 						"MYSQL_DATABASE=" + s.DbName,
 						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
@@ -186,7 +201,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "mysql 8",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypeMySQL
 				s.User = "root"
@@ -194,16 +209,12 @@ func TestIntegration(t *testing.T) {
 				s.DbName = "public"
 				s.Host = "localhost"
 				s.Port = "3306"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "mysql8",
-
-					dockerImage: "mysql",
-					version:     "8",
+				dbs := &testSettings{
+					filepath:      "mysql8",
+					testDirectory: testDirectory,
+					dockerImage:   "mysql",
+					version:       "8",
 					env: []string{
 						"MYSQL_DATABASE=" + s.DbName,
 						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
@@ -217,7 +228,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "postgres 10",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
@@ -227,16 +238,12 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "postgres",
-
-					dockerImage: "postgres",
-					version:     "10",
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "10",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -250,7 +257,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "postgres 11",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
@@ -260,16 +267,12 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "postgres",
-
-					dockerImage: "postgres",
-					version:     "11",
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "11",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -283,7 +286,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "postgres 12",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
@@ -293,16 +296,12 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "postgres",
-
-					dockerImage: "postgres",
-					version:     "12",
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "12",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -316,7 +315,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "postgres 17",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
@@ -326,16 +325,12 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "postgres",
-
-					dockerImage: "postgres",
-					version:     "17",
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "17",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -349,7 +344,7 @@ func TestIntegration(t *testing.T) {
 		},
 		{
 			desc: "postgres 18",
-			settings: func() *dbSettings {
+			settings: func() *testSettings {
 				s := settings.New()
 				s.DbType = settings.DBTypePostgresql
 				s.User = "postgres"
@@ -359,16 +354,12 @@ func TestIntegration(t *testing.T) {
 				s.Host = "localhost"
 				s.Port = "5432"
 				s.SSLMode = "disable"
-				// s.Verbose = true
-				// s.VVerbose = true
 
-				dbs := &dbSettings{
-					Settings: s,
-
-					dataFilepath: "postgres",
-
-					dockerImage: "postgres",
-					version:     "18",
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "18",
 					env: []string{
 						"POSTGRES_DB=" + s.DbName,
 						"POSTGRES_PASSWORD=" + s.Pswd,
@@ -384,29 +375,20 @@ func TestIntegration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			s := test.settings
-
-			db, purgeFn := setupDatabase(t, s)
+			db := setupDatabase(t, test.settings)
 			defer func() {
-				if purgeFn != nil {
-					if err := purgeFn(); err != nil {
-						log.Fatal(err)
-					}
-				}
-
 				// TODO need flag for not removing generated output but
 				//  save it into the expected directory
 				if !t.Failed() {
-					_ = os.RemoveAll(s.Settings.OutputFilePath)
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
 				}
 			}()
 
-			loadTestData(t, db.SQLDriver(), s)
+			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(s.Settings.OutputFilePath, 0755)
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
-				t.Errorf("could not create output file path: %v", err)
-				return
+				t.Fatalf("could not create output file path: %v", err)
 			}
 
 			version, err := db.Version()
@@ -416,22 +398,279 @@ func TestIntegration(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(s.Settings.OutputFilePath)
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(s.Settings, db, writer)
+			err = cli.Run(test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
-			checkFiles(t, s)
+			checkFiles(t, test.settings)
 		})
 	}
 }
 
-func checkFiles(t *testing.T, s *dbSettings) {
-	expectedPattern := filepath.Join(s.dataFilepath, expectedDirectoryName, s.Settings.Prefix+"*")
+func TestIntegrationNullTypePrimitive(t *testing.T) {
+	const testDirectory = "nulltypeprimitive"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 5",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypeMySQL
+				s.User = "root"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "public"
+				s.Host = "localhost"
+				s.Port = "3306"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "mysql5",
+					testDirectory: testDirectory,
+					dockerImage:   "mysql",
+					version:       "5",
+					env: []string{
+						"MYSQL_DATABASE=" + s.DbName,
+						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypeMySQL
+				s.User = "root"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "public"
+				s.Host = "localhost"
+				s.Port = "3306"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "mysql8",
+					testDirectory: testDirectory,
+					dockerImage:   "mysql",
+					version:       "8",
+					env: []string{
+						"MYSQL_DATABASE=" + s.DbName,
+						"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 10",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "10",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 11",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "11",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 12",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "12",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 17",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "17",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+		{
+			desc: "postgres 18",
+			settings: func() *testSettings {
+				s := settings.New()
+				s.DbType = settings.DBTypePostgresql
+				s.User = "postgres"
+				s.Pswd = "mysecretpassword"
+				s.DbName = "postgres"
+				s.Schema = "public"
+				s.Host = "localhost"
+				s.Port = "5432"
+				s.SSLMode = "disable"
+
+				s.Null = settings.NullTypePrimitive
+
+				dbs := &testSettings{
+					filepath:      "postgres",
+					testDirectory: testDirectory,
+					dockerImage:   "postgres",
+					version:       "18",
+					env: []string{
+						"POSTGRES_DB=" + s.DbName,
+						"POSTGRES_PASSWORD=" + s.Pswd,
+					},
+				}
+
+				dbs.setSettings(s)
+
+				return dbs
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				// TODO need flag for not removing generated output but
+				//  save it into the expected directory
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func checkFiles(t *testing.T, s *testSettings) {
+	expectedPattern := filepath.Join(s.filepath, s.testDirectory, expectedDirectoryName, "*")
 	expectedFiles, err := filepath.Glob(expectedPattern)
 	assert.NoError(t, err)
 
-	outputPattern := filepath.Join(s.Settings.OutputFilePath, s.Settings.Prefix+"*")
+	outputPattern := filepath.Join(s.Settings.OutputFilePath, "*")
 	outputFiles, err := filepath.Glob(outputPattern)
 	assert.NoError(t, err)
 
@@ -470,7 +709,7 @@ func checkFiles(t *testing.T, s *dbSettings) {
 		outputContent, err := os.ReadFile(outputFile)
 		assert.NoError(t, err)
 
-		assert.Equal(t, expectedContent, outputContent, "file %q differs in content", fileName)
+		assert.Equal(t, string(expectedContent), string(outputContent), "file %q differs in content", fileName)
 	}
 
 	if len(expectedByName) > 0 {
@@ -483,79 +722,85 @@ func checkFiles(t *testing.T, s *dbSettings) {
 	}
 }
 
-func setupDatabase(t *testing.T, s *dbSettings) (database.Database, func() error) {
-	t.Logf("spinning up database %s:%s ...\n", s.dockerImage, s.version)
+func setupDatabase(t *testing.T, s *testSettings) database.Database {
+	t.Logf("spinning up database %s:%s", s.dockerImage, s.version)
 
 	containerName := fmt.Sprintf("tables_to_go_%s_%s_integration", s.dockerImage, s.version)
 
-	// Note: registering before the resource gets created because it happens that
-	// the resource gets created but for some reason we cannot figure out if it's
-	// ready or not. Using CTRL+C then would result in existing resource not
-	// being cleaned up.
-	done := registerCleanupSignalHandler(t, containerName)
+	resource, exist := pool.ContainerByName(containerName)
+	if !exist {
+		// Note: registering before the resource gets created because it happens that
+		// the resource gets created but for some reason we cannot figure out if it's
+		// ready or not. Using CTRL+C then would result in existing resource not
+		// being cleaned up.
+		done := registerCleanupSignalHandler(t, containerName)
 
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Name:       containerName,
-		Repository: s.dockerImage,
-		Tag:        s.version,
-		Env:        s.env,
-	}, func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
+		var err error
+		resource, err = pool.RunWithOptions(&dockertest.RunOptions{
+			Name:       containerName,
+			Repository: s.dockerImage,
+			Tag:        s.version,
+			Env:        s.env,
+		}, func(config *docker.HostConfig) {
+			config.AutoRemove = true
+			config.RestartPolicy = docker.RestartPolicy{
+				Name: "no",
+			}
+		})
+		if err != nil {
+			close(done)
+			t.Fatalf("could not start resource: %v", err)
 		}
-	})
-	if err != nil {
-		t.Fatalf("could not start resource: %v", err)
-	}
-	_ = resource.Expire(resourceExpirationSeconds)
+		_ = resource.Expire(resourceExpirationSeconds)
 
-	purgeFn := func() error {
-		if err := pool.Purge(resource); err != nil {
-			return fmt.Errorf("could not purge MySQL: %w", err)
-		}
-		close(done)
-		return nil
+		purgeFns = append(purgeFns, func() error {
+			defer close(done)
+			if err := pool.Purge(resource); err != nil {
+				return fmt.Errorf("could not purge database: %w", err)
+			}
+			return nil
+		})
 	}
 
 	var db database.Database
 
-	if err = pool.Retry(func() error {
-		newSettings := s.Settings
+	if err := pool.Retry(func() error {
 		port := resource.GetPort(s.Port + "/tcp")
 		if port != "" {
-			newSettings.Port = port
+			s.Settings.Port = port
 		}
-		db = database.New(newSettings)
+		db = database.New(s.Settings)
 		err := db.Connect()
 		if err != nil {
-			if newSettings.Verbose {
+			if s.Settings.Verbose {
 				t.Log(err.Error())
 			}
 			return err
 		}
 		return nil
 	}); err != nil {
-		_ = purgeFn()
 		t.Fatalf("could not connect to database: %v", err)
 	}
 
-	return db, purgeFn
+	if exist {
+		t.Log("already exists, resetting database")
+		resetDatabase(t, db, s)
+	}
+
+	return db
 }
 
-func loadTestData(t *testing.T, db *sqlx.DB, s *dbSettings) {
-	testDataPattern := filepath.Join(s.dataFilepath, testdataDirectoryName, "*.sql")
+func loadTestData(t *testing.T, db *sqlx.DB, s *testSettings) {
+	testDataPattern := filepath.Join(s.filepath, s.testDirectory, testdataDirectoryName, "*.sql")
 	files, err := filepath.Glob(testDataPattern)
 	if err != nil {
-		t.Errorf("could not find sql testdata: %v", err)
-		return
+		t.Fatalf("could not find sql testdata: %v", err)
 	}
 
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
-			t.Errorf("could not read %q: %v", f, err)
-			return
+			t.Fatalf("could not read %q: %v", f, err)
 		}
 
 		queries := bytes.Split(data, []byte(";"))
@@ -569,9 +814,44 @@ func loadTestData(t *testing.T, db *sqlx.DB, s *dbSettings) {
 
 			_, err = db.Exec(q)
 			if err != nil {
-				t.Errorf("could not create testdata %q: %v", f, err)
-				return
+				t.Fatalf("could not create testdata %q: %v", f, err)
 			}
 		}
+	}
+}
+
+func resetDatabase(t *testing.T, db database.Database, s *testSettings) {
+	dbx := db.SQLDriver()
+
+	// For the sake of integration testing and not to expose a DROP method
+	// at the database.Database interface, we type switch here.
+	switch tdb := db.(type) {
+	case *database.MySQL:
+		query := `DROP DATABASE ` + s.DbName
+		if _, err := dbx.ExecContext(t.Context(), query); err != nil {
+			t.Fatalf("could not drop database %q: %v", s.DbName, err)
+		}
+		query = `CREATE DATABASE ` + s.DbName
+		if _, err := dbx.ExecContext(t.Context(), query); err != nil {
+			t.Fatalf("could not create database %q: %v", s.DbName, err)
+		}
+		query = `USE ` + s.DbName
+		if _, err := dbx.ExecContext(t.Context(), query); err != nil {
+			t.Fatalf("could not use database %q: %v", s.DbName, err)
+		}
+	case *database.Postgresql:
+		query := `DROP SCHEMA ` + s.Schema + ` CASCADE`
+		if _, err := dbx.ExecContext(t.Context(), query); err != nil {
+			t.Fatalf("could not drop schema %q: %v", s.Schema, err)
+		}
+		query = `CREATE SCHEMA ` + s.Schema
+		if _, err := dbx.ExecContext(t.Context(), query); err != nil {
+			t.Fatalf("could not create schema %q: %v", s.Schema, err)
+		}
+	case *database.SQLite:
+		t.Log("not implemented")
+	default:
+		// MUST never happen
+		t.Fatalf("unknown database %v", tdb)
 	}
 }

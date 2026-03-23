@@ -32,7 +32,7 @@ _testmain.go
 tables-to-go
 coverage.txt
 
-internal/integration_tests/*/output
+internal/integration_tests/**/output
 
 AGENTS.md
 plan.md

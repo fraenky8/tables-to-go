@@ -123,7 +123,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 	return gdb.Ping()
 }
 
-// SQLDriver returns the underlyig SQL driver
+// SQLDriver returns the underlying SQL driver
 func (gdb *GeneralDatabase) SQLDriver() *sqlx.DB {
 	return gdb.DB
 }
