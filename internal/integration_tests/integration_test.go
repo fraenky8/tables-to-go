@@ -492,6 +492,10 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 			settings: func() *testSettings {
 				s := newMySQLSettings("8", "mysql8", testDirectory)
 				s.FileNameFormat = settings.FileNameFormatSnakeCase
+
+				// Only present to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+
 				return s
 			}(),
 		},
@@ -544,6 +548,10 @@ func TestIntegrationPackageName(t *testing.T) {
 			settings: func() *testSettings {
 				s := newMySQLSettings("8", "mysql8", testDirectory)
 				s.PackageName = "models"
+
+				// Only present to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+
 				return s
 			}(),
 		},

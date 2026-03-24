@@ -1,5 +1,0 @@
-package models
-
-type BinaryCheckPk struct {
-	BinaryCheckPk string `db:"binary_check_pk"`
-}
