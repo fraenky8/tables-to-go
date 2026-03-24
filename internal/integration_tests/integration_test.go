@@ -34,7 +34,7 @@ const (
 const (
 	// Note: The more integration tests, the higher we have to set this time.
 	// Otherwise, the resources might be purged before your tests are finished.
-	resourceExpirationSeconds = 300
+	resourceExpirationSeconds = 900
 )
 
 var (
