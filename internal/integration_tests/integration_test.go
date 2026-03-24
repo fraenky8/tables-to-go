@@ -28,7 +28,6 @@ import (
 
 const (
 	testdataDirectoryName = "testdata"
-	expectedDirectoryName = "expected"
 	outputDirectoryName   = "output"
 )
 
@@ -76,12 +75,6 @@ type testSettings struct {
 	dockerImage string
 	version     string
 	env         []string
-}
-
-// TODO remove once Postgres is migrated
-func (s *testSettings) setSettings(ss *settings.Settings) {
-	s.Settings = ss
-	s.Settings.OutputFilePath = filepath.Join(s.filepath, s.testDirectory, outputDirectoryName)
 }
 
 func newMySQLSettings(version, path, testDirectory string) *testSettings {
@@ -383,7 +376,7 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 }
 
 func checkFiles(t *testing.T, s *testSettings) {
-	expectedPattern := filepath.Join(s.filepath, s.testDirectory, expectedDirectoryName, "*")
+	expectedPattern := filepath.Join(s.filepath, s.testDirectory, "*.go")
 	expectedFiles, err := filepath.Glob(expectedPattern)
 	assert.NoError(t, err)
 
@@ -508,7 +501,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 }
 
 func loadTestData(t *testing.T, db *sqlx.DB, s *testSettings) {
-	testDataPattern := filepath.Join(s.filepath, s.testDirectory, testdataDirectoryName, "*.sql")
+	testDataPattern := filepath.Join(s.filepath, testdataDirectoryName, "*.sql")
 	files, err := filepath.Glob(testDataPattern)
 	if err != nil {
 		t.Fatalf("could not find sql testdata: %v", err)
