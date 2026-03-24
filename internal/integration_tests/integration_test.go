@@ -287,59 +287,111 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		{
 			desc: "mysql 5",
 			settings: func() *testSettings {
-				dbs := newMySQLSettings("5", "mysql5", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newMySQLSettings("5", "mysql5", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "mysql 8",
 			settings: func() *testSettings {
-				dbs := newMySQLSettings("8", "mysql8", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "postgres 10",
 			settings: func() *testSettings {
-				dbs := newPostgresSettings("10", "postgres", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newPostgresSettings("10", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "postgres 11",
 			settings: func() *testSettings {
-				dbs := newPostgresSettings("11", "postgres", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newPostgresSettings("11", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "postgres 12",
 			settings: func() *testSettings {
-				dbs := newPostgresSettings("12", "postgres", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newPostgresSettings("12", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "postgres 17",
 			settings: func() *testSettings {
-				dbs := newPostgresSettings("17", "postgres", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newPostgresSettings("17", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
 		{
 			desc: "postgres 18",
 			settings: func() *testSettings {
-				dbs := newPostgresSettings("18", "postgres", testDirectory)
-				dbs.Null = settings.NullTypePrimitive
-				return dbs
+				s := newPostgresSettings("18", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
 			}(),
 		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
+	const testDirectory = "filenameformatsnakecase"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 5",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.FileNameFormat = settings.FileNameFormatSnakeCase
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
 	}
 
 	for _, test := range tests {
