@@ -375,6 +375,111 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 	}
 }
 
+func TestIntegrationTablesFlag(t *testing.T) {
+	const testDirectory = "tablesflag"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 5",
+			settings: func() *testSettings {
+				s := newMySQLSettings("5", "mysql5", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table"}
+				return s
+			}(),
+		},
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table"}
+				return s
+			}(),
+		},
+		{
+			desc: "postgres 10",
+			settings: func() *testSettings {
+				s := newPostgresSettings("10", "postgres", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+		{
+			desc: "postgres 11",
+			settings: func() *testSettings {
+				s := newPostgresSettings("11", "postgres", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+		{
+			desc: "postgres 12",
+			settings: func() *testSettings {
+				s := newPostgresSettings("12", "postgres", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+		{
+			desc: "postgres 17",
+			settings: func() *testSettings {
+				s := newPostgresSettings("17", "postgres", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+		{
+			desc: "postgres 18",
+			settings: func() *testSettings {
+				s := newPostgresSettings("18", "postgres", testDirectory)
+				// Note: int_table non-existing
+				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
 func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 	const testDirectory = "filenameformatsnakecase"
 
