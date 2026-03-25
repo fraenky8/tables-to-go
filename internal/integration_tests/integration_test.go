@@ -649,6 +649,62 @@ func TestIntegrationPackageName(t *testing.T) {
 	}
 }
 
+func TestIntegrationTagsNoDB(t *testing.T) {
+	const testDirectory = "tagsnodbflag"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.TagsNoDb = true
+
+				// Only set to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
 func checkFiles(t *testing.T, s *testSettings) {
 	expectedPattern := filepath.Join(s.filepath, s.testDirectory, "*.go")
 	expectedFiles, err := filepath.Glob(expectedPattern)
