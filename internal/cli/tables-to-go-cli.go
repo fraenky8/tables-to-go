@@ -216,13 +216,13 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 			columnInfo.isNullable = true
 		}
 	} else if db.IsTemporal(column) {
-		if !db.IsNullable(column) {
+		if db.IsNullable(column) {
+			goType = getNullType(s, "*time.Time", "sql.NullTime")
+			columnInfo.isTemporal = !s.IsNullTypeSQL()
+			columnInfo.isNullable = true
+		} else {
 			goType = "time.Time"
 			columnInfo.isTemporal = true
-		} else {
-			goType = getNullType(s, "*time.Time", "sql.NullTime")
-			columnInfo.isTemporal = s.Null == settings.NullTypeNative
-			columnInfo.isNullable = true
 		}
 	} else {
 		// TODO handle special data types
