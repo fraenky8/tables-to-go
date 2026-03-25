@@ -185,13 +185,14 @@ func newPool() (*dockertest.Pool, error) {
 }
 
 func registerCleanupSignalHandler(t *testing.T, container string) chan struct{} {
-	signals := []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGKILL}
+	signals := []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT}
 	terminate := make(chan os.Signal, len(signals))
 	done := make(chan struct{})
 	signal.Notify(terminate, signals...)
 	go func() {
 		select {
 		case <-done:
+			signal.Stop(terminate)
 			return
 		case s := <-terminate:
 			t.Log()
@@ -488,7 +489,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 		settings *testSettings
 	}{
 		{
-			desc: "mysql 5",
+			desc: "mysql 8",
 			settings: func() *testSettings {
 				s := newMySQLSettings("8", "mysql8", testDirectory)
 				s.FileNameFormat = settings.FileNameFormatSnakeCase
@@ -544,7 +545,7 @@ func TestIntegrationPackageName(t *testing.T) {
 		settings *testSettings
 	}{
 		{
-			desc: "mysql 5",
+			desc: "mysql 8",
 			settings: func() *testSettings {
 				s := newMySQLSettings("8", "mysql8", testDirectory)
 				s.PackageName = "models"
