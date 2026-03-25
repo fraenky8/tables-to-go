@@ -397,7 +397,7 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			settings: func() *testSettings {
 				s := newMySQLSettings("8", "mysql8", testDirectory)
 				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table"}
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table", "user"}
 				return s
 			}(),
 		},
@@ -495,7 +495,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 				s.OutputFormat = settings.OutputFormatOriginal
 
 				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
 
 				return s
 			}(),
@@ -551,7 +551,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 				s.FileNameFormat = settings.FileNameFormatSnakeCase
 
 				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
 
 				return s
 			}(),
@@ -607,8 +607,61 @@ func TestIntegrationPackageName(t *testing.T) {
 				s.PackageName = "models"
 
 				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
 
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationNoInitialism(t *testing.T) {
+	const testDirectory = "noinitialism"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.NoInitialism = true
+				s.Tables = settings.StringsFlag{"user"}
 				return s
 			}(),
 		},
@@ -663,7 +716,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 				s.TagsNoDb = true
 
 				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table"}
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
 
 				return s
 			}(),
