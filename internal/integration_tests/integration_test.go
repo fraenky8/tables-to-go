@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -34,7 +35,7 @@ const (
 const (
 	// Note: The more integration tests, the higher we have to set this time.
 	// Otherwise, the resources might be purged before your tests are finished.
-	resourceExpirationSeconds = 900
+	resourceExpiration = 15 * time.Minute
 )
 
 var (
@@ -649,6 +650,175 @@ func TestIntegrationPackageName(t *testing.T) {
 	}
 }
 
+func TestIntegrationPrefix(t *testing.T) {
+	const testDirectory = "prefix"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.Prefix = "Prefix_"
+
+				// Only set to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
+
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationSuffix(t *testing.T) {
+	const testDirectory = "suffix"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.Suffix = "_Suffix"
+
+				// Only set to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
+
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationPrefixSuffix(t *testing.T) {
+	const testDirectory = "prefixsuffix"
+
+	tests := []struct {
+		desc     string
+		settings *testSettings
+	}{
+		{
+			desc: "mysql 8",
+			settings: func() *testSettings {
+				s := newMySQLSettings("8", "mysql8", testDirectory)
+				s.Prefix = "Prefix_"
+				s.Suffix = "_Suffix"
+
+				// Only set to reduce the amount of files
+				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
+
+				return s
+			}(),
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version()
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+
+			err = cli.Run(test.settings.Settings, db, writer)
+			assert.NoError(t, err)
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
 func TestIntegrationNoInitialism(t *testing.T) {
 	const testDirectory = "noinitialism"
 
@@ -844,7 +1014,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 			close(done)
 			t.Fatalf("could not start resource: %v", err)
 		}
-		_ = resource.Expire(resourceExpirationSeconds)
+		_ = resource.Expire(uint(resourceExpiration.Seconds()))
 
 		purgeFns = append(purgeFns, func() error {
 			defer close(done)

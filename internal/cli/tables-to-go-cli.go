@@ -102,8 +102,7 @@ func (c columnInfo) isNullableOrTemporal() bool {
 
 func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
 
-	var structFields strings.Builder
-	tableName := caser.String(settings.Prefix + table.Name + settings.Suffix)
+	tableName := caser.String(settings.Prefix) + caser.String(table.Name) + caser.String(settings.Suffix)
 	// Replace any whitespace with underscores
 	tableName = strings.Map(replaceSpace, tableName)
 	if settings.IsOutputFormatCamelCase() {
@@ -115,9 +114,11 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		return "", "", fmt.Errorf("table name %q contains invalid characters", table.Name)
 	}
 
-	columnInfo := columnInfo{}
-	columns := map[string]struct{}{}
-
+	var (
+		structFields strings.Builder
+		columnInfo   columnInfo
+		columns      = make(map[string]struct{}, len(table.Columns))
+	)
 	for _, column := range table.Columns {
 		columnName, err := formatColumnName(settings, column.Name, table.Name)
 		if err != nil {
