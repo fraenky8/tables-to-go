@@ -29,6 +29,7 @@ _testmain.go
 
 .DS_Store
 
+.dev
 tables-to-go
 coverage.txt
 
