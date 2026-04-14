@@ -63,6 +63,8 @@ type testSettings struct {
 
 	dockerImage string
 	version     string
+	tmpfs       map[string]string
+	cmd         []string
 	env         []string
 }
 
@@ -82,6 +84,12 @@ func newMySQLSettings(version, path, testDirectory string) *testSettings {
 		testDirectory: testDirectory,
 		dockerImage:   "mysql",
 		version:       version,
+		tmpfs:         map[string]string{"/var/lib/mysql": ""},
+		cmd: []string{
+			"--skip-log-bin",
+			"--innodb_flush_log_at_trx_commit=2",
+			"--sync_binlog=0",
+		},
 		env: []string{
 			"MYSQL_DATABASE=" + s.DbName,
 			"MYSQL_ROOT_PASSWORD=" + s.Pswd,
@@ -107,6 +115,13 @@ func newPostgresSettings(version, path, testDirectory string) *testSettings {
 		testDirectory: testDirectory,
 		dockerImage:   "postgres",
 		version:       version,
+		tmpfs:         map[string]string{"/var/lib/postgresql": ""},
+		cmd: []string{
+			"postgres",
+			"-c", "fsync=off",
+			"-c", "full_page_writes=off",
+			"-c", "synchronous_commit=off",
+		},
 		env: []string{
 			"POSTGRES_DB=" + s.DbName,
 			"POSTGRES_PASSWORD=" + s.Pswd,
@@ -1116,6 +1131,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 	// Using pool.Run instead of pool.RunT here to be able to reuse containers.
 	// Otherwise, t.Cleanup would have been run already and removed the container.
 	resource, err := pool.Run(t.Context(), s.dockerImage,
+		dockertest.WithCmd(s.cmd),
 		dockertest.WithTag(s.version),
 		dockertest.WithName(containerName),
 		dockertest.WithEnv(s.env),
@@ -1124,6 +1140,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 			config.RestartPolicy = container.RestartPolicy{
 				Name: container.RestartPolicyDisabled,
 			}
+			config.Tmpfs = s.tmpfs
 		}),
 	)
 	if err != nil {
@@ -1149,6 +1166,9 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 	}); err != nil {
 		t.Fatalf("could not connect to database: %v", err)
 	}
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
 
 	resetDatabase(t, db, s)
 
