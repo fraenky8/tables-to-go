@@ -19,7 +19,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/moby/moby/api/types/container"
-	mobyclient "github.com/moby/moby/client"
 	"github.com/ory/dockertest/v4"
 	"github.com/stretchr/testify/assert"
 
@@ -127,7 +126,7 @@ func TestMain(m *testing.M) {
 	log.Println("creating Docker pool...")
 
 	var err error
-	pool, err = newPool(ctx)
+	pool, err = dockertest.NewPool(ctx, "")
 	if err != nil {
 		log.Fatalf("error connecting to Docker: %v", err)
 	}
@@ -142,39 +141,6 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
-}
-
-func newPool(ctx context.Context) (dockertest.ClosablePool, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("os.UserHomeDir failed: %w", err)
-	}
-
-	endpoints := []string{
-		"", // first try dockertest's default based on env vars
-		"unix://" + filepath.Join(home, ".docker/run/docker.sock"),     // In case the symlink is missing.
-		"unix://" + filepath.Join(home, ".rd/docker.sock"),             // Rancher Desktop
-		"unix://" + filepath.Join(home, ".colima/default/docker.sock"), // Colima
-	}
-	for _, endpoint := range endpoints {
-		pool, err := dockertest.NewPool(ctx, endpoint)
-		if err != nil {
-			log.Println("dockertest.NewPool failed:", err)
-			continue
-		}
-
-		// Our "ping" function
-		_, err = pool.Client().NetworkInspect(ctx, "none", mobyclient.NetworkInspectOptions{})
-		if err != nil {
-			log.Println("docker:", err)
-			continue
-		}
-
-		log.Printf("using Docker endpoint %q", endpoint)
-		return pool, nil
-	}
-
-	return nil, fmt.Errorf("could not create pool from any given endpoint")
 }
 
 func registerCleanupSignalHandler(ctx context.Context) context.Context {
