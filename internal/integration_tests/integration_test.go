@@ -137,7 +137,8 @@ func TestMain(m *testing.M) {
 
 	err = pool.Close(ctx)
 	if err != nil {
-		log.Fatalf("error closing Docker pool: %v", err)
+		// No need to log.Fatal here, this is just informative.
+		log.Printf("warning: error closing Docker pool: %v", err)
 	}
 
 	os.Exit(code)
