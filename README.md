@@ -6,7 +6,7 @@ database schema.
 
 **Tables change, run the tool, get your structs!**
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go/v2)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go/v2)
 [![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
 [![Build & Test](https://github.com/fraenky8/tables-to-go/actions/workflows/go.yml/badge.svg)](https://github.com/fraenky8/tables-to-go/actions)
 [![codecov](https://codecov.io/github/fraenky8/tables-to-go/graph/badge.svg?token=EACZFL68U9)](https://codecov.io/github/fraenky8/tables-to-go)
