@@ -4,6 +4,7 @@ package integration_tests
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -17,8 +18,9 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
+	"github.com/moby/moby/api/types/container"
+	mobyclient "github.com/moby/moby/client"
+	"github.com/ory/dockertest/v4"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
@@ -32,27 +34,14 @@ const (
 	outputDirectoryName   = "output"
 )
 
-const (
-	// Note: The more integration tests, the higher we have to set this time.
-	// Otherwise, the resources might be purged before your tests are finished.
-	resourceExpiration = 15 * time.Minute
-)
-
 var (
-	pool *dockertest.Pool
+	pool dockertest.ClosablePool
 )
 
 // nopLogger is used to silence MySQL logs of "packets.go:36: unexpected EOF".
 type nopLogger struct{}
 
 func (nopLogger) Print(...any) {}
-
-// purgeFn is a function which can purge resources.
-type purgeFn func() error
-
-var (
-	purgeFns []purgeFn
-)
 
 var (
 	isCI bool
@@ -127,6 +116,8 @@ func newPostgresSettings(version, path, testDirectory string) *testSettings {
 }
 
 func TestMain(m *testing.M) {
+	ctx := context.Background()
+
 	logMsg := "running Tables-to-Go integration tests"
 	if isCI {
 		logMsg += " on CI"
@@ -136,23 +127,24 @@ func TestMain(m *testing.M) {
 	log.Println("creating Docker pool...")
 
 	var err error
-	pool, err = newPool()
+	pool, err = newPool(ctx)
 	if err != nil {
 		log.Fatalf("error connecting to Docker: %v", err)
 	}
 
+	ctx = registerCleanupSignalHandler(ctx)
+
 	code := m.Run()
 
-	for i := range purgeFns {
-		if err := purgeFns[i](); err != nil {
-			log.Println(err.Error())
-		}
+	err = pool.Close(ctx)
+	if err != nil {
+		log.Fatalf("error closing Docker pool: %v", err)
 	}
 
 	os.Exit(code)
 }
 
-func newPool() (*dockertest.Pool, error) {
+func newPool(ctx context.Context) (dockertest.ClosablePool, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("os.UserHomeDir failed: %w", err)
@@ -165,14 +157,14 @@ func newPool() (*dockertest.Pool, error) {
 		"unix://" + filepath.Join(home, ".colima/default/docker.sock"), // Colima
 	}
 	for _, endpoint := range endpoints {
-		pool, err := dockertest.NewPool(endpoint)
+		pool, err := dockertest.NewPool(ctx, endpoint)
 		if err != nil {
 			log.Println("dockertest.NewPool failed:", err)
 			continue
 		}
 
 		// Our "ping" function
-		_, err = pool.NetworksByName("none")
+		_, err = pool.Client().NetworkInspect(ctx, "none", mobyclient.NetworkInspectOptions{})
 		if err != nil {
 			log.Println("docker:", err)
 			continue
@@ -185,21 +177,16 @@ func newPool() (*dockertest.Pool, error) {
 	return nil, fmt.Errorf("could not create pool from any given endpoint")
 }
 
-func registerCleanupSignalHandler(t *testing.T, container string) chan struct{} {
+func registerCleanupSignalHandler(ctx context.Context) context.Context {
 	signals := []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT}
-	terminate := make(chan os.Signal, len(signals))
-	done := make(chan struct{})
-	signal.Notify(terminate, signals...)
+	done, stop := signal.NotifyContext(ctx, signals...)
 	go func() {
+		defer stop()
 		select {
-		case <-done:
-			signal.Stop(terminate)
-			return
-		case s := <-terminate:
-			t.Log()
-			t.Log("got signal:", s.String())
-			t.Logf("removing container %q", container)
-			_ = pool.RemoveContainerByName(container)
+		case <-done.Done():
+			log.Println("got signal:", context.Cause(done))
+			log.Println("removing container...")
+			_ = pool.Close(ctx)
 			// Ignoring error here because it might be called multiple times due
 			// to multiple signals arriving. The first of them will remove the
 			// container already leading subsequent calls error. But we are not
@@ -1159,44 +1146,26 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 
 	containerName := fmt.Sprintf("tables_to_go_%s_%s_integration", s.dockerImage, s.version)
 
-	resource, exist := pool.ContainerByName(containerName)
-	if !exist {
-		// Note: registering before the resource gets created because it happens that
-		// the resource gets created but for some reason we cannot figure out if it's
-		// ready or not. Using CTRL+C then would result in existing resource not
-		// being cleaned up.
-		done := registerCleanupSignalHandler(t, containerName)
-
-		var err error
-		resource, err = pool.RunWithOptions(&dockertest.RunOptions{
-			Name:       containerName,
-			Repository: s.dockerImage,
-			Tag:        s.version,
-			Env:        s.env,
-		}, func(config *docker.HostConfig) {
+	// Using pool.Run instead of pool.RunT here to be able to reuse containers.
+	// Otherwise, t.Cleanup would have been run already and removed the container.
+	resource, err := pool.Run(t.Context(), s.dockerImage,
+		dockertest.WithTag(s.version),
+		dockertest.WithName(containerName),
+		dockertest.WithEnv(s.env),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
 			config.AutoRemove = true
-			config.RestartPolicy = docker.RestartPolicy{
-				Name: "no",
+			config.RestartPolicy = container.RestartPolicy{
+				Name: container.RestartPolicyDisabled,
 			}
-		})
-		if err != nil {
-			close(done)
-			t.Fatalf("could not start resource: %v", err)
-		}
-		_ = resource.Expire(uint(resourceExpiration.Seconds()))
-
-		purgeFns = append(purgeFns, func() error {
-			defer close(done)
-			if err := pool.Purge(resource); err != nil {
-				return fmt.Errorf("could not purge database: %w", err)
-			}
-			return nil
-		})
+		}),
+	)
+	if err != nil {
+		t.Fatalf("could not start resource: %v", err)
 	}
 
 	var db database.Database
 
-	if err := pool.Retry(func() error {
+	if err := pool.Retry(t.Context(), 0, func() error {
 		port := resource.GetPort(s.Port + "/tcp")
 		if port != "" {
 			s.Settings.Port = port
@@ -1214,10 +1183,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 		t.Fatalf("could not connect to database: %v", err)
 	}
 
-	if exist {
-		t.Log("already exists, resetting database")
-		resetDatabase(t, db, s)
-	}
+	resetDatabase(t, db, s)
 
 	return db
 }
@@ -1253,6 +1219,8 @@ func loadTestData(t *testing.T, db *sqlx.DB, s *testSettings) {
 }
 
 func resetDatabase(t *testing.T, db database.Database, s *testSettings) {
+	start := time.Now()
+
 	dbx := db.SQLDriver()
 
 	// For the sake of integration testing and not to expose a DROP method
@@ -1286,4 +1254,6 @@ func resetDatabase(t *testing.T, db database.Database, s *testSettings) {
 		// MUST never happen
 		t.Fatalf("unknown database %v", tdb)
 	}
+
+	t.Logf("resetting database (%s)", time.Since(start))
 }

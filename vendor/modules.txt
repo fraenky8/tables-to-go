@@ -1,14 +1,7 @@
-# dario.cat/mergo v1.0.2
-## explicit; go 1.13
-dario.cat/mergo
 # filippo.io/edwards25519 v1.2.0
 ## explicit; go 1.24.0
 filippo.io/edwards25519
 filippo.io/edwards25519/field
-# github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c
-## explicit; go 1.16
-github.com/Azure/go-ansiterm
-github.com/Azure/go-ansiterm/winterm
 # github.com/Masterminds/squirrel v1.5.4
 ## explicit; go 1.14
 github.com/Masterminds/squirrel
@@ -22,18 +15,12 @@ github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
 github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
-# github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
-## explicit
-github.com/Nvveen/Gotty
-# github.com/cenkalti/backoff/v4 v4.3.0
-## explicit; go 1.18
-github.com/cenkalti/backoff/v4
+# github.com/cenkalti/backoff/v5 v5.0.3
+## explicit; go 1.23
+github.com/cenkalti/backoff/v5
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
-# github.com/containerd/continuity v0.4.5
-## explicit; go 1.21
-github.com/containerd/continuity/pathdriver
 # github.com/containerd/errdefs v1.0.0
 ## explicit; go 1.20
 github.com/containerd/errdefs
@@ -47,21 +34,8 @@ github.com/davecgh/go-spew/spew
 # github.com/distribution/reference v0.6.0
 ## explicit; go 1.20
 github.com/distribution/reference
-# github.com/docker/cli v29.4.0+incompatible
-## explicit
-github.com/docker/cli/cli/compose/interpolation
-github.com/docker/cli/cli/compose/loader
-github.com/docker/cli/cli/compose/schema
-github.com/docker/cli/cli/compose/template
-github.com/docker/cli/cli/compose/types
-github.com/docker/cli/internal/lazyregexp
-github.com/docker/cli/internal/volumespec
-github.com/docker/cli/opts
-github.com/docker/cli/opts/swarmopts
-github.com/docker/cli/pkg/kvfile
 # github.com/docker/go-connections v0.6.0
 ## explicit; go 1.18
-github.com/docker/go-connections/nat
 github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.5.0
@@ -80,13 +54,6 @@ github.com/go-logr/stdr
 # github.com/go-sql-driver/mysql v1.9.3
 ## explicit; go 1.21.0
 github.com/go-sql-driver/mysql
-# github.com/go-viper/mapstructure/v2 v2.5.0
-## explicit; go 1.18
-github.com/go-viper/mapstructure/v2
-github.com/go-viper/mapstructure/v2/internal/errors
-# github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-## explicit; go 1.13
-github.com/google/shlex
 # github.com/iancoleman/strcase v0.3.0
 ## explicit; go 1.16
 github.com/iancoleman/strcase
@@ -120,6 +87,7 @@ github.com/mattn/go-sqlite3
 github.com/moby/docker-image-spec/specs-go/v1
 # github.com/moby/moby/api v1.54.1
 ## explicit; go 1.24
+github.com/moby/moby/api/pkg/stdcopy
 github.com/moby/moby/api/types
 github.com/moby/moby/api/types/blkiodev
 github.com/moby/moby/api/types/build
@@ -144,13 +112,6 @@ github.com/moby/moby/client/internal
 github.com/moby/moby/client/internal/mod
 github.com/moby/moby/client/internal/timestamp
 github.com/moby/moby/client/pkg/versions
-# github.com/moby/sys/user v0.4.0
-## explicit; go 1.17
-github.com/moby/sys/user
-# github.com/moby/term v0.5.2
-## explicit; go 1.18
-github.com/moby/term
-github.com/moby/term/windows
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
@@ -158,40 +119,13 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/runc v1.2.3
-## explicit; go 1.22
-github.com/opencontainers/runc/libcontainer/user
-# github.com/ory/dockertest/v3 v3.12.0
-## explicit; go 1.22
-github.com/ory/dockertest/v3
-github.com/ory/dockertest/v3/docker
-github.com/ory/dockertest/v3/docker/opts
-github.com/ory/dockertest/v3/docker/pkg/archive
-github.com/ory/dockertest/v3/docker/pkg/fileutils
-github.com/ory/dockertest/v3/docker/pkg/homedir
-github.com/ory/dockertest/v3/docker/pkg/idtools
-github.com/ory/dockertest/v3/docker/pkg/ioutils
-github.com/ory/dockertest/v3/docker/pkg/jsonmessage
-github.com/ory/dockertest/v3/docker/pkg/longpath
-github.com/ory/dockertest/v3/docker/pkg/mount
-github.com/ory/dockertest/v3/docker/pkg/pools
-github.com/ory/dockertest/v3/docker/pkg/stdcopy
-github.com/ory/dockertest/v3/docker/pkg/system
-github.com/ory/dockertest/v3/docker/types
-github.com/ory/dockertest/v3/docker/types/blkiodev
-github.com/ory/dockertest/v3/docker/types/container
-github.com/ory/dockertest/v3/docker/types/filters
-github.com/ory/dockertest/v3/docker/types/mount
-github.com/ory/dockertest/v3/docker/types/network
-github.com/ory/dockertest/v3/docker/types/registry
-github.com/ory/dockertest/v3/docker/types/strslice
-github.com/ory/dockertest/v3/docker/types/versions
+# github.com/ory/dockertest/v4 v4.0.0-beta.4
+## explicit; go 1.25.5
+github.com/ory/dockertest/v4
+github.com/ory/dockertest/v4/internal/client
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/sirupsen/logrus v1.9.4
-## explicit; go 1.17
-github.com/sirupsen/logrus
 # github.com/stretchr/objx v0.5.3
 ## explicit; go 1.20
 github.com/stretchr/objx
@@ -200,15 +134,6 @@ github.com/stretchr/objx
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
 github.com/stretchr/testify/mock
-# github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
-## explicit
-github.com/xeipuuv/gojsonpointer
-# github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
-## explicit
-github.com/xeipuuv/gojsonreference
-# github.com/xeipuuv/gojsonschema v1.2.0
-## explicit
-github.com/xeipuuv/gojsonschema
 # go.opentelemetry.io/auto/sdk v1.2.1
 ## explicit; go 1.24.0
 go.opentelemetry.io/auto/sdk
@@ -244,12 +169,8 @@ go.opentelemetry.io/otel/trace
 go.opentelemetry.io/otel/trace/embedded
 go.opentelemetry.io/otel/trace/internal/telemetry
 go.opentelemetry.io/otel/trace/noop
-# go.yaml.in/yaml/v3 v3.0.4
-## explicit; go 1.16
-go.yaml.in/yaml/v3
 # golang.org/x/sys v0.43.0
 ## explicit; go 1.25.0
-golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.36.0
 ## explicit; go 1.25.0
