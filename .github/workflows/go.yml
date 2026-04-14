@@ -27,7 +27,7 @@ env:
   #
   # https://github.com/golangci/golangci-lint/releases
   #
-  GOLANGCI_LINT_VERSION: "v2.10.1"
+  GOLANGCI_LINT_VERSION: "v2.11.4"
 
 jobs:
   checks-lint:
@@ -76,15 +76,52 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build
-        run: go build -v -mod=vendor .
+      - name: Build tables-to-go
+        run: |
+          go build -v -mod=vendor .
 
-      - name: Test
+      - name: Run unit tests
         shell: bash
-        run: go test -v -mod=vendor -race -coverprofile=coverage.txt ./...
+        run: |
+          go test -v -mod=vendor -race ./...
+
+  # Run integration tests and coverage only on ubuntu-latest.
+  #
+  # Because there is no docker installed on MacOS, see here
+  # https://github.community/t5/GitHub-Actions/Why-is-Docker-not-installed-on-macOS/td-p/39364
+  #
+  # And on Windows we get this error:
+  #
+  # vendor\github.com\ory\dockertest\docker\pkg\system\filesys_windows.go:113:24:
+  #  cannot use uintptr(unsafe.Pointer(&sd[0])) (type uintptr) as type *"golang.org/x/sys/windows".SECURITY_DESCRIPTOR in assignment
+  #
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Run integration tests
+        run: |
+          go test -v -mod=vendor -race -tags=integration ./internal/integration_tests/...
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Run all tests with coverage
+        run: |
+          go test -v -mod=vendor -tags=integration -covermode=atomic -coverpkg=./... -coverprofile=coverage.txt ./...
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v5
-        if: matrix.os == 'ubuntu-latest'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

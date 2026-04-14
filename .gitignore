@@ -29,4 +29,11 @@ _testmain.go
 
 .DS_Store
 
+.dev
 tables-to-go
+coverage.txt
+
+internal/integration_tests/**/output
+
+AGENTS.md
+plan.md
