@@ -96,22 +96,7 @@ func (s *SQLite) PrepareGetColumnsOfTableStmt(context.Context) error {
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a
 // specific table for a given database.
-func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error) {
-
-	rows, err := s.QueryxContext(ctx, `
-		SELECT * 
-		FROM PRAGMA_TABLE_INFO('`+table.Name+`')
-	`)
-	if err != nil {
-		if s.Verbose {
-			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
-			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
-		}
-		return err
-	}
-	//nolint:errcheck // Best effort close.
-	defer rows.Close()
-
+func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 	type column struct {
 		Name         string         `db:"name"`
 		DataType     string         `db:"type"`
@@ -121,46 +106,53 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error
 		PrimaryKey   int            `db:"pk"`
 	}
 
-	for rows.Next() {
+	var columns []column
+	err := s.SelectContext(ctx, &columns, `
+		SELECT * 
+		FROM PRAGMA_TABLE_INFO(?)
+	`, table.Name)
+	if err != nil {
+		if s.Verbose {
+			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
+			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
+		}
+		return err
+	}
+
+	table.Columns = make([]Column, 0, len(columns))
+	for i := range columns {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 
-		var col column
-		err = rows.StructScan(&col)
-		if err != nil {
-			return err
-		}
-
 		isNullable := "YES"
-		if col.NotNull == 1 {
+		if columns[i].NotNull == 1 {
 			isNullable = "NO"
 		}
 
 		isPrimaryKey := ""
-		if col.PrimaryKey == 1 {
+		if columns[i].PrimaryKey == 1 {
 			isPrimaryKey = "PK"
 		}
 
 		table.Columns = append(table.Columns, Column{
-			OrdinalPosition:        col.CID,
-			Name:                   col.Name,
-			DataType:               strings.ToLower(col.DataType),
-			DefaultValue:           col.DefaultValue,
+			OrdinalPosition:        columns[i].CID,
+			Name:                   columns[i].Name,
+			DataType:               strings.ToLower(columns[i].DataType),
+			DefaultValue:           columns[i].DefaultValue,
 			IsNullable:             isNullable,
 			CharacterMaximumLength: sql.NullInt64{},
 			NumericPrecision:       sql.NullInt64{},
 			// reuse mysql column_key as primary key indicator
 			ColumnKey:      isPrimaryKey,
-			Extra:          "",
 			ConstraintName: sql.NullString{},
 			ConstraintType: sql.NullString{},
 		})
 	}
 
-	return rows.Err()
+	return nil
 }
 
 // IsPrimaryKey checks if the column belongs to the primary key.
