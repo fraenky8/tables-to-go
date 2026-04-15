@@ -122,6 +122,6 @@ jobs:
           go test -v -mod=vendor -tags=integration -covermode=atomic -coverpkg=./... -coverprofile=coverage.txt ./...
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
