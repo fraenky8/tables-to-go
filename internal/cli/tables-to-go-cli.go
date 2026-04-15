@@ -17,78 +17,93 @@ import (
 )
 
 var (
-	taggers tagger.Tagger
-	caser   = cases.Title(language.English, cases.NoLower)
-
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
 	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL", "UUID"}
 )
 
+// App is the dependency container for this CLI tool.
+type App struct {
+	settings *settings.Settings
+	taggers  *tagger.Taggers
+	db       database.Database
+	out      output.Writer
+	caser    cases.Caser
+}
+
+// New creates a new App.
+func New(s *settings.Settings, db database.Database, out output.Writer) *App {
+	return &App{
+		settings: s,
+		taggers:  tagger.NewTaggers(s),
+		db:       db,
+		out:      out,
+		caser:    cases.Title(language.English, cases.NoLower),
+	}
+}
+
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(ctx context.Context, settings *settings.Settings, db database.Database, out output.Writer) (err error) {
+func (app *App) Run(ctx context.Context) error {
 
-	taggers = tagger.NewTaggers(settings)
+	fmt.Printf("running for %q...\r\n", app.settings.DbType)
 
-	fmt.Printf("running for %q...\r\n", settings.DbType)
-
-	tables, err := db.GetTables(ctx, settings.Tables...)
+	tables, err := app.db.GetTables(ctx, app.settings.Tables...)
 	if err != nil {
 		return fmt.Errorf("could not get tables: %w", err)
 	}
 
-	if settings.Verbose {
+	if app.settings.Verbose {
 		fmt.Printf("> number of tables: %v\r\n", len(tables))
 	}
 
-	if err = db.PrepareGetColumnsOfTableStmt(ctx); err != nil {
+	if err = app.db.PrepareGetColumnsOfTableStmt(ctx); err != nil {
 		return fmt.Errorf("could not prepare the get-column-statement: %w", err)
 	}
 
 	for _, table := range tables {
 		select {
 		case <-ctx.Done():
-			if settings.Verbose {
+			if app.settings.Verbose {
 				fmt.Printf("> received cancellation: %v\r\n", context.Cause(ctx))
 			}
 			return ctx.Err()
 		default:
 		}
 
-		if settings.Verbose {
+		if app.settings.Verbose {
 			fmt.Printf("> processing table %q\r\n", table.Name)
 		}
 
-		if err = db.GetColumnsOfTable(ctx, table); err != nil {
-			if !settings.Force {
+		if err = app.db.GetColumnsOfTable(ctx, table); err != nil {
+			if !app.settings.Force {
 				return fmt.Errorf("could not get columns of table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not get columns of table %q: %v\n", table.Name, err)
 			continue
 		}
 
-		if settings.Verbose {
+		if app.settings.Verbose {
 			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
-		tableName, content, err := createTableStructString(settings, db, table)
+		tableName, content, err := app.createTableStructString(table)
 
 		if err != nil {
-			if !settings.Force {
+			if !app.settings.Force {
 				return fmt.Errorf("could not create string for table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not create string for table %q: %v\n", table.Name, err)
 			continue
 		}
 
-		fileName := camelCaseString(tableName)
-		if settings.IsFileNameFormatSnakeCase() {
+		fileName := app.camelCaseString(tableName)
+		if app.settings.IsFileNameFormatSnakeCase() {
 			fileName = strcase.ToSnake(fileName)
 		}
 
-		err = out.Write(fileName, content)
+		err = app.out.Write(fileName, content)
 		if err != nil {
-			if !settings.Force {
+			if !app.settings.Force {
 				return fmt.Errorf("could not write struct for table %q: %w", table.Name, err)
 			}
 			fmt.Printf("could not write struct for table %q: %v\n", table.Name, err)
@@ -109,13 +124,13 @@ func (c columnInfo) isNullableOrTemporal() bool {
 	return c.isNullable || c.isTemporal
 }
 
-func createTableStructString(settings *settings.Settings, db database.Database, table *database.Table) (string, string, error) {
+func (app *App) createTableStructString(table *database.Table) (string, string, error) {
 
-	tableName := caser.String(settings.Prefix) + caser.String(table.Name) + caser.String(settings.Suffix)
+	tableName := app.caser.String(app.settings.Prefix) + app.caser.String(table.Name) + app.caser.String(app.settings.Suffix)
 	// Replace any whitespace with underscores
 	tableName = strings.Map(replaceSpace, tableName)
-	if settings.IsOutputFormatCamelCase() {
-		tableName = camelCaseString(tableName)
+	if app.settings.IsOutputFormatCamelCase() {
+		tableName = app.camelCaseString(tableName)
 	}
 
 	// Check that the table name doesn't contain any invalid characters for Go variables
@@ -129,7 +144,7 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		columns      = make(map[string]struct{}, len(table.Columns))
 	)
 	for _, column := range table.Columns {
-		columnName, err := formatColumnName(settings, column.Name, table.Name)
+		columnName, err := app.formatColumnName(column.Name, table.Name)
 		if err != nil {
 			return "", "", err
 		}
@@ -143,11 +158,11 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		}
 		columns[columnName] = struct{}{}
 
-		if settings.VVerbose {
+		if app.settings.VVerbose {
 			fmt.Printf("\t\t> %v\r\n", column.Name)
 		}
 
-		columnType, col := mapDbColumnTypeToGoType(settings, db, column)
+		columnType, col := app.mapDbColumnTypeToGoType(column)
 
 		// save that we saw types of columns at least once
 		if !columnInfo.isTemporal {
@@ -161,11 +176,11 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
 		structFields.WriteString(" ")
-		structFields.WriteString(taggers.GenerateTag(db, column))
+		structFields.WriteString(app.taggers.GenerateTag(app.db, column))
 		structFields.WriteString("\n")
 	}
 
-	if settings.IsMastermindStructableRecorder {
+	if app.settings.IsMastermindStructableRecorder {
 		structFields.WriteString("\t\nstructable.Recorder\n")
 	}
 
@@ -173,11 +188,11 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 
 	// write header infos
 	fileContent.WriteString("package ")
-	fileContent.WriteString(settings.PackageName)
+	fileContent.WriteString(app.settings.PackageName)
 	fileContent.WriteString("\n\n")
 
 	// write imports
-	generateImports(&fileContent, settings, columnInfo)
+	app.generateImports(&fileContent, columnInfo)
 
 	// write struct with fields
 	fileContent.WriteString("type ")
@@ -189,15 +204,15 @@ func createTableStructString(settings *settings.Settings, db database.Database, 
 	return tableName, fileContent.String(), nil
 }
 
-func generateImports(content *strings.Builder, settings *settings.Settings, columnInfo columnInfo) {
+func (app *App) generateImports(content *strings.Builder, columnInfo columnInfo) {
 
-	if !columnInfo.isNullableOrTemporal() && !settings.IsMastermindStructableRecorder {
+	if !columnInfo.isNullableOrTemporal() && !app.settings.IsMastermindStructableRecorder {
 		return
 	}
 
 	content.WriteString("import (\n")
 
-	if columnInfo.isNullable && settings.IsNullTypeSQL() {
+	if columnInfo.isNullable && app.settings.IsNullTypeSQL() {
 		content.WriteString("\t\"database/sql\"\n")
 	}
 
@@ -205,30 +220,30 @@ func generateImports(content *strings.Builder, settings *settings.Settings, colu
 		content.WriteString("\t\"time\"\n")
 	}
 
-	if settings.IsMastermindStructableRecorder {
+	if app.settings.IsMastermindStructableRecorder {
 		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
 	}
 
 	content.WriteString(")\n\n")
 }
 
-func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column database.Column) (goType string, columnInfo columnInfo) {
-	if db.IsInteger(column) {
+func (app *App) mapDbColumnTypeToGoType(column database.Column) (goType string, columnInfo columnInfo) {
+	if app.db.IsInteger(column) {
 		goType = "int"
-		if db.IsNullable(column) {
-			goType = getNullType(s, "*int", "sql.NullInt64")
+		if app.db.IsNullable(column) {
+			goType = getNullType(app.settings, "*int", "sql.NullInt64")
 			columnInfo.isNullable = true
 		}
-	} else if db.IsFloat(column) {
+	} else if app.db.IsFloat(column) {
 		goType = "float64"
-		if db.IsNullable(column) {
-			goType = getNullType(s, "*float64", "sql.NullFloat64")
+		if app.db.IsNullable(column) {
+			goType = getNullType(app.settings, "*float64", "sql.NullFloat64")
 			columnInfo.isNullable = true
 		}
-	} else if db.IsTemporal(column) {
-		if db.IsNullable(column) {
-			goType = getNullType(s, "*time.Time", "sql.NullTime")
-			columnInfo.isTemporal = !s.IsNullTypeSQL()
+	} else if app.db.IsTemporal(column) {
+		if app.db.IsNullable(column) {
+			goType = getNullType(app.settings, "*time.Time", "sql.NullTime")
+			columnInfo.isTemporal = !app.settings.IsNullTypeSQL()
 			columnInfo.isNullable = true
 		} else {
 			goType = "time.Time"
@@ -239,15 +254,15 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 		switch column.DataType {
 		case "boolean":
 			goType = "bool"
-			if db.IsNullable(column) {
-				goType = getNullType(s, "*bool", "sql.NullBool")
+			if app.db.IsNullable(column) {
+				goType = getNullType(app.settings, "*bool", "sql.NullBool")
 				columnInfo.isNullable = true
 			}
 		default:
 			// Everything else we cannot detect defaults to (nullable) string.
 			goType = "string"
-			if db.IsNullable(column) {
-				goType = getNullType(s, "*string", "sql.NullString")
+			if app.db.IsNullable(column) {
+				goType = getNullType(app.settings, "*string", "sql.NullString")
 				columnInfo.isNullable = true
 			}
 		}
@@ -256,7 +271,7 @@ func mapDbColumnTypeToGoType(s *settings.Settings, db database.Database, column 
 	return goType, columnInfo
 }
 
-func camelCaseString(s string) string {
+func (app *App) camelCaseString(s string) string {
 	if s == "" {
 		return s
 	}
@@ -264,12 +279,12 @@ func camelCaseString(s string) string {
 	splitted := strings.Split(s, "_")
 
 	if len(splitted) == 1 {
-		return caser.String(s)
+		return app.caser.String(s)
 	}
 
 	var cc strings.Builder
 	for _, part := range splitted {
-		cc.WriteString(caser.String(strings.ToLower(part)))
+		cc.WriteString(app.caser.String(strings.ToLower(part)))
 	}
 	return cc.String()
 }
@@ -320,16 +335,16 @@ func replaceSpace(r rune) rune {
 
 // FormatColumnName checks for invalid characters and transforms a column name
 // according to the provided settings.
-func formatColumnName(settings *settings.Settings, column, table string) (string, error) {
+func (app *App) formatColumnName(column, table string) (string, error) {
 
 	// Replace any whitespace with underscores
 	columnName := strings.Map(replaceSpace, column)
-	columnName = caser.String(columnName)
+	columnName = app.caser.String(columnName)
 
-	if settings.IsOutputFormatCamelCase() {
-		columnName = camelCaseString(columnName)
+	if app.settings.IsOutputFormatCamelCase() {
+		columnName = app.camelCaseString(columnName)
 	}
-	if settings.ShouldInitialism() {
+	if app.settings.ShouldInitialism() {
 		columnName = toInitialisms(columnName)
 	}
 
@@ -342,17 +357,17 @@ func formatColumnName(settings *settings.Settings, column, table string) (string
 	// We want it to be an uppercase letter to be a public field
 	if !unicode.IsLetter(rune(columnName[0])) {
 		prefix := "X_"
-		if settings.IsOutputFormatCamelCase() {
+		if app.settings.IsOutputFormatCamelCase() {
 			prefix = "X"
 		}
-		if settings.ShouldInitialism() {
+		if app.settings.ShouldInitialism() {
 			// Note we use the original passed in name of the column here to
 			// avoid the Title'izing of the first non-digit character as done
 			// by cases.Caser. Eg: `1fish2fish` gets transformed to `X1Fish2fish`
 			// but we want `X1fish2fish`.
 			columnName = toInitialisms(column)
 		}
-		if settings.Verbose {
+		if app.settings.Verbose {
 			fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
 		}
 		columnName = prefix + columnName

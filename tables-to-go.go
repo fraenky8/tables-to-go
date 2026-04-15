@@ -129,7 +129,9 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
-	if err := cli.Run(ctx, cmdArgs.Settings, db, writer); err != nil {
+	app := cli.New(cmdArgs.Settings, db, writer)
+
+	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run error: %w", err)
 	}
 

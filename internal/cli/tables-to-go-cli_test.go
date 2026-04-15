@@ -71,7 +71,9 @@ func (w *mockWriter) Write(tableName, content string) error {
 	return args.Error(0)
 }
 
-func TestCamelCaseString(t *testing.T) {
+func TestApp_camelCaseString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -95,7 +97,8 @@ func TestCamelCaseString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			actual := camelCaseString(tt.input)
+			app := New(settings.New(), nil, nil)
+			actual := app.camelCaseString(tt.input)
 			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
 		})
 	}
@@ -158,7 +161,9 @@ func TestToInitialisms(t *testing.T) {
 	}
 }
 
-func TestRun_StringTextColumns(t *testing.T) {
+func TestApp_Run_StringTextColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -206,7 +211,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -246,7 +253,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -287,7 +296,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -332,7 +343,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -378,7 +391,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -449,7 +464,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -458,7 +475,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 	}
 }
 
-func TestRun_IntegerColumns(t *testing.T) {
+func TestApp_Run_IntegerColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -506,7 +525,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -546,7 +567,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -587,7 +610,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -632,7 +657,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -678,7 +705,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -749,7 +778,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -758,7 +789,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 	}
 }
 
-func TestRun_FloatColumns(t *testing.T) {
+func TestApp_Run_FloatColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -806,7 +839,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -846,7 +881,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -887,7 +924,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -932,7 +971,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -978,7 +1019,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1049,7 +1092,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1058,7 +1103,9 @@ func TestRun_FloatColumns(t *testing.T) {
 	}
 }
 
-func TestRun_TemporalColumns(t *testing.T) {
+func TestApp_Run_TemporalColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1106,7 +1153,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1146,7 +1195,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1187,7 +1238,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1232,7 +1285,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1278,7 +1333,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1349,7 +1406,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1358,7 +1417,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 	}
 }
 
-func TestRun_BooleanColumns(t *testing.T) {
+func TestApp_Run_BooleanColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1406,7 +1467,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1446,7 +1509,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1487,7 +1552,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1532,7 +1599,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1578,7 +1647,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1649,7 +1720,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1659,6 +1732,8 @@ func TestRun_BooleanColumns(t *testing.T) {
 }
 
 func TestRun_UnknownColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1690,7 +1765,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 								},
 							},
 						}
-						//
+
 						mdb.
 							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
@@ -1710,7 +1785,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1751,7 +1828,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1793,7 +1872,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1839,7 +1920,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1886,7 +1969,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1958,7 +2043,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(t.Context(), s, mdb, w)
+						app := New(s, mdb, w)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -2021,7 +2108,7 @@ func TestReplaceSpace(t *testing.T) {
 	}
 }
 
-func TestFormatColumnName(t *testing.T) {
+func TestApp_formatColumnName(t *testing.T) {
 	t.Parallel()
 
 	t.Run("pass", func(t *testing.T) {
@@ -2045,9 +2132,10 @@ func TestFormatColumnName(t *testing.T) {
 		camelSettings := settings.New()
 		camelSettings.OutputFormat = settings.OutputFormatCamelCase
 		t.Run("camelcase", func(t *testing.T) {
+			app := New(camelSettings, nil, nil)
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					output, err := formatColumnName(camelSettings, tc.input, "MyTable")
+					output, err := app.formatColumnName(tc.input, "MyTable")
 					if err != nil {
 						t.Error(err)
 					} else if output != tc.camel {
@@ -2060,9 +2148,10 @@ func TestFormatColumnName(t *testing.T) {
 		originalSettings := settings.New()
 		originalSettings.OutputFormat = settings.OutputFormatOriginal
 		t.Run("original", func(t *testing.T) {
+			app := New(originalSettings, nil, nil)
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					output, err := formatColumnName(originalSettings, tc.input, "MyTable")
+					output, err := app.formatColumnName(tc.input, "MyTable")
 					if err != nil {
 						t.Error(err)
 					} else if output != tc.original {
@@ -2082,10 +2171,10 @@ func TestFormatColumnName(t *testing.T) {
 			{"semicolons", "MyColumn;"},
 			{"brackets", "MyColumn()"},
 		}
-		s := settings.New()
+		app := New(settings.New(), nil, nil)
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := formatColumnName(s, tc.input, "MyTable")
+				_, err := app.formatColumnName(tc.input, "MyTable")
 				if err == nil {
 					t.Errorf("formatColumnName(%q) should have thrown error but didn't", tc.input)
 				}

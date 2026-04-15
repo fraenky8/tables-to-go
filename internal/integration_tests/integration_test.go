@@ -258,7 +258,8 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -364,7 +365,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -477,7 +479,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -533,7 +536,8 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -589,7 +593,8 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -645,7 +650,8 @@ func TestIntegrationPackageName(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -701,7 +707,8 @@ func TestIntegrationPrefix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -757,7 +764,8 @@ func TestIntegrationSuffix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -814,7 +822,8 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -867,7 +876,8 @@ func TestIntegrationNoInitialism(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -923,7 +933,8 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -979,7 +990,8 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -1035,7 +1047,8 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -1092,7 +1105,8 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
+			app := cli.New(test.settings.Settings, db, writer)
+			err = app.Run(t.Context())
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
