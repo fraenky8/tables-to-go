@@ -49,7 +49,8 @@ func TestMySQL_DSN(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			db := NewMySQL(test.settings())
-			actual := db.DSN()
+			actual, err := db.DSN()
+			assert.NoError(t, err)
 			assert.Equal(t, test.expected(db.Settings), actual)
 		})
 	}

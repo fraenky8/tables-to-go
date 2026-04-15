@@ -23,7 +23,7 @@ var (
 // Database interface for the concrete databases.
 type Database interface {
 	SQLDriver() *sqlx.DB
-	DSN() string
+	DSN() (string, error)
 	Connect() error
 	Close() error
 	Version() (string, error)

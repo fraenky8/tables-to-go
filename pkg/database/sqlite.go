@@ -4,18 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 
 	// sqlite3 database driver
 	_ "modernc.org/sqlite"
-)
-
-const (
-	defaultBusyTimeout = 5 * time.Second
-	defaultCacheSize   = 20 * 1024
 )
 
 // SQLite implements the Database interface with help of GeneralDatabase.
@@ -35,44 +30,26 @@ func NewSQLite(s *settings.Settings) *SQLite {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (s *SQLite) Connect() (err error) {
-	return s.GeneralDatabase.Connect(s.DSN())
+func (s *SQLite) Connect() error {
+	dsn, err := s.DSN()
+	if err != nil {
+		return err
+	}
+	return s.GeneralDatabase.Connect(dsn)
 }
 
 // DSN creates the DSN String to connect to this database.
 // Any Username and Password set in the settings are ignored since SQLite3 does
 // not support authentication yet (https://sqlite.org/forum/forumpost/9a4c2a21beb82efd?t=h&unf).
-func (s *SQLite) DSN() string {
-	normalized := strings.ReplaceAll(s.Settings.DbName, `\`, `/`)
+func (s *SQLite) DSN() (string, error) {
+	normalized := filepath.ToSlash(s.Settings.DbName)
 
-	if !strings.HasPrefix(normalized, "file:") {
-		normalized = "file:" + normalized
-	}
-
-	u, err := url.Parse(normalized)
+	_, err := url.Parse(normalized)
 	if err != nil {
-		return s.Settings.DbName
+		return "", err
 	}
 
-	q := u.Query()
-	if !s.hasDSNParam(q, "busy_timeout") {
-		q.Add("_pragma", fmt.Sprintf("busy_timeout(%d)", defaultBusyTimeout.Milliseconds()))
-	}
-	if !s.hasDSNParam(q, "cache_size") {
-		q.Add("_pragma", fmt.Sprintf("cache_size(%d)", defaultCacheSize))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.RequestURI()
-}
-
-func (s *SQLite) hasDSNParam(values url.Values, p string) bool {
-	for _, v := range values["_pragma"] {
-		if strings.HasPrefix(v, p+`(`) {
-			return true
-		}
-	}
-	return false
+	return normalized, nil
 }
 
 // Version reports the actual version of the Sqlite database.
