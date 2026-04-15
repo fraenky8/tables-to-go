@@ -1,5 +1,5 @@
 package dto
 
 type RealRef struct {
-	RealRef *string `db:"real_ref"`
+	RealRef *float64 `db:"real_ref"`
 }

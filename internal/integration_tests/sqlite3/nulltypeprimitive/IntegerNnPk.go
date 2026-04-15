@@ -1,5 +1,5 @@
 package dto
 
 type IntegerNnPk struct {
-	IntegerNnPk string `db:"integer_nn_pk"`
+	IntegerNnPk int `db:"integer_nn_pk"`
 }

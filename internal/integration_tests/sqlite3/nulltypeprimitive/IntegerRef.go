@@ -1,5 +1,5 @@
 package dto
 
 type IntegerRef struct {
-	IntegerRef *string `db:"integer_ref"`
+	IntegerRef *int `db:"integer_ref"`
 }

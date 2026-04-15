@@ -5,5 +5,5 @@ import (
 )
 
 type RealRef struct {
-	RealRef sql.NullString `db:"real_ref"`
+	RealRef sql.NullFloat64 `db:"real_ref"`
 }

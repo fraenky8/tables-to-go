@@ -161,7 +161,7 @@ func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 		table.Columns = append(table.Columns, Column{
 			OrdinalPosition:        col.CID,
 			Name:                   col.Name,
-			DataType:               col.DataType,
+			DataType:               strings.ToLower(col.DataType),
 			DefaultValue:           col.DefaultValue,
 			IsNullable:             isNullable,
 			CharacterMaximumLength: sql.NullInt64{},

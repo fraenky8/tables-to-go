@@ -118,7 +118,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
-			ic.data_type,
+			LOWER(ic.data_type) AS data_type,
 			ic.column_default,
 			ic.is_nullable,
 			ic.character_maximum_length,

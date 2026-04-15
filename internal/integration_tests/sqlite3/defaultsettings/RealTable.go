@@ -5,11 +5,11 @@ import (
 )
 
 type RealTable struct {
-	R            sql.NullString `db:"r"`
-	RealNn       string         `db:"real_nn"`
-	RealUnique   sql.NullString `db:"real_unique"`
-	RealCheck    sql.NullString `db:"real_check"`
-	RealRef      sql.NullString `db:"real_ref"`
-	RealDefConst sql.NullString `db:"real_def_const"`
-	RealPk       sql.NullString `db:"real_pk"`
+	R            sql.NullFloat64 `db:"r"`
+	RealNn       float64         `db:"real_nn"`
+	RealUnique   sql.NullFloat64 `db:"real_unique"`
+	RealCheck    sql.NullFloat64 `db:"real_check"`
+	RealRef      sql.NullFloat64 `db:"real_ref"`
+	RealDefConst sql.NullFloat64 `db:"real_def_const"`
+	RealPk       sql.NullFloat64 `db:"real_pk"`
 }

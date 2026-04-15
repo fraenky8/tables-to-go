@@ -1,5 +1,5 @@
 package dto
 
 type StrictTypesRef struct {
-	StrictTypesRef *string `db:"strict_types_ref"`
+	StrictTypesRef *int `db:"strict_types_ref"`
 }

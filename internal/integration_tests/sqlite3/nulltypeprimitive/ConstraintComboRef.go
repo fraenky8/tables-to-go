@@ -1,5 +1,5 @@
 package dto
 
 type ConstraintComboRef struct {
-	ConstraintComboRef *string `db:"constraint_combo_ref"`
+	ConstraintComboRef *float64 `db:"constraint_combo_ref"`
 }

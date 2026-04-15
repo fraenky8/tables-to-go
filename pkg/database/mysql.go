@@ -100,7 +100,7 @@ func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
 		SELECT
 		  ordinal_position AS ordinal_position,
 		  column_name AS column_name,
-		  data_type AS data_type,
+		  LOWER(data_type) AS data_type,
 		  column_default AS column_default,
 		  is_nullable AS is_nullable,
 		  character_maximum_length AS character_maximum_length,

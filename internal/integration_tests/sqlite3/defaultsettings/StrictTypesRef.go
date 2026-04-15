@@ -5,5 +5,5 @@ import (
 )
 
 type StrictTypesRef struct {
-	StrictTypesRef sql.NullString `db:"strict_types_ref"`
+	StrictTypesRef sql.NullInt64 `db:"strict_types_ref"`
 }

@@ -5,5 +5,5 @@ import (
 )
 
 type IntegerRef struct {
-	IntegerRef sql.NullString `db:"integer_ref"`
+	IntegerRef sql.NullInt64 `db:"integer_ref"`
 }
