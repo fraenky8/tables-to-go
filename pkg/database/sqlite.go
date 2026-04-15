@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
-	"path/filepath"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
@@ -42,7 +41,7 @@ func (s *SQLite) Connect() error {
 // Any Username and Password set in the settings are ignored since SQLite3 does
 // not support authentication yet (https://sqlite.org/forum/forumpost/9a4c2a21beb82efd?t=h&unf).
 func (s *SQLite) DSN() (string, error) {
-	normalized := filepath.ToSlash(s.Settings.DbName)
+	normalized := strings.ReplaceAll(s.Settings.DbName, `\`, `/`)
 
 	_, err := url.Parse(normalized)
 	if err != nil {
