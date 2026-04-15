@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"unicode"
 
@@ -44,8 +45,7 @@ func New(s *settings.Settings, db database.Database, out output.Writer) *App {
 
 // Run runs the transformations by creating the concrete Database by the provided settings
 func (app *App) Run(ctx context.Context) error {
-
-	fmt.Printf("running for %q...\r\n", app.settings.DbType)
+	app.printf("running for %q...\r\n", app.settings.DbType)
 
 	tables, err := app.db.GetTables(ctx, app.settings.Tables...)
 	if err != nil {
@@ -53,7 +53,7 @@ func (app *App) Run(ctx context.Context) error {
 	}
 
 	if app.settings.Verbose {
-		fmt.Printf("> number of tables: %v\r\n", len(tables))
+		app.printf("> number of tables: %v\r\n", len(tables))
 	}
 
 	if err = app.db.PrepareGetColumnsOfTableStmt(ctx); err != nil {
@@ -64,26 +64,26 @@ func (app *App) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			if app.settings.Verbose {
-				fmt.Printf("> received cancellation: %v\r\n", context.Cause(ctx))
+				app.printf("> received cancellation: %v\r\n", context.Cause(ctx))
 			}
 			return ctx.Err()
 		default:
 		}
 
 		if app.settings.Verbose {
-			fmt.Printf("> processing table %q\r\n", table.Name)
+			app.printf("> processing table %q\r\n", table.Name)
 		}
 
 		if err = app.db.GetColumnsOfTable(ctx, table); err != nil {
 			if !app.settings.Force {
 				return fmt.Errorf("could not get columns of table %q: %w", table.Name, err)
 			}
-			fmt.Printf("could not get columns of table %q: %v\n", table.Name, err)
+			app.printf("could not get columns of table %q: %v\n", table.Name, err)
 			continue
 		}
 
 		if app.settings.Verbose {
-			fmt.Printf("\t> number of columns: %v\r\n", len(table.Columns))
+			app.printf("\t> number of columns: %v\r\n", len(table.Columns))
 		}
 
 		tableName, content, err := app.createTableStructString(table)
@@ -92,7 +92,7 @@ func (app *App) Run(ctx context.Context) error {
 			if !app.settings.Force {
 				return fmt.Errorf("could not create string for table %q: %w", table.Name, err)
 			}
-			fmt.Printf("could not create string for table %q: %v\n", table.Name, err)
+			app.printf("could not create string for table %q: %v\n", table.Name, err)
 			continue
 		}
 
@@ -106,11 +106,11 @@ func (app *App) Run(ctx context.Context) error {
 			if !app.settings.Force {
 				return fmt.Errorf("could not write struct for table %q: %w", table.Name, err)
 			}
-			fmt.Printf("could not write struct for table %q: %v\n", table.Name, err)
+			app.printf("could not write struct for table %q: %v\n", table.Name, err)
 		}
 	}
 
-	fmt.Println("done!")
+	app.println("done!")
 
 	return nil
 }
@@ -159,7 +159,7 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 		columns[columnName] = struct{}{}
 
 		if app.settings.VVerbose {
-			fmt.Printf("\t\t> %v\r\n", column.Name)
+			app.printf("\t\t> %v\r\n", column.Name)
 		}
 
 		columnType, col := app.mapDbColumnTypeToGoType(column)
@@ -368,10 +368,18 @@ func (app *App) formatColumnName(column, table string) (string, error) {
 			columnName = toInitialisms(column)
 		}
 		if app.settings.Verbose {
-			fmt.Printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
+			app.printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
 		}
 		columnName = prefix + columnName
 	}
 
 	return columnName, nil
+}
+
+func (app *App) printf(format string, a ...any) {
+	_, _ = fmt.Fprintf(os.Stderr, format, a...)
+}
+
+func (app *App) println(a ...any) {
+	_, _ = fmt.Fprintln(os.Stderr, a...)
 }

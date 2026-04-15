@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
@@ -79,8 +80,8 @@ func (s *SQLite) GetTables(ctx context.Context, tables ...string) ([]*Table, err
 
 	if s.Verbose {
 		if err != nil {
-			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> database: %q\r\n", s.DbName)
+			fmt.Fprintln(os.Stderr, "> Error at GetTables()")
+			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
 		}
 	}
 
@@ -103,8 +104,8 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error
 	`)
 	if err != nil {
 		if s.Verbose {
-			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.Name)
-			fmt.Printf("> database: %q\r\n", s.DbName)
+			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
+			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
 		}
 		return err
 	}

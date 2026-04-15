@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -107,8 +108,8 @@ func (pg *Postgresql) GetTables(ctx context.Context, tables ...string) ([]*Table
 
 	if pg.Verbose {
 		if err != nil {
-			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> schema: %q\r\n", pg.Schema)
+			fmt.Fprintln(os.Stderr, "> Error at GetTables()")
+			fmt.Fprintf(os.Stderr, "> schema: %q\r\n", pg.Schema)
 		}
 	}
 
@@ -153,8 +154,8 @@ func (pg *Postgresql) GetColumnsOfTable(ctx context.Context, table *Table) (err 
 
 	if pg.Verbose {
 		if err != nil {
-			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.Name)
-			fmt.Printf("> schema: %q\r\n", pg.Schema)
+			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
+			fmt.Fprintf(os.Stderr, "> schema: %q\r\n", pg.Schema)
 		}
 	}
 

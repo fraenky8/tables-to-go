@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
@@ -89,8 +90,8 @@ func (mysql *MySQL) GetTables(ctx context.Context, tables ...string) ([]*Table, 
 
 	if mysql.Verbose {
 		if err != nil {
-			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> schema: %q\r\n", mysql.DbName)
+			fmt.Fprintln(os.Stderr, "> Error at GetTables()")
+			fmt.Fprintf(os.Stderr, "> schema: %q\r\n", mysql.DbName)
 		}
 	}
 
@@ -129,9 +130,9 @@ func (mysql *MySQL) GetColumnsOfTable(ctx context.Context, table *Table) (err er
 
 	if mysql.Settings.Verbose {
 		if err != nil {
-			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.Name)
-			fmt.Printf("> schema: %q\r\n", mysql.Schema)
-			fmt.Printf("> dbName: %q\r\n", mysql.DbName)
+			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
+			fmt.Fprintf(os.Stderr, "> schema: %q\r\n", mysql.Schema)
+			fmt.Fprintf(os.Stderr, "> dbName: %q\r\n", mysql.DbName)
 		}
 	}
 
