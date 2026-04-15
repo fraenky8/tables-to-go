@@ -2068,6 +2068,7 @@ func TestValidVariableName(t *testing.T) {
 		expected bool
 	}
 	tests := []testCase{
+		{"empty", "", false},
 		{"basic", "MyVariable_2", true},
 		{"specialChars", "MyVar;iable", false},
 		{"brackets", "MyVariabl(e)", false},
