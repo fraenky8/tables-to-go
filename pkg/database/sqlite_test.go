@@ -29,7 +29,7 @@ func TestSQLite_DSN(t *testing.T) {
 			isErr:    assert.Error,
 		},
 		{
-			desc: "plain db file without query params, default _pragma gets added",
+			desc: "plain db file without query params",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
@@ -81,6 +81,107 @@ func TestSQLite_DSN(t *testing.T) {
 				return s
 			}(),
 			expected: "C:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
+			isErr:    assert.NoError,
+		},
+		// Test cases from official SQLite docs: https://sqlite.org/c3ref/open.html#:~:text=URI%20filename%20examples
+		// These assert current DSN behavior only, without SQLite-specific URI validation.
+		{
+			desc: "file:data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:data.db"
+				return s
+			}(),
+			expected: "file:data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:/home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:/home/fred/data.db"
+				return s
+			}(),
+			expected: "file:/home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:///home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:///home/fred/data.db"
+				return s
+			}(),
+			expected: "file:///home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file://localhost/home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file://localhost/home/fred/data.db"
+				return s
+			}(),
+			expected: "file://localhost/home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file://darkstar/home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file://darkstar/home/fred/data.db"
+				return s
+			}(),
+			expected: "file://darkstar/home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db"
+				return s
+			}(),
+			expected: "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:data.db?mode=ro&cache=private",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:data.db?mode=ro&cache=private"
+				return s
+			}(),
+			expected: "file:data.db?mode=ro&cache=private",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:/home/fred/data.db?vfs=unix-dotfile",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:/home/fred/data.db?vfs=unix-dotfile"
+				return s
+			}(),
+			expected: "file:/home/fred/data.db?vfs=unix-dotfile",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:data.db?mode=readonly",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:data.db?mode=readonly"
+				return s
+			}(),
+			expected: "file:data.db?mode=readonly",
 			isErr:    assert.NoError,
 		},
 	}
