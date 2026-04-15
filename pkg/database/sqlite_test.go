@@ -14,129 +14,108 @@ func TestSQLite_DSN(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		settings func() *settings.Settings
+		settings *settings.Settings
 		expected string
-		isError  assert.ErrorAssertionFunc
 	}{
 		{
-			desc: "no username or password given, no authentication in DNS string",
+			desc: "an invalid URL query param is ignored and returns DB name as is",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "path/to/a/file.db?_pragma=\x00"
+				return s
+			}(),
+			expected: "path/to/a/file.db?_pragma=\x00",
+		},
+		{
+			desc: "plain db file without query params, default _pragma gets added",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				return s
-			},
-			expected: "path/to/a/file.db",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=busy_timeout(5000)&_pragma=cache_size(20480)",
 		},
 		{
-			desc: "with given username, authentication is enabled in DNS string",
+			desc: "given query params are preserved",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.User = "username"
+				s.DbName = "path/to/a/file.db?_pragma=encoding('UTF-8')"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=encoding('UTF-8')&_pragma=busy_timeout(5000)&_pragma=cache_size(20480)",
 		},
 		{
-			desc: "with given password, authentication is enabled in DNS string",
+			desc: "busy_timeout is overwritten",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.Pswd = "p4assw0rd"
+				s.DbName = "path/to/a/file.db?_pragma=busy_timeout(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=&_auth_pass=p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(20480)",
 		},
 		{
-			desc: "with given username and password, authentication is enabled in DNS string",
+			desc: "cache_size is overwritten",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.User = "username"
-				s.Pswd = "p4assw0rd"
+				s.DbName = "path/to/a/file.db?_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=cache_size(10000)&_pragma=busy_timeout(5000)",
 		},
 		{
-			desc: "with existing username and password, authentication in DB name is overwritten",
+			desc: "busy_timeout and cache_size are overwritten",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
 		},
 		{
-			desc: "with existing username and password and additional option at the end, " +
-				"authentication in DB name is overwritten and options are preserved",
+			desc: "file:// prefix",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd&cache=shared"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "file://path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd&cache=shared",
-			isError:  assert.NoError,
+			}(),
+			expected: "/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
 		},
 		{
-			desc: "with existing username and password and additional option at the beginning, " +
-				"authentication in DB name is overwritten and options are preserved",
+			desc: "file: prefix",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?cache=shared&_auth&_auth_user=username&_auth_pass=p4assw0rd"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "file:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?cache=shared&_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
 		},
 		{
-			desc: "invalid dns returns raw dns string",
+			desc: "windows file path gets normalized",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = ":123:456"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "C:\\path\\to\\a\\file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: ":123:456",
-			isError:  assert.Error,
+			}(),
+			expected: "/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			db := NewSQLite(test.settings())
-			dsn := db.DSN()
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			db := NewSQLite(tt.settings)
 
-			actual, err := url.Parse(dsn)
-			test.isError(t, err)
-			if err != nil {
-				assert.Equal(t, test.expected, dsn)
-				return
-			}
-
-			expected, err := url.Parse(dsn)
+			actual, err := url.QueryUnescape(db.DSN())
 			assert.NoError(t, err)
 
-			assert.Equal(t, expected.Query(), actual.Query())
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }

@@ -32,15 +32,6 @@ Get the latest changes from master:
 go install github.com/fraenky8/tables-to-go/v2@master
 ```
 
-To enable SQLite3 support, clone the repo manually and run the make file:
-
-```
-make sqlite3
-```
-
-See [this PR](https://github.com/fraenky8/tables-to-go/pull/23) why it's 
-disabled by default.
-
 ## Getting Started
 
 ```

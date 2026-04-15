@@ -41,6 +41,9 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
+# github.com/dustin/go-humanize v1.0.1
+## explicit; go 1.16
+github.com/dustin/go-humanize
 # github.com/felixge/httpsnoop v1.0.4
 ## explicit; go 1.13
 github.com/felixge/httpsnoop
@@ -54,6 +57,9 @@ github.com/go-logr/stdr
 # github.com/go-sql-driver/mysql v1.9.3
 ## explicit; go 1.21.0
 github.com/go-sql-driver/mysql
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
 # github.com/iancoleman/strcase v0.3.0
 ## explicit; go 1.16
 github.com/iancoleman/strcase
@@ -79,9 +85,11 @@ github.com/lib/pq/internal/proto
 github.com/lib/pq/oid
 github.com/lib/pq/pqerror
 github.com/lib/pq/scram
+# github.com/mattn/go-isatty v0.0.20
+## explicit; go 1.15
+github.com/mattn/go-isatty
 # github.com/mattn/go-sqlite3 v1.14.42
 ## explicit; go 1.21
-github.com/mattn/go-sqlite3
 # github.com/moby/docker-image-spec v1.3.1
 ## explicit; go 1.18
 github.com/moby/docker-image-spec/specs-go/v1
@@ -112,6 +120,9 @@ github.com/moby/moby/client/internal
 github.com/moby/moby/client/internal/mod
 github.com/moby/moby/client/internal/timestamp
 github.com/moby/moby/client/pkg/versions
+# github.com/ncruces/go-strftime v1.0.0
+## explicit; go 1.17
+github.com/ncruces/go-strftime
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
@@ -119,13 +130,16 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/ory/dockertest/v4 v4.0.0-beta.4
+# github.com/ory/dockertest/v4 v4.0.0
 ## explicit; go 1.25.5
 github.com/ory/dockertest/v4
 github.com/ory/dockertest/v4/internal/client
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
+# github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+## explicit; go 1.12
+github.com/remyoudompheng/bigfft
 # github.com/stretchr/objx v0.5.3
 ## explicit; go 1.20
 github.com/stretchr/objx
@@ -171,6 +185,7 @@ go.opentelemetry.io/otel/trace/internal/telemetry
 go.opentelemetry.io/otel/trace/noop
 # golang.org/x/sys v0.43.0
 ## explicit; go 1.25.0
+golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.36.0
 ## explicit; go 1.25.0
@@ -185,3 +200,42 @@ golang.org/x/text/unicode/norm
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
+# modernc.org/libc v1.70.0
+## explicit; go 1.24.0
+modernc.org/libc
+modernc.org/libc/errno
+modernc.org/libc/fcntl
+modernc.org/libc/fts
+modernc.org/libc/grp
+modernc.org/libc/honnef.co/go/netdb
+modernc.org/libc/langinfo
+modernc.org/libc/limits
+modernc.org/libc/netdb
+modernc.org/libc/netinet/in
+modernc.org/libc/poll
+modernc.org/libc/pthread
+modernc.org/libc/pwd
+modernc.org/libc/signal
+modernc.org/libc/stdio
+modernc.org/libc/stdlib
+modernc.org/libc/sys/socket
+modernc.org/libc/sys/stat
+modernc.org/libc/sys/types
+modernc.org/libc/termios
+modernc.org/libc/time
+modernc.org/libc/unistd
+modernc.org/libc/utime
+modernc.org/libc/uuid
+modernc.org/libc/uuid/uuid
+modernc.org/libc/wctype
+# modernc.org/mathutil v1.7.1
+## explicit; go 1.21
+modernc.org/mathutil
+# modernc.org/memory v1.11.0
+## explicit; go 1.23.0
+modernc.org/memory
+# modernc.org/sqlite v1.48.2
+## explicit; go 1.25.0
+modernc.org/sqlite
+modernc.org/sqlite/lib
+modernc.org/sqlite/vtab

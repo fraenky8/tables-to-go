@@ -5,8 +5,17 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
+
+	// sqlite3 database driver
+	_ "modernc.org/sqlite"
+)
+
+const (
+	defaultBusyTimeout = 5 * time.Second
+	defaultCacheSize   = 20 * 1024
 )
 
 // SQLite implements the Database interface with help of GeneralDatabase.
@@ -31,23 +40,35 @@ func (s *SQLite) Connect() (err error) {
 }
 
 // DSN creates the DSN String to connect to this database.
+// Any Username and Password set in the settings are ignored since SQLite3 does
+// not support authentication yet (https://sqlite.org/forum/forumpost/9a4c2a21beb82efd?t=h&unf).
 func (s *SQLite) DSN() string {
-	if s.Settings.User == "" && s.Settings.Pswd == "" {
-		return s.Settings.DbName
-	}
+	normalized := strings.ReplaceAll(s.DbName, `\`, `/`)
 
-	u, err := url.Parse(s.DbName)
+	u, err := url.Parse(normalized)
 	if err != nil {
-		return s.Settings.DbName
+		return s.DbName
 	}
 
-	query := u.Query()
-	query.Set("_auth_user", s.Settings.User)
-	query.Set("_auth_pass", s.Settings.Pswd)
-	u.RawQuery = query.Encode()
+	q := u.Query()
+	if !s.hasDSNParam(q, "busy_timeout") {
+		q.Add("_pragma", fmt.Sprintf("busy_timeout(%d)", defaultBusyTimeout.Milliseconds()))
+	}
+	if !s.hasDSNParam(q, "cache_size") {
+		q.Add("_pragma", fmt.Sprintf("cache_size(%d)", defaultCacheSize))
+	}
+	u.RawQuery = q.Encode()
 
-	// SQLite driver expects a empty `_auth` request param
-	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
+	return u.RequestURI()
+}
+
+func (s *SQLite) hasDSNParam(values url.Values, p string) bool {
+	for _, v := range values["_pragma"] {
+		if strings.HasPrefix(v, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // Version reports the actual version of the Sqlite database.
@@ -62,7 +83,7 @@ func (s *SQLite) Version() (string, error) {
 
 // GetDriverImportLibrary returns the golang sql driver specific for the Sqlite database.
 func (s *SQLite) GetDriverImportLibrary() string {
-	return `"github.com/mattn/go-sqlite3"`
+	return `"modernc.org/sqlite"`
 }
 
 // GetTables gets all tables for a given database by name.

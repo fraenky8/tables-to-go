@@ -16,7 +16,7 @@ var (
 	dbTypeToDriverMap = map[settings.DBType]string{
 		settings.DBTypePostgresql: "postgres",
 		settings.DBTypeMySQL:      "mysql",
-		settings.DBTypeSQLite:     "sqlite3",
+		settings.DBTypeSQLite:     "sqlite",
 	}
 )
 

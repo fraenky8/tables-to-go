@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
@@ -113,8 +112,6 @@ func main() {
 }
 
 func printVersion() {
-	var withSQLite bool
-
 	info, ok := debug.ReadBuildInfo()
 	if ok {
 		if versionTag == "" {
@@ -124,8 +121,6 @@ func printVersion() {
 			switch s.Key {
 			case "vcs.revision":
 				revision = s.Value[:8]
-			case "-tags":
-				withSQLite = strings.Contains(s.Value, "sqlite3")
 			}
 			if s.Key == "vcs.revision" {
 				revision = s.Value[:8]
@@ -135,11 +130,6 @@ func printVersion() {
 
 	fmt.Printf("tables-to-go/%s-%s %s/%s built with %s", versionTag, revision,
 		runtime.GOOS, runtime.GOARCH, runtime.Version())
-
-	//goland:noinspection GoDfaConstantCondition
-	if withSQLite {
-		fmt.Printf(" with sqlite3 support")
-	}
 
 	//goland:noinspection GoBoolExpressions
 	if buildTimestamp != "" {
