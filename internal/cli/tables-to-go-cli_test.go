@@ -39,7 +39,12 @@ func (db *mockDB) GetTables(ctx context.Context, tables ...string) ([]*database.
 	if len(tables) == 0 {
 		args = db.Called(ctx)
 	} else {
-		args = db.Called(ctx, tables)
+		callArgs := make([]any, 0, len(tables)+1)
+		callArgs = append(callArgs, ctx)
+		for i := range tables {
+			callArgs = append(callArgs, tables[i])
+		}
+		args = db.Called(callArgs...)
 	}
 	err := args.Error(1)
 	if err != nil {
