@@ -66,11 +66,6 @@ func (mysql *MySQL) Version() (string, error) {
 	return version, nil
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific for the MySQL database.
-func (mysql *MySQL) GetDriverImportLibrary() string {
-	return `"github.com/go-sql-driver/mysql"`
-}
-
 // GetTables gets all tables for a given database by name.
 func (mysql *MySQL) GetTables(tables ...string) ([]*Table, error) {
 

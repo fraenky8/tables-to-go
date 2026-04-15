@@ -84,11 +84,6 @@ func (pg *Postgresql) Version() (string, error) {
 	return version, nil
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database.
-func (pg *Postgresql) GetDriverImportLibrary() string {
-	return "pg \"github.com/lib/pq\""
-}
-
 // GetTables gets all tables for a given schema by name.
 func (pg *Postgresql) GetTables(tables ...string) ([]*Table, error) {
 

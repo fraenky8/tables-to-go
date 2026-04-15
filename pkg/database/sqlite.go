@@ -85,11 +85,6 @@ func (s *SQLite) Version() (string, error) {
 	return version, nil
 }
 
-// GetDriverImportLibrary returns the golang sql driver specific for the Sqlite database.
-func (s *SQLite) GetDriverImportLibrary() string {
-	return `"modernc.org/sqlite"`
-}
-
 // GetTables gets all tables for a given database by name.
 func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
