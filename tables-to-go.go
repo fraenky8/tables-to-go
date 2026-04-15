@@ -32,6 +32,10 @@ type cmdArgs struct {
 
 // newCmdArgs creates and prepares the command line arguments with default values
 func newCmdArgs(args []string) *cmdArgs {
+	if len(args) == 0 {
+		args = []string{"tables-to-go"}
+	}
+
 	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
 
 	a := cmdArgs{
