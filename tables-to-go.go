@@ -96,8 +96,6 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	_ = ctx // TODO propagate down
-
 	cmdArgs := newCmdArgs(args)
 
 	if cmdArgs.Help {
@@ -125,13 +123,13 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 		}
 	}(db)
 
-	if err := db.Connect(); err != nil {
+	if err := db.Connect(ctx); err != nil {
 		return fmt.Errorf("could not connect to database: %w", err)
 	}
 
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
-	if err := cli.Run(cmdArgs.Settings, db, writer); err != nil {
+	if err := cli.Run(ctx, cmdArgs.Settings, db, writer); err != nil {
 		return fmt.Errorf("run error: %w", err)
 	}
 

@@ -249,7 +249,7 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -258,7 +258,7 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -355,7 +355,7 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -364,7 +364,7 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -468,7 +468,7 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -477,7 +477,7 @@ func TestIntegrationTablesFlag(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -524,7 +524,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -533,7 +533,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -580,7 +580,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -589,7 +589,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -636,7 +636,7 @@ func TestIntegrationPackageName(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -645,7 +645,7 @@ func TestIntegrationPackageName(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -692,7 +692,7 @@ func TestIntegrationPrefix(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -701,7 +701,7 @@ func TestIntegrationPrefix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -748,7 +748,7 @@ func TestIntegrationSuffix(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -757,7 +757,7 @@ func TestIntegrationSuffix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -805,7 +805,7 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -814,7 +814,7 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -858,7 +858,7 @@ func TestIntegrationNoInitialism(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -867,7 +867,7 @@ func TestIntegrationNoInitialism(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -914,7 +914,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -923,7 +923,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -970,7 +970,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -979,7 +979,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -1026,7 +1026,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -1035,7 +1035,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -1083,7 +1083,7 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 				t.Fatalf("could not create output file path: %v", err)
 			}
 
-			version, err := db.Version()
+			version, err := db.Version(t.Context())
 			if err != nil {
 				t.Logf("could not get version: %v", err)
 			} else {
@@ -1092,7 +1092,7 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 
 			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
 
-			err = cli.Run(test.settings.Settings, db, writer)
+			err = cli.Run(t.Context(), test.settings.Settings, db, writer)
 			assert.NoError(t, err)
 
 			checkFiles(t, test.settings)
@@ -1193,7 +1193,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 			s.Settings.Port = port
 		}
 		db = database.New(s.Settings)
-		err := db.Connect()
+		err := db.Connect(t.Context())
 		if err != nil {
 			if s.Settings.Verbose {
 				t.Log(err.Error())
@@ -1215,7 +1215,7 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 
 func setupSQLite(t *testing.T, s *testSettings) database.Database {
 	db := database.New(s.Settings)
-	err := db.Connect()
+	err := db.Connect(t.Context())
 	if err != nil {
 		t.Fatalf("could not create sqlite: %v", err)
 	}

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -30,12 +31,12 @@ func NewMySQL(s *settings.Settings) *MySQL {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (mysql *MySQL) Connect() error {
+func (mysql *MySQL) Connect(ctx context.Context) error {
 	dsn, err := mysql.DSN()
 	if err != nil {
 		return err
 	}
-	return mysql.GeneralDatabase.Connect(dsn)
+	return mysql.GeneralDatabase.Connect(ctx, dsn)
 }
 
 // DSN creates the data source name string to connect to this database.
@@ -54,9 +55,9 @@ func (mysql *MySQL) DSN() (string, error) {
 }
 
 // Version reports the actual version of the MySQL database.
-func (mysql *MySQL) Version() (string, error) {
+func (mysql *MySQL) Version(ctx context.Context) (string, error) {
 	var version string
-	err := mysql.Get(&version, `
+	err := mysql.GetContext(ctx, &version, `
 		SELECT
 			CONCAT(
 				@@version, ' ', 
@@ -71,13 +72,13 @@ func (mysql *MySQL) Version() (string, error) {
 }
 
 // GetTables gets all tables for a given database by name.
-func (mysql *MySQL) GetTables(tables ...string) ([]*Table, error) {
+func (mysql *MySQL) GetTables(ctx context.Context, tables ...string) ([]*Table, error) {
 
 	args := []any{mysql.DbName}
 	in := mysql.andInClause("table_name", tables, &args)
 
 	var dbTables []*Table
-	err := mysql.Select(&dbTables, `
+	err := mysql.SelectContext(ctx, &dbTables, `
 		SELECT table_name AS table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -98,9 +99,9 @@ func (mysql *MySQL) GetTables(tables ...string) ([]*Table, error) {
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
 // columns of a specific table for a given database.
-func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
+func (mysql *MySQL) PrepareGetColumnsOfTableStmt(ctx context.Context) (err error) {
 
-	mysql.GetColumnsOfTableStmt, err = mysql.Preparex(`
+	mysql.GetColumnsOfTableStmt, err = mysql.PreparexContext(ctx, `
 		SELECT
 		  ordinal_position AS ordinal_position,
 		  column_name AS column_name,
@@ -122,9 +123,9 @@ func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a
 // specific table for a given database.
-func (mysql *MySQL) GetColumnsOfTable(table *Table) (err error) {
+func (mysql *MySQL) GetColumnsOfTable(ctx context.Context, table *Table) (err error) {
 
-	err = mysql.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, mysql.DbName)
+	err = mysql.GetColumnsOfTableStmt.SelectContext(ctx, &table.Columns, table.Name, mysql.DbName)
 
 	if mysql.Settings.Verbose {
 		if err != nil {

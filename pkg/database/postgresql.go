@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strconv"
@@ -56,12 +57,12 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (pg *Postgresql) Connect() error {
+func (pg *Postgresql) Connect(ctx context.Context) error {
 	dsn, err := pg.DSN()
 	if err != nil {
 		return err
 	}
-	return pg.GeneralDatabase.Connect(dsn)
+	return pg.GeneralDatabase.Connect(ctx, dsn)
 }
 
 // DSN creates the data source name string to connect to this database.
@@ -79,9 +80,9 @@ func (pg *Postgresql) DSN() (string, error) {
 }
 
 // Version reports the actual version of the Postgres database.
-func (pg *Postgresql) Version() (string, error) {
+func (pg *Postgresql) Version(ctx context.Context) (string, error) {
 	var version string
-	err := pg.Get(&version, `SELECT version() as version`)
+	err := pg.GetContext(ctx, &version, `SELECT version() as version`)
 	if err != nil {
 		return "", err
 	}
@@ -89,13 +90,13 @@ func (pg *Postgresql) Version() (string, error) {
 }
 
 // GetTables gets all tables for a given schema by name.
-func (pg *Postgresql) GetTables(tables ...string) ([]*Table, error) {
+func (pg *Postgresql) GetTables(ctx context.Context, tables ...string) ([]*Table, error) {
 
 	args := []any{pg.Schema}
 	in := pg.andInClause("LOWER(table_name)", tables, &args)
 
 	var dbTables []*Table
-	err := pg.Select(&dbTables, `
+	err := pg.SelectContext(ctx, &dbTables, `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
@@ -116,9 +117,9 @@ func (pg *Postgresql) GetTables(tables ...string) ([]*Table, error) {
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
 // columns of a specific table for a given database.
-func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
+func (pg *Postgresql) PrepareGetColumnsOfTableStmt(ctx context.Context) (err error) {
 
-	pg.GetColumnsOfTableStmt, err = pg.Preparex(`
+	pg.GetColumnsOfTableStmt, err = pg.PreparexContext(ctx, `
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
@@ -146,9 +147,9 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a
 // specific table in a given schema.
-func (pg *Postgresql) GetColumnsOfTable(table *Table) (err error) {
+func (pg *Postgresql) GetColumnsOfTable(ctx context.Context, table *Table) (err error) {
 
-	err = pg.GetColumnsOfTableStmt.Select(&table.Columns, table.Name, pg.Schema)
+	err = pg.GetColumnsOfTableStmt.SelectContext(ctx, &table.Columns, table.Name, pg.Schema)
 
 	if pg.Verbose {
 		if err != nil {

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"unicode"
@@ -25,13 +26,13 @@ var (
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
-func Run(settings *settings.Settings, db database.Database, out output.Writer) (err error) {
+func Run(ctx context.Context, settings *settings.Settings, db database.Database, out output.Writer) (err error) {
 
 	taggers = tagger.NewTaggers(settings)
 
 	fmt.Printf("running for %q...\r\n", settings.DbType)
 
-	tables, err := db.GetTables(settings.Tables...)
+	tables, err := db.GetTables(ctx, settings.Tables...)
 	if err != nil {
 		return fmt.Errorf("could not get tables: %w", err)
 	}
@@ -40,17 +41,25 @@ func Run(settings *settings.Settings, db database.Database, out output.Writer) (
 		fmt.Printf("> number of tables: %v\r\n", len(tables))
 	}
 
-	if err = db.PrepareGetColumnsOfTableStmt(); err != nil {
+	if err = db.PrepareGetColumnsOfTableStmt(ctx); err != nil {
 		return fmt.Errorf("could not prepare the get-column-statement: %w", err)
 	}
 
 	for _, table := range tables {
+		select {
+		case <-ctx.Done():
+			if settings.Verbose {
+				fmt.Printf("> received cancellation: %v\r\n", context.Cause(ctx))
+			}
+			return ctx.Err()
+		default:
+		}
 
 		if settings.Verbose {
 			fmt.Printf("> processing table %q\r\n", table.Name)
 		}
 
-		if err = db.GetColumnsOfTable(table); err != nil {
+		if err = db.GetColumnsOfTable(ctx, table); err != nil {
 			if !settings.Force {
 				return fmt.Errorf("could not get columns of table %q: %w", table.Name, err)
 			}

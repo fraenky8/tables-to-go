@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"slices"
@@ -24,13 +25,13 @@ var (
 type Database interface {
 	SQLDriver() *sqlx.DB
 	DSN() (string, error)
-	Connect() error
+	Connect(ctx context.Context) error
 	Close() error
-	Version() (string, error)
+	Version(ctx context.Context) (string, error)
 
-	GetTables(tables ...string) ([]*Table, error)
-	PrepareGetColumnsOfTableStmt() error
-	GetColumnsOfTable(table *Table) error
+	GetTables(ctx context.Context, tables ...string) ([]*Table, error)
+	PrepareGetColumnsOfTableStmt(ctx context.Context) error
+	GetColumnsOfTable(ctx context.Context, table *Table) error
 
 	IsPrimaryKey(column Column) bool
 	IsAutoIncrement(column Column) bool
@@ -107,8 +108,8 @@ func New(s *settings.Settings) Database {
 
 // Connect establishes a connection to the database with the given DSN.
 // It pings the database to ensure it is reachable.
-func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
-	gdb.DB, err = sqlx.Connect(gdb.driver, dsn)
+func (gdb *GeneralDatabase) Connect(ctx context.Context, dsn string) (err error) {
+	gdb.DB, err = sqlx.ConnectContext(ctx, gdb.driver, dsn)
 	if err != nil {
 		usingPswd := "no"
 		if gdb.Settings.Pswd != "" {
@@ -120,7 +121,7 @@ func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
 		)
 	}
 
-	return gdb.Ping()
+	return gdb.PingContext(ctx)
 }
 
 // SQLDriver returns the underlying SQL driver

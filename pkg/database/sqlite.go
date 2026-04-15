@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
@@ -29,12 +30,12 @@ func NewSQLite(s *settings.Settings) *SQLite {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (s *SQLite) Connect() error {
+func (s *SQLite) Connect(ctx context.Context) error {
 	dsn, err := s.DSN()
 	if err != nil {
 		return err
 	}
-	return s.GeneralDatabase.Connect(dsn)
+	return s.GeneralDatabase.Connect(ctx, dsn)
 }
 
 // DSN creates the DSN String to connect to this database.
@@ -52,9 +53,9 @@ func (s *SQLite) DSN() (string, error) {
 }
 
 // Version reports the actual version of the Sqlite database.
-func (s *SQLite) Version() (string, error) {
+func (s *SQLite) Version(ctx context.Context) (string, error) {
 	var version string
-	err := s.Get(&version, `SELECT sqlite_version()`)
+	err := s.GetContext(ctx, &version, `SELECT sqlite_version()`)
 	if err != nil {
 		return "", err
 	}
@@ -62,13 +63,13 @@ func (s *SQLite) Version() (string, error) {
 }
 
 // GetTables gets all tables for a given database by name.
-func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
+func (s *SQLite) GetTables(ctx context.Context, tables ...string) ([]*Table, error) {
 
 	var args []any
 	in := s.andInClause("name", tables, &args)
 
 	var dbTables []*Table
-	err := s.Select(&dbTables, `
+	err := s.SelectContext(ctx, &dbTables, `
 		SELECT name AS table_name
 		FROM sqlite_master
 		WHERE type = 'table'
@@ -88,17 +89,17 @@ func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
 // columns of a specific table for a given database. Unused in Sqlite.
-func (s *SQLite) PrepareGetColumnsOfTableStmt() (err error) {
+func (s *SQLite) PrepareGetColumnsOfTableStmt(context.Context) error {
 	return nil
 }
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a
 // specific table for a given database.
-func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
+func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error) {
 
-	rows, err := s.Queryx(`
+	rows, err := s.QueryxContext(ctx, `
 		SELECT * 
-		FROM PRAGMA_TABLE_INFO('` + table.Name + `')
+		FROM PRAGMA_TABLE_INFO('`+table.Name+`')
 	`)
 	if err != nil {
 		if s.Verbose {
@@ -107,6 +108,8 @@ func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 		}
 		return err
 	}
+	//nolint:errcheck // Best effort close.
+	defer rows.Close()
 
 	type column struct {
 		CID          int            `db:"cid"`
@@ -118,6 +121,12 @@ func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 	}
 
 	for rows.Next() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		var col column
 		err = rows.StructScan(&col)
 		if err != nil {
