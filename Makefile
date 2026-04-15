@@ -19,12 +19,3 @@ test:                   ## Runs unit tests with race flag enabled
 
 integration-test:       ## Runs integration tests
 	go test -mod=vendor -tags=integration ./internal/integration_tests/...
-
-sqlite3:                ## Installs tables-to-go with sqlite3 driver and the \
-                        ## User Authentication feature enabled. \
-                        ## For more information see the documentation of the driver at \
-                        ## - https://github.com/mattn/go-sqlite3#compilation \
-                        ## - https://github.com/mattn/go-sqlite3#user-authentication
-	CGO_ENABLED=1 go install -mod=vendor -tags="sqlite3 sqlite_userauth" -ldflags \
-    	"-X 'main.buildTimestamp=$(TS)' -X 'main.versionTag=$(TAG)'" \
-    	.

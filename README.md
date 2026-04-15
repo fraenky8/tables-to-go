@@ -6,8 +6,8 @@ database schema.
 
 **Tables change, run the tool, get your structs!**
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go)
-[![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fraenky8/tables-to-go/v2)](https://goreportcard.com/report/github.com/fraenky8/tables-to-go/v2)
+[![GoDoc](https://godoc.org/github.com/fraenky8/tables-to-go/v2?status.svg)](https://godoc.org/github.com/fraenky8/tables-to-go/v2)
 [![Build & Test](https://github.com/fraenky8/tables-to-go/actions/workflows/go.yml/badge.svg)](https://github.com/fraenky8/tables-to-go/actions)
 [![codecov](https://codecov.io/github/fraenky8/tables-to-go/graph/badge.svg?token=EACZFL68U9)](https://codecov.io/github/fraenky8/tables-to-go)
 
@@ -31,15 +31,6 @@ Get the latest changes from master:
 ```
 go install github.com/fraenky8/tables-to-go/v2@master
 ```
-
-To enable SQLite3 support, clone the repo manually and run the make file:
-
-```
-make sqlite3
-```
-
-See [this PR](https://github.com/fraenky8/tables-to-go/pull/23) why it's 
-disabled by default.
 
 ## Getting Started
 
@@ -206,7 +197,7 @@ Print usage with `-?` or `-help`
 Usage of tables-to-go:
   -?	shows help and usage
   -d string
-    	database name (default "postgres")
+    	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. path/to/database.db?_pragma=busy_timeout(5000) (default "postgres")
   -f	force; skip tables that encounter errors
   -fn-format value
     	format of the filename: camelCase (c, default) or snake_case (s) (default c)
@@ -221,7 +212,7 @@ Usage of tables-to-go:
   -null value
     	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) (default sql)
   -of string
-    	output file path, default is current working directory (default "/Users/zalora_user/Coding/Go/src/github.com/fraenky8/tables-to-go")
+    	output file path, default is current working directory
   -p string
     	password of user
   -pn string

@@ -31,11 +31,15 @@ func NewMySQL(s *settings.Settings) *MySQL {
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
 func (mysql *MySQL) Connect() error {
-	return mysql.GeneralDatabase.Connect(mysql.DSN())
+	dsn, err := mysql.DSN()
+	if err != nil {
+		return err
+	}
+	return mysql.GeneralDatabase.Connect(dsn)
 }
 
 // DSN creates the data source name string to connect to this database.
-func (mysql *MySQL) DSN() string {
+func (mysql *MySQL) DSN() (string, error) {
 	user := mysql.defaultUserName
 	if mysql.Settings.User != "" {
 		user = mysql.Settings.User
@@ -43,10 +47,10 @@ func (mysql *MySQL) DSN() string {
 
 	if mysql.Settings.Socket != "" {
 		return fmt.Sprintf("%s:%s@unix(%s)/%s",
-			user, mysql.Settings.Pswd, mysql.Settings.Socket, mysql.Settings.DbName)
+			user, mysql.Settings.Pswd, mysql.Settings.Socket, mysql.Settings.DbName), nil
 	}
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		user, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName)
+		user, mysql.Settings.Pswd, mysql.Settings.Host, mysql.Settings.Port, mysql.Settings.DbName), nil
 }
 
 // Version reports the actual version of the MySQL database.
@@ -64,11 +68,6 @@ func (mysql *MySQL) Version() (string, error) {
 		return "", err
 	}
 	return version, nil
-}
-
-// GetDriverImportLibrary returns the golang sql driver specific for the MySQL database.
-func (mysql *MySQL) GetDriverImportLibrary() string {
-	return `"github.com/go-sql-driver/mysql"`
 }
 
 // GetTables gets all tables for a given database by name.
@@ -105,7 +104,7 @@ func (mysql *MySQL) PrepareGetColumnsOfTableStmt() (err error) {
 		SELECT
 		  ordinal_position AS ordinal_position,
 		  column_name AS column_name,
-		  data_type AS data_type,
+		  LOWER(data_type) AS data_type,
 		  column_default AS column_default,
 		  is_nullable AS is_nullable,
 		  character_maximum_length AS character_maximum_length,

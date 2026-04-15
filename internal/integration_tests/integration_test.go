@@ -129,6 +129,20 @@ func newPostgresSettings(version, path, testDirectory string) *testSettings {
 	}
 }
 
+func newSQLiteSettings(path, testDirectory, params string) *testSettings {
+	s := settings.New()
+	s.DbType = settings.DBTypeSQLite
+	s.Schema = filepath.Join(path, "database.db") // Only used to keep track of the actual file name without any query params.
+	s.DbName = s.Schema + params
+	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
+
+	return &testSettings{
+		Settings:      s,
+		filepath:      path,
+		testDirectory: testDirectory,
+	}
+}
+
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
@@ -212,6 +226,10 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 		{
 			desc:     "postgres 18",
 			settings: newPostgresSettings("18", "postgres", testDirectory),
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory, ""),
 		},
 	}
 
@@ -307,6 +325,14 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			desc: "postgres 18",
 			settings: func() *testSettings {
 				s := newPostgresSettings("18", "postgres", testDirectory)
+				s.Null = settings.NullTypePrimitive
+				return s
+			}(),
+		},
+		{
+			desc: "sqlite 3",
+			settings: func() *testSettings {
+				s := newSQLiteSettings("sqlite3", testDirectory, "")
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
@@ -413,6 +439,14 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s := newPostgresSettings("18", "postgres", testDirectory)
 				// Note: int_table non-existing
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
+				return s
+			}(),
+		},
+		{
+			desc: "sqlite 3",
+			settings: func() *testSettings {
+				s := newSQLiteSettings("sqlite3", testDirectory, "")
+				s.Tables = settings.StringsFlag{"numeric_table", "text_table", "strict_types"}
 				return s
 			}(),
 		},
@@ -1124,6 +1158,10 @@ func checkFiles(t *testing.T, s *testSettings) {
 }
 
 func setupDatabase(t *testing.T, s *testSettings) database.Database {
+	if s.Settings.DbType == settings.DBTypeSQLite {
+		return setupSQLite(t, s)
+	}
+
 	t.Logf("spinning up database %s:%s", s.dockerImage, s.version)
 
 	containerName := fmt.Sprintf("tables_to_go_%s_%s_integration", s.dockerImage, s.version)
@@ -1172,6 +1210,22 @@ func setupDatabase(t *testing.T, s *testSettings) database.Database {
 
 	resetDatabase(t, db, s)
 
+	return db
+}
+
+func setupSQLite(t *testing.T, s *testSettings) database.Database {
+	db := database.New(s.Settings)
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("could not create sqlite: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = db.Close()
+		err := os.Remove(s.Schema)
+		if err != nil {
+			t.Log(err)
+		}
+	})
 	return db
 }
 
@@ -1236,7 +1290,7 @@ func resetDatabase(t *testing.T, db database.Database, s *testSettings) {
 			t.Fatalf("could not create schema %q: %v", s.Schema, err)
 		}
 	case *database.SQLite:
-		t.Log("not implemented")
+		t.Log("not implemented since never reached")
 	default:
 		// MUST never happen
 		t.Fatalf("unknown database %v", tdb)

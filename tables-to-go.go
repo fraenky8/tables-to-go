@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
@@ -44,7 +43,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
 	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
-	flag.StringVar(&args.DbName, "d", args.DbName, "database name")
+	flag.StringVar(&args.DbName, "d", args.DbName, "database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. ?_pragma=busy_timeout(5000)")
 	flag.StringVar(&args.Schema, "s", args.Schema, "schema name")
 	flag.StringVar(&args.Host, "h", args.Host, "host of database")
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")
@@ -113,8 +112,6 @@ func main() {
 }
 
 func printVersion() {
-	var withSQLite bool
-
 	info, ok := debug.ReadBuildInfo()
 	if ok {
 		if versionTag == "" {
@@ -124,8 +121,6 @@ func printVersion() {
 			switch s.Key {
 			case "vcs.revision":
 				revision = s.Value[:8]
-			case "-tags":
-				withSQLite = strings.Contains(s.Value, "sqlite3")
 			}
 			if s.Key == "vcs.revision" {
 				revision = s.Value[:8]
@@ -135,11 +130,6 @@ func printVersion() {
 
 	fmt.Printf("tables-to-go/%s-%s %s/%s built with %s", versionTag, revision,
 		runtime.GOOS, runtime.GOARCH, runtime.Version())
-
-	//goland:noinspection GoDfaConstantCondition
-	if withSQLite {
-		fmt.Printf(" with sqlite3 support")
-	}
 
 	//goland:noinspection GoBoolExpressions
 	if buildTimestamp != "" {

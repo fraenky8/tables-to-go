@@ -16,14 +16,14 @@ var (
 	dbTypeToDriverMap = map[settings.DBType]string{
 		settings.DBTypePostgresql: "postgres",
 		settings.DBTypeMySQL:      "mysql",
-		settings.DBTypeSQLite:     "sqlite3",
+		settings.DBTypeSQLite:     "sqlite",
 	}
 )
 
 // Database interface for the concrete databases.
 type Database interface {
 	SQLDriver() *sqlx.DB
-	DSN() string
+	DSN() (string, error)
 	Connect() error
 	Close() error
 	Version() (string, error)

@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
+
+	// sqlite3 database driver
+	_ "modernc.org/sqlite"
 )
 
 // SQLite implements the Database interface with help of GeneralDatabase.
@@ -26,28 +29,26 @@ func NewSQLite(s *settings.Settings) *SQLite {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (s *SQLite) Connect() (err error) {
-	return s.GeneralDatabase.Connect(s.DSN())
+func (s *SQLite) Connect() error {
+	dsn, err := s.DSN()
+	if err != nil {
+		return err
+	}
+	return s.GeneralDatabase.Connect(dsn)
 }
 
 // DSN creates the DSN String to connect to this database.
-func (s *SQLite) DSN() string {
-	if s.Settings.User == "" && s.Settings.Pswd == "" {
-		return s.Settings.DbName
-	}
+// Any Username and Password set in the settings are ignored since SQLite3 does
+// not support authentication yet (https://sqlite.org/forum/forumpost/9a4c2a21beb82efd?t=h&unf).
+func (s *SQLite) DSN() (string, error) {
+	normalized := strings.ReplaceAll(s.Settings.DbName, `\`, `/`)
 
-	u, err := url.Parse(s.DbName)
+	_, err := url.Parse(normalized)
 	if err != nil {
-		return s.Settings.DbName
+		return "", err
 	}
 
-	query := u.Query()
-	query.Set("_auth_user", s.Settings.User)
-	query.Set("_auth_pass", s.Settings.Pswd)
-	u.RawQuery = query.Encode()
-
-	// SQLite driver expects a empty `_auth` request param
-	return strings.ReplaceAll(u.RequestURI(), "_auth=&", "_auth&")
+	return normalized, nil
 }
 
 // Version reports the actual version of the Sqlite database.
@@ -58,11 +59,6 @@ func (s *SQLite) Version() (string, error) {
 		return "", err
 	}
 	return version, nil
-}
-
-// GetDriverImportLibrary returns the golang sql driver specific for the Sqlite database.
-func (s *SQLite) GetDriverImportLibrary() string {
-	return `"github.com/mattn/go-sqlite3"`
 }
 
 // GetTables gets all tables for a given database by name.
@@ -141,7 +137,7 @@ func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
 		table.Columns = append(table.Columns, Column{
 			OrdinalPosition:        col.CID,
 			Name:                   col.Name,
-			DataType:               col.DataType,
+			DataType:               strings.ToLower(col.DataType),
 			DefaultValue:           col.DefaultValue,
 			IsNullable:             isNullable,
 			CharacterMaximumLength: sql.NullInt64{},

@@ -57,21 +57,25 @@ func NewPostgresql(s *settings.Settings) *Postgresql {
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
 func (pg *Postgresql) Connect() error {
-	return pg.GeneralDatabase.Connect(pg.DSN())
+	dsn, err := pg.DSN()
+	if err != nil {
+		return err
+	}
+	return pg.GeneralDatabase.Connect(dsn)
 }
 
 // DSN creates the data source name string to connect to this database.
-func (pg *Postgresql) DSN() string {
+func (pg *Postgresql) DSN() (string, error) {
 	user := pg.defaultUserName
 	if pg.Settings.User != "" {
 		user = pg.Settings.User
 	}
 	if pg.Settings.Socket != "" {
 		return fmt.Sprintf("postgres://%s:%s@?%s&%s&sslmode=%s",
-			user, pg.Settings.Pswd, pg.Settings.Socket, pg.Settings.Port, pg.Settings.SSLMode)
+			user, pg.Settings.Pswd, pg.Settings.Socket, pg.Settings.Port, pg.Settings.SSLMode), nil
 	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		user, pg.Settings.Pswd, pg.Settings.Host, pg.Settings.Port, pg.Settings.DbName, pg.Settings.SSLMode)
+		user, pg.Settings.Pswd, pg.Settings.Host, pg.Settings.Port, pg.Settings.DbName, pg.Settings.SSLMode), nil
 }
 
 // Version reports the actual version of the Postgres database.
@@ -82,11 +86,6 @@ func (pg *Postgresql) Version() (string, error) {
 		return "", err
 	}
 	return version, nil
-}
-
-// GetDriverImportLibrary returns the golang sql driver specific fot the Postgres database.
-func (pg *Postgresql) GetDriverImportLibrary() string {
-	return "pg \"github.com/lib/pq\""
 }
 
 // GetTables gets all tables for a given schema by name.
@@ -123,7 +122,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt() (err error) {
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
-			ic.data_type,
+			LOWER(ic.data_type) AS data_type,
 			ic.column_default,
 			ic.is_nullable,
 			ic.character_maximum_length,

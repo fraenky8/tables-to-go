@@ -1,7 +1,6 @@
 package database
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,129 +13,185 @@ func TestSQLite_DSN(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		settings func() *settings.Settings
+		settings *settings.Settings
 		expected string
-		isError  assert.ErrorAssertionFunc
+		isErr    assert.ErrorAssertionFunc
 	}{
 		{
-			desc: "no username or password given, no authentication in DNS string",
+			desc: "an invalid URL query param returns error",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "path/to/a/file.db?_pragma=\x00"
+				return s
+			}(),
+			expected: "",
+			isErr:    assert.Error,
+		},
+		{
+			desc: "plain db file without query params",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
 				s.DbName = "path/to/a/file.db"
 				return s
-			},
+			}(),
 			expected: "path/to/a/file.db",
-			isError:  assert.NoError,
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "with given username, authentication is enabled in DNS string",
+			desc: "given query params are preserved",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.User = "username"
+				s.DbName = "path/to/a/file.db?_pragma=encoding('UTF-8')"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=",
-			isError:  assert.NoError,
+			}(),
+			expected: "path/to/a/file.db?_pragma=encoding('UTF-8')",
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "with given password, authentication is enabled in DNS string",
+			desc: "file:// prefix",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.Pswd = "p4assw0rd"
+				s.DbName = "file://path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=&_auth_pass=p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "file://path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "with given username and password, authentication is enabled in DNS string",
+			desc: "file: prefix",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db"
-				s.User = "username"
-				s.Pswd = "p4assw0rd"
+				s.DbName = "file:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "file:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "with existing username and password, authentication in DB name is overwritten",
+			desc: "windows file path gets normalized",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "C:\\path\\to\\a\\file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "C:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
+			isErr:    assert.NoError,
 		},
+		// Test cases from official SQLite docs: https://sqlite.org/c3ref/open.html#:~:text=URI%20filename%20examples
+		// These assert current DSN behavior only, without SQLite-specific URI validation.
 		{
-			desc: "with existing username and password and additional option at the end, " +
-				"authentication in DB name is overwritten and options are preserved",
+			desc: "file:data.db",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?_auth&_auth_user=username&_auth_pass=p4assw0rd&cache=shared"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "file:data.db"
 				return s
-			},
-			expected: "path/to/a/file.db?_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd&cache=shared",
-			isError:  assert.NoError,
+			}(),
+			expected: "file:data.db",
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "with existing username and password and additional option at the beginning, " +
-				"authentication in DB name is overwritten and options are preserved",
+			desc: "file:/home/fred/data.db",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = "path/to/a/file.db?cache=shared&_auth&_auth_user=username&_auth_pass=p4assw0rd"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "file:/home/fred/data.db"
 				return s
-			},
-			expected: "path/to/a/file.db?cache=shared&_auth&_auth_user=new_username&_auth_pass=new_p4assw0rd",
-			isError:  assert.NoError,
+			}(),
+			expected: "file:/home/fred/data.db",
+			isErr:    assert.NoError,
 		},
 		{
-			desc: "invalid dns returns raw dns string",
+			desc: "file:///home/fred/data.db",
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.DbType = settings.DBTypeSQLite
-				s.DbName = ":123:456"
-				s.User = "new_username"
-				s.Pswd = "new_p4assw0rd"
+				s.DbName = "file:///home/fred/data.db"
 				return s
-			},
-			expected: ":123:456",
-			isError:  assert.Error,
+			}(),
+			expected: "file:///home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file://localhost/home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file://localhost/home/fred/data.db"
+				return s
+			}(),
+			expected: "file://localhost/home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file://darkstar/home/fred/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file://darkstar/home/fred/data.db"
+				return s
+			}(),
+			expected: "file://darkstar/home/fred/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db"
+				return s
+			}(),
+			expected: "file:///C:/Documents%20and%20Settings/fred/Desktop/data.db",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:data.db?mode=ro&cache=private",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:data.db?mode=ro&cache=private"
+				return s
+			}(),
+			expected: "file:data.db?mode=ro&cache=private",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:/home/fred/data.db?vfs=unix-dotfile",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:/home/fred/data.db?vfs=unix-dotfile"
+				return s
+			}(),
+			expected: "file:/home/fred/data.db?vfs=unix-dotfile",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "file:data.db?mode=readonly",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.DbType = settings.DBTypeSQLite
+				s.DbName = "file:data.db?mode=readonly"
+				return s
+			}(),
+			expected: "file:data.db?mode=readonly",
+			isErr:    assert.NoError,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			db := NewSQLite(test.settings())
-			dsn := db.DSN()
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			db := NewSQLite(tt.settings)
 
-			actual, err := url.Parse(dsn)
-			test.isError(t, err)
-			if err != nil {
-				assert.Equal(t, test.expected, dsn)
-				return
-			}
-
-			expected, err := url.Parse(dsn)
-			assert.NoError(t, err)
-
-			assert.Equal(t, expected.Query(), actual.Query())
+			actual, err := db.DSN()
+			tt.isErr(t, err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
