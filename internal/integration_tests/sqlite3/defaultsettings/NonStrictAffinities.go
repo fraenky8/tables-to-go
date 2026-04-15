@@ -19,7 +19,7 @@ type NonStrictAffinities struct {
 	AffinityNchar    sql.NullString `db:"affinity_nchar"`
 	AffinityNvarchar sql.NullString `db:"affinity_nvarchar"`
 	AffinityJSON     sql.NullString `db:"affinity_json"`
-	AffinityUuID     sql.NullString `db:"affinity_uuid"`
+	AffinityUUID     sql.NullString `db:"affinity_uuid"`
 	AffinityBinary   sql.NullString `db:"affinity_binary"`
 	AffinityVarbin   sql.NullString `db:"affinity_varbin"`
 }

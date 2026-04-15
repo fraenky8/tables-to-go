@@ -15,7 +15,7 @@ type NonStrictAffinities struct {
 	AffinityNchar    *string `db:"affinity_nchar"`
 	AffinityNvarchar *string `db:"affinity_nvarchar"`
 	AffinityJSON     *string `db:"affinity_json"`
-	AffinityUuID     *string `db:"affinity_uuid"`
+	AffinityUUID     *string `db:"affinity_uuid"`
 	AffinityBinary   *string `db:"affinity_binary"`
 	AffinityVarbin   *string `db:"affinity_varbin"`
 }

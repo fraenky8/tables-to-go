@@ -21,7 +21,7 @@ var (
 
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
-	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL"}
+	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL", "UUID"}
 )
 
 // Run runs the transformations by creating the concrete Database by the provided settings
