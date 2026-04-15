@@ -43,7 +43,7 @@ func NewCmdArgs() (args *CmdArgs) {
 	flag.Var(&args.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	flag.StringVar(&args.User, "u", args.User, "user to connect to the database")
 	flag.StringVar(&args.Pswd, "p", args.Pswd, "password of user")
-	flag.StringVar(&args.DbName, "d", args.DbName, "database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. _pragma=busy_timeout(10000)")
+	flag.StringVar(&args.DbName, "d", args.DbName, "database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. _pragma=busy_timeout(10000); default: _pragma=busy_timeout(5000)&_pragma=cache_size(20480)")
 	flag.StringVar(&args.Schema, "s", args.Schema, "schema name")
 	flag.StringVar(&args.Host, "h", args.Host, "host of database")
 	flag.StringVar(&args.Port, "port", args.Port, "port of database host, if not specified, it will be the default ports for the supported databases")

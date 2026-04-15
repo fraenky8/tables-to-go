@@ -39,7 +39,7 @@
 //	go run tables-to-go.go -help
 //		-?	shows help and usage
 //		-d string
-//		  	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. _pragma=busy_timeout(10000) (default "postgres")
+//		  	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. _pragma=busy_timeout(10000); default: _pragma=busy_timeout(5000)&_pragma=cache_size(20480) (default "postgres")
 //		-f	force; skip tables that encounter errors
 //		-fn-format value
 //		  	format of the filename: camelCase (c, default) or snake_case (s) (default c)
