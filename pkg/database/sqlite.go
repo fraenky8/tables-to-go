@@ -160,7 +160,7 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error
 		})
 	}
 
-	return nil
+	return rows.Err()
 }
 
 // IsPrimaryKey checks if the column belongs to the primary key.
