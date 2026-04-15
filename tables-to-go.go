@@ -113,6 +113,10 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	}
 
 	db := database.New(cmdArgs.Settings)
+
+	if err := db.Connect(ctx); err != nil {
+		return fmt.Errorf("could not connect to database: %w", err)
+	}
 	defer func(db database.Database) {
 		if cErr := db.Close(); cErr != nil {
 			if err != nil {
@@ -122,10 +126,6 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 			err = fmt.Errorf("could not close database: %w", cErr)
 		}
 	}(db)
-
-	if err := db.Connect(ctx); err != nil {
-		return fmt.Errorf("could not connect to database: %w", err)
-	}
 
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
