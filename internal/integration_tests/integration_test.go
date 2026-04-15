@@ -1290,12 +1290,7 @@ func resetDatabase(t *testing.T, db database.Database, s *testSettings) {
 			t.Fatalf("could not create schema %q: %v", s.Schema, err)
 		}
 	case *database.SQLite:
-		_ = db.Close()
-		err := os.Remove(s.Schema)
-		if err != nil {
-			t.Log(err)
-		}
-
+		t.Log("not implemented since never reached")
 	default:
 		// MUST never happen
 		t.Fatalf("unknown database %v", tdb)
