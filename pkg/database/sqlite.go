@@ -112,11 +112,11 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) (err error
 	defer rows.Close()
 
 	type column struct {
-		CID          int            `db:"cid"`
 		Name         string         `db:"name"`
 		DataType     string         `db:"type"`
-		NotNull      int            `db:"notnull"`
 		DefaultValue sql.NullString `db:"dflt_value"`
+		CID          int            `db:"cid"`
+		NotNull      int            `db:"notnull"`
 		PrimaryKey   int            `db:"pk"`
 	}
 

@@ -44,10 +44,6 @@ var (
 
 // Settings stores the supported settings / command line arguments.
 type Settings struct {
-	Verbose  bool
-	VVerbose bool
-	Force    bool // continue through errors
-
 	DbType DBType
 
 	User    string
@@ -58,7 +54,6 @@ type Settings struct {
 	Port    string
 	SSLMode string
 	Socket  string
-	Tables  StringsFlag
 
 	OutputFilePath string
 	OutputFormat   OutputFormat
@@ -68,6 +63,8 @@ type Settings struct {
 	Prefix         string
 	Suffix         string
 	Null           NullType
+
+	Tables StringsFlag
 
 	NoInitialism bool
 
@@ -79,6 +76,10 @@ type Settings struct {
 
 	// TODO not implemented yet
 	TagsGorm bool
+
+	Verbose  bool
+	VVerbose bool
+	Force    bool // continue through errors
 }
 
 // New constructs Settings with default values.

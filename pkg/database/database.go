@@ -64,27 +64,27 @@ type Table struct {
 
 // Column stores information about a column.
 type Column struct {
-	OrdinalPosition        int            `db:"ordinal_position"`
 	Name                   string         `db:"column_name"`
 	DataType               string         `db:"data_type"`
-	DefaultValue           sql.NullString `db:"column_default"`
 	IsNullable             string         `db:"is_nullable"`
-	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
-	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	ColumnKey              string         `db:"column_key"`      // mysql specific
-	Extra                  string         `db:"extra"`           // mysql specific
+	ColumnKey              string         `db:"column_key"` // mysql specific
+	Extra                  string         `db:"extra"`      // mysql specific
+	DefaultValue           sql.NullString `db:"column_default"`
 	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
+	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
+	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	OrdinalPosition        int            `db:"ordinal_position"`
 }
 
 // GeneralDatabase represents a base "class" database - for all other concrete
 // databases it implements partly the Database interface.
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
-	driver                string
-
 	*settings.Settings
 	*sqlx.DB
+
+	driver string
 }
 
 // New creates a new Database based on the given type in the settings.

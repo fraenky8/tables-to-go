@@ -24,9 +24,9 @@ const (
 type Postgresql struct {
 	*GeneralDatabase
 
-	defaultUserName string
-
 	integerDataTypes map[string]struct{}
+
+	defaultUserName string
 }
 
 // NewPostgresql creates a new Postgresql database.

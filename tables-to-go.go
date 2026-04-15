@@ -24,10 +24,10 @@ var (
 
 // cmdArgs represents the supported command line args
 type cmdArgs struct {
-	Help    bool
-	Version bool
-	usage   func()
+	usage func()
 	*settings.Settings
+	Version bool
+	Help    bool
 }
 
 // newCmdArgs creates and prepares the command line arguments with default values
