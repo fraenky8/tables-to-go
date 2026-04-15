@@ -105,7 +105,7 @@ func TestSQLite_DSN(t *testing.T) {
 				s.DbName = "C:\\path\\to\\a\\file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)"
 				return s
 			}(),
-			expected: "/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
+			expected: "C:/path/to/a/file.db?_pragma=busy_timeout(10000)&_pragma=cache_size(10000)",
 		},
 	}
 	for _, tt := range tests {

@@ -43,11 +43,15 @@ func (s *SQLite) Connect() (err error) {
 // Any Username and Password set in the settings are ignored since SQLite3 does
 // not support authentication yet (https://sqlite.org/forum/forumpost/9a4c2a21beb82efd?t=h&unf).
 func (s *SQLite) DSN() string {
-	normalized := strings.ReplaceAll(s.DbName, `\`, `/`)
+	normalized := strings.ReplaceAll(s.Settings.DbName, `\`, `/`)
+
+	if !strings.HasPrefix(normalized, "file:") {
+		normalized = "file:" + normalized
+	}
 
 	u, err := url.Parse(normalized)
 	if err != nil {
-		return s.DbName
+		return s.Settings.DbName
 	}
 
 	q := u.Query()
@@ -64,7 +68,7 @@ func (s *SQLite) DSN() string {
 
 func (s *SQLite) hasDSNParam(values url.Values, p string) bool {
 	for _, v := range values["_pragma"] {
-		if strings.HasPrefix(v, p) {
+		if strings.HasPrefix(v, p+`(`) {
 			return true
 		}
 	}
