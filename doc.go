@@ -36,53 +36,62 @@
 //
 // Commandline Flags
 //
-//	 go run tables-to-go.go -help
-//	    -?	shows help and usage
-//	    -d string
-//	      	database name (default "postgres")
-//	    -f
-//	      	force, skip tables that encounter errors but construct all others
-//	    -format string
-//	      	format of struct fields (columns): camelCase (c) or original (o) (default "c")
-//	    -fn-format string
-//	        format of the filename: camelCase (c, default) or snake_case (s)
-//	    -h string
-//	      	host of database (default "127.0.0.1")
-//	    -help
-//	      	shows help and usage
-//	    -no-initialism
+//	go run tables-to-go.go -help
+//		-?	shows help and usage
+//		-d string
+//		  	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. _pragma=busy_timeout(10000) (default "postgres")
+//		-f	force; skip tables that encounter errors
+//		-fn-format value
+//		  	format of the filename: camelCase (c, default) or snake_case (s) (default c)
+//		-format value
+//		  	format of struct fields (columns): camelCase (c) or original (o) (default c)
+//		-h string
+//		  	host of database (default "127.0.0.1")
+//		-help
+//		  	shows help and usage
+//		-no-initialism
 //		  	disable the conversion to upper-case words in column names
-//	    -null string
-//	 	  	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)  (default "sql")
-//	    -of string
-//	      	output file path (default "current working directory")
-//	    -p string
-//	      	password of user
-//	    -pn string
-//	      	package name (default "dto")
-//	    -port string
-//	      	port of database host, if not specified, it will be the default ports for the supported databases
-//	    -pre string
-//	      	prefix for file- and struct names
-//	    -s string
-//	      	schema name (default "public")
-//	    -structable-recorder
-//	      	generate a structable.Recorder field
-//	    -suf string
-//	      	suffix for file- and struct names
-//	    -t string
-//	      	type of database to use, currently supported: [pg mysql] (default "pg")
-//	    -tags-no-db
-//	      	do not create db-tags
-//	    -tags-structable
-//	      	generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
-//	    -tags-structable-only
-//	      	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
-//	    -u string
-//	      	user to connect to the database (default "postgres")
-//	    -v	verbose output
-//	    -vv
-//	      	more verbose output
+//		-null value
+//		  	representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive) (default sql)
+//		-of string
+//		  	output file path, default is current working directory
+//		-p string
+//		  	password of user
+//		-pn string
+//		  	package name (default "dto")
+//		-port string
+//		  	port of database host, if not specified, it will be the default ports for the supported databases
+//		-pre string
+//		  	prefix for file- and struct names
+//		-s string
+//		  	schema name (default "public")
+//		-socket string
+//		  	The socket file to use for connection. If specified, takes precedence over host:port.
+//		-sslmode string
+//		  	Connect to database using secure connection. (default "disable")
+//		  	The value will be passed as is to the underlying driver.
+//		  	Refer to this site for supported values: https://www.postgresql.org/docs/current/libpq-ssl.html
+//		-structable-recorder
+//		  	generate a structable.Recorder field
+//		-suf string
+//		  	suffix for file- and struct names
+//		-t value
+//		  	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
+//		-table value
+//		  	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
+//		-tags-no-db
+//		  	do not create db-tags
+//		-tags-structable
+//		  	generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
+//		-tags-structable-only
+//		  	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+//		-u string
+//		  	user to connect to the database
+//		-v	verbose output
+//		-version
+//		  	show version and build information
+//		-vv
+//		  	more verbose output
 //
 // For more details & examples refer to https://github.com/fraenky8/tables-to-go/blob/master/README.md
 package main
