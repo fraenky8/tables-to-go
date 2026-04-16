@@ -101,7 +101,7 @@ func newCmdArgs(args []string) (*cmdArgs, error) {
 // main function to run the transformations
 func main() {
 	ctx := context.Background()
-	if err := run(ctx, os.Args, os.Stderr); err != nil {
+	if err := run(ctx, os.Args, os.Stdout); err != nil {
 		if !errors.Is(err, errFlagParse) {
 			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
@@ -109,7 +109,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
+func run(ctx context.Context, args []string, stdout io.Writer) (err error) {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
@@ -124,7 +124,7 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	}
 
 	if cmdArgs.Version {
-		printVersion(stderr)
+		printVersion(stdout)
 		return nil
 	}
 
@@ -158,7 +158,7 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	return nil
 }
 
-func printVersion(stderr io.Writer) {
+func printVersion(w io.Writer) {
 	var (
 		goOS, goArch = runtime.GOOS, runtime.GOARCH
 	)
@@ -179,12 +179,12 @@ func printVersion(stderr io.Writer) {
 		}
 	}
 
-	_, _ = fmt.Fprintf(stderr, "tables-to-go/%s-%s %s/%s built with %s",
+	_, _ = fmt.Fprintf(w, "tables-to-go/%s-%s %s/%s built with %s",
 		versionTag, revision, goOS, goArch, runtime.Version())
 
 	//goland:noinspection GoBoolExpressions
 	if buildTimestamp != "" {
-		_, _ = fmt.Fprintf(stderr, " on %s", buildTimestamp)
+		_, _ = fmt.Fprintf(w, " on %s", buildTimestamp)
 	}
-	_, _ = fmt.Fprintln(stderr)
+	_, _ = fmt.Fprintln(w)
 }
