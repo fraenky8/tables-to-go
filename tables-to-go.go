@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -22,6 +23,10 @@ var (
 	buildTimestamp = ""
 )
 
+var (
+	errFlagParse = errors.New("error parsing flags")
+)
+
 // cmdArgs represents the supported command line args
 type cmdArgs struct {
 	usage func()
@@ -31,12 +36,12 @@ type cmdArgs struct {
 }
 
 // newCmdArgs creates and prepares the command line arguments with default values
-func newCmdArgs(args []string) *cmdArgs {
+func newCmdArgs(args []string) (*cmdArgs, error) {
 	if len(args) == 0 {
 		args = []string{"tables-to-go"}
 	}
 
-	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 
 	a := cmdArgs{
 		usage:    fs.Usage,
@@ -81,17 +86,25 @@ func newCmdArgs(args []string) *cmdArgs {
 	// NOOP to disable the print of usage when an error occurs.
 	fs.Usage = func() {}
 
-	// Ignore error since we are using flag.ExitOnError
-	_ = fs.Parse(args[1:])
+	err := fs.Parse(args[1:])
+	if err != nil {
+		// Note that we ignore the original error here and return our sentinel
+		// value to be detected in main. Reason is that the flag package itself
+		// prints any parsing error already to stderr and hence by not returning
+		// it here we avoid printing it twice to stderr.
+		return nil, errFlagParse
+	}
 
-	return &a
+	return &a, nil
 }
 
 // main function to run the transformations
 func main() {
 	ctx := context.Background()
 	if err := run(ctx, os.Args, os.Stderr); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
+		if !errors.Is(err, errFlagParse) {
+			_, _ = fmt.Fprintln(os.Stderr, err)
+		}
 		os.Exit(1)
 	}
 }
@@ -100,7 +113,10 @@ func run(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cmdArgs := newCmdArgs(args)
+	cmdArgs, err := newCmdArgs(args)
+	if err != nil {
+		return err
+	}
 
 	if cmdArgs.Help {
 		cmdArgs.usage()
