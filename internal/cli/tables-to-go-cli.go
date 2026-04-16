@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"unicode"
 
@@ -30,16 +30,18 @@ type App struct {
 	db       database.Database
 	out      output.Writer
 	caser    cases.Caser
+	stderr   io.Writer
 }
 
 // New creates a new App.
-func New(s *settings.Settings, db database.Database, out output.Writer) *App {
+func New(s *settings.Settings, db database.Database, out output.Writer, stderr io.Writer) *App {
 	return &App{
 		settings: s,
 		taggers:  tagger.NewTaggers(s),
 		db:       db,
 		out:      out,
 		caser:    cases.Title(language.English, cases.NoLower),
+		stderr:   stderr,
 	}
 }
 
@@ -381,9 +383,9 @@ func (app *App) formatColumnName(column, table string) (string, error) {
 }
 
 func (app *App) printf(format string, a ...any) {
-	_, _ = fmt.Fprintf(os.Stderr, format, a...)
+	_, _ = fmt.Fprintf(app.stderr, format, a...)
 }
 
 func (app *App) println(a ...any) {
-	_, _ = fmt.Fprintln(os.Stderr, a...)
+	_, _ = fmt.Fprintln(app.stderr, a...)
 }

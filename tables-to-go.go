@@ -101,7 +101,7 @@ func newCmdArgs(args []string) (*cmdArgs, error) {
 // main function to run the transformations
 func main() {
 	ctx := context.Background()
-	if err := run(ctx, os.Args, os.Stdout); err != nil {
+	if err := run(ctx, os.Args, os.Stdout, os.Stderr); err != nil {
 		if !errors.Is(err, errFlagParse) {
 			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
@@ -109,7 +109,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, args []string, stdout io.Writer) (err error) {
+func run(ctx context.Context, args []string, stdout, stderr io.Writer) (err error) {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
@@ -149,7 +149,7 @@ func run(ctx context.Context, args []string, stdout io.Writer) (err error) {
 
 	writer := output.NewFileWriter(cmdArgs.OutputFilePath)
 
-	app := cli.New(cmdArgs.Settings, db, writer)
+	app := cli.New(cmdArgs.Settings, db, writer, stderr)
 
 	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run error: %w", err)

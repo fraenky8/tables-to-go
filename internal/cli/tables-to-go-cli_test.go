@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -102,7 +103,7 @@ func TestApp_camelCaseString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			app := New(settings.New(), nil, nil)
+			app := New(settings.New(), nil, nil, os.Stderr)
 			actual := app.camelCaseString(tt.input)
 			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
 		})
@@ -216,7 +217,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -258,7 +259,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -301,7 +302,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -348,7 +349,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -396,7 +397,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -469,7 +470,7 @@ func TestApp_Run_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -530,7 +531,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -572,7 +573,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -615,7 +616,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -662,7 +663,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -710,7 +711,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -783,7 +784,7 @@ func TestApp_Run_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -844,7 +845,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -886,7 +887,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -929,7 +930,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -976,7 +977,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1024,7 +1025,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1097,7 +1098,7 @@ func TestApp_Run_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1158,7 +1159,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1200,7 +1201,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1243,7 +1244,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1290,7 +1291,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1338,7 +1339,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1411,7 +1412,7 @@ func TestApp_Run_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1472,7 +1473,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1514,7 +1515,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1557,7 +1558,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1604,7 +1605,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1652,7 +1653,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1725,7 +1726,7 @@ func TestApp_Run_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1790,7 +1791,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1833,7 +1834,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1877,7 +1878,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1925,7 +1926,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -1974,7 +1975,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -2048,7 +2049,7 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						app := New(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
 
 						err := app.Run(t.Context())
 						assert.NoError(t, err)
@@ -2130,7 +2131,7 @@ func TestApp_formatColumnName(t *testing.T) {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
 				s.Verbose = true // for coverage
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "1fish2fish",
 			expected: "X1fish2fish",
@@ -2141,7 +2142,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "1fish2fish",
 			expected: "X_1fish2fish",
@@ -2152,7 +2153,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "1 fish",
 			expected: "X1_fish",
@@ -2163,7 +2164,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "1 fish",
 			expected: "X_1_fish",
@@ -2174,7 +2175,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "my column\twith\nmany\u200bspaces",
 			expected: "MyColumnWithManySpaces",
@@ -2185,7 +2186,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "my column\twith\nmany\u200bspaces",
 			expected: "My_column_with_many_spaces",
@@ -2196,7 +2197,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "MyColumn",
 			expected: "MyColumn",
@@ -2207,7 +2208,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "MyColumn",
 			expected: "MyColumn",
@@ -2218,7 +2219,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "my_column",
 			expected: "MyColumn",
@@ -2229,7 +2230,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "my_column",
 			expected: "My_column",
@@ -2240,7 +2241,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "My_Column",
 			expected: "MyColumn",
@@ -2251,7 +2252,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "My_Column",
 			expected: "My_Column",
@@ -2262,7 +2263,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "123",
 			expected: "X123",
@@ -2273,7 +2274,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "123",
 			expected: "X_123",
@@ -2284,7 +2285,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "火",
 			expected: "火",
@@ -2295,7 +2296,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "火",
 			expected: "火",
@@ -2306,7 +2307,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatCamelCase
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "Λλ",
 			expected: "Λλ",
@@ -2317,7 +2318,7 @@ func TestApp_formatColumnName(t *testing.T) {
 			app: func() *App {
 				s := settings.New()
 				s.OutputFormat = settings.OutputFormatOriginal
-				return New(s, nil, nil)
+				return New(s, nil, nil, os.Stderr)
 			}(),
 			column:   "Λλ",
 			expected: "Λλ",
@@ -2325,14 +2326,14 @@ func TestApp_formatColumnName(t *testing.T) {
 		},
 		{
 			desc:     "semicolons returns error",
-			app:      New(settings.New(), nil, nil),
+			app:      New(settings.New(), nil, nil, os.Stderr),
 			column:   "MyColumn;",
 			expected: "",
 			isErr:    assert.Error,
 		},
 		{
 			desc:     "brackets returns error",
-			app:      New(settings.New(), nil, nil),
+			app:      New(settings.New(), nil, nil, os.Stderr),
 			column:   "MyColumn()",
 			expected: "",
 			isErr:    assert.Error,
