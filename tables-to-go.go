@@ -154,7 +154,7 @@ func printVersion(stderr io.Writer) {
 		for _, s := range info.Settings {
 			switch s.Key {
 			case "vcs.revision":
-				revision = s.Value[:8]
+				revision = s.Value[:min(8, len(s.Value))]
 			case "GOOS":
 				goOS = s.Value
 			case "GOARCH":
