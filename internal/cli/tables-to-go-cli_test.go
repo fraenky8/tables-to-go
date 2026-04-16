@@ -2117,74 +2117,232 @@ func TestReplaceSpace(t *testing.T) {
 func TestApp_formatColumnName(t *testing.T) {
 	t.Parallel()
 
-	t.Run("pass", func(t *testing.T) {
-		type testCase struct {
-			name     string
-			input    string
-			original string
-			camel    string
-		}
-		tests := []testCase{
-			{"startWithNumber", "1fish2fish", "X_1fish2fish", "X1fish2fish"},
-			{"containsSpaces", "my column\twith\nmany\u200bspaces", "My_column_with_many_spaces", "MyColumnWithManySpaces"},
-			{"titleCase", "MyColumn", "MyColumn", "MyColumn"},
-			{"snakeCase", "my_column", "My_column", "MyColumn"},
-			{"titleSnake", "My_Column", "My_Column", "MyColumn"},
-			{"numbersOnly", "123", "X_123", "X123"},
-			{"nonEnglish", "火", "火", "火"},
-			{"nonEnglishUpper", "Λλ", "Λλ", "Λλ"},
-		}
-
-		camelSettings := settings.New()
-		camelSettings.OutputFormat = settings.OutputFormatCamelCase
-		t.Run("camelcase", func(t *testing.T) {
-			app := New(camelSettings, nil, nil)
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					output, err := app.formatColumnName(tc.input, "MyTable")
-					if err != nil {
-						t.Error(err)
-					} else if output != tc.camel {
-						t.Errorf("camelcase format of %q = %q, expected %q", tc.input, output, tc.camel)
-					}
-				})
-			}
+	tests := []struct {
+		desc     string
+		app      *App
+		column   string
+		expected string
+		isErr    assert.ErrorAssertionFunc
+	}{
+		{
+			desc: "camel case startWithNumber",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				s.Verbose = true // for coverage
+				return New(s, nil, nil)
+			}(),
+			column:   "1fish2fish",
+			expected: "X1fish2fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case startWithNumber",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "1fish2fish",
+			expected: "X_1fish2fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case startWithNumberFollowedBySpace",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "1 fish",
+			expected: "X1_fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case startWithNumberFollowedBySpace",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "1 fish",
+			expected: "X_1_fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case containsSpaces",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "my column\twith\nmany\u200bspaces",
+			expected: "MyColumnWithManySpaces",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case containsSpaces",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "my column\twith\nmany\u200bspaces",
+			expected: "My_column_with_many_spaces",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case titleCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "MyColumn",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case titleCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "MyColumn",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case snakeCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "my_column",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case snakeCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "my_column",
+			expected: "My_column",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case titleSnake",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "My_Column",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case titleSnake",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "My_Column",
+			expected: "My_Column",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case numbersOnly",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "123",
+			expected: "X123",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case numbersOnly",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "123",
+			expected: "X_123",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case nonEnglish",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "火",
+			expected: "火",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case nonEnglish",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "火",
+			expected: "火",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case nonEnglishUpper",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil)
+			}(),
+			column:   "Λλ",
+			expected: "Λλ",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case nonEnglishUpper",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil)
+			}(),
+			column:   "Λλ",
+			expected: "Λλ",
+			isErr:    assert.NoError,
+		},
+		{
+			desc:     "semicolons returns error",
+			app:      New(settings.New(), nil, nil),
+			column:   "MyColumn;",
+			expected: "",
+			isErr:    assert.Error,
+		},
+		{
+			desc:     "brackets returns error",
+			app:      New(settings.New(), nil, nil),
+			column:   "MyColumn()",
+			expected: "",
+			isErr:    assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			actual, err := tt.app.formatColumnName(tt.column, "MyTable")
+			tt.isErr(t, err)
+			assert.Equal(t, tt.expected, actual)
 		})
-
-		originalSettings := settings.New()
-		originalSettings.OutputFormat = settings.OutputFormatOriginal
-		t.Run("original", func(t *testing.T) {
-			app := New(originalSettings, nil, nil)
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					output, err := app.formatColumnName(tc.input, "MyTable")
-					if err != nil {
-						t.Error(err)
-					} else if output != tc.original {
-						t.Errorf("originalCase format of %q = %q, expected %q", tc.input, output, tc.original)
-					}
-				})
-			}
-		})
-	})
-
-	t.Run("fail", func(t *testing.T) {
-		type testCase struct {
-			name  string
-			input string
-		}
-		tests := []testCase{
-			{"semicolons", "MyColumn;"},
-			{"brackets", "MyColumn()"},
-		}
-		app := New(settings.New(), nil, nil)
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				_, err := app.formatColumnName(tc.input, "MyTable")
-				if err == nil {
-					t.Errorf("formatColumnName(%q) should have thrown error but didn't", tc.input)
-				}
-			})
-		}
-	})
+	}
 }
