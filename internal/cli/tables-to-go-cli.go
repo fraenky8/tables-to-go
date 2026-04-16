@@ -369,7 +369,7 @@ func (app *App) formatColumnName(column, table string) (string, error) {
 			// avoid the Title'izing of the first non-digit character as done
 			// by cases.Caser. Eg: `1fish2fish` gets transformed to `X1Fish2fish`
 			// but we want `X1fish2fish`.
-			columnName = toInitialisms(column)
+			columnName = toInitialisms(strings.Map(replaceSpace, column))
 		}
 		if app.settings.Verbose {
 			app.printf("\t\t>column %q in table %q doesn't start with a letter; prepending with %q\n", column, table, prefix)
