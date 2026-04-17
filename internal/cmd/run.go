@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"syscall"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
@@ -55,7 +56,7 @@ type Args struct {
 
 // Run runs the command with the provided arguments and IO streams.
 func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) (err error) {
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	cmdArgs, err := NewArgs(args, stderr)

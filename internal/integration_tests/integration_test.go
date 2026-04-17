@@ -173,7 +173,7 @@ func TestMain(m *testing.M) {
 }
 
 func registerCleanupSignalHandler(ctx context.Context) context.Context {
-	signals := []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT}
+	signals := []os.Signal{os.Interrupt, syscall.SIGTERM}
 	done, stop := signal.NotifyContext(ctx, signals...)
 	go func() {
 		defer stop()
