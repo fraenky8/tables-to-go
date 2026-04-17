@@ -170,9 +170,7 @@ func Test_Run(t *testing.T) {
 			}(),
 			expectedStdout: "^$",
 			expectedStderr: "^$",
-			isErr: func(t assert.TestingT, err error, i ...any) bool {
-				return assert.ErrorContains(t, err, "could not connect to database")
-			},
+			isErr:          assert.Error,
 		},
 		{
 			desc: "run error prints running header",

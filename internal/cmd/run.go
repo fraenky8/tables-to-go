@@ -82,7 +82,7 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 	}
 
 	if err := c.db.Connect(ctx); err != nil {
-		return fmt.Errorf("could not connect to database: %w", err)
+		return err
 	}
 	defer func(db database.Database) {
 		if cErr := db.Close(); cErr != nil {

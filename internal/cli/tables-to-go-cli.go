@@ -45,7 +45,7 @@ func New(s *settings.Settings, db database.Database, out output.Writer, stderr i
 	}
 }
 
-// Run runs the transformations by creating the concrete Database by the provided settings
+// Run runs the transformations using the provided Database.
 func (app *App) Run(ctx context.Context) error {
 	app.printf("running for %q...\r\n", app.settings.DbType)
 
