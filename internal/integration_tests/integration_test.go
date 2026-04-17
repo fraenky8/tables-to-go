@@ -68,17 +68,8 @@ type testSettings struct {
 }
 
 func newMySQLSettings(version, path, testDirectory string) *testSettings {
-	s := settings.New()
-	s.DbType = settings.DBTypeMySQL
-	s.User = "root"
-	s.Pswd = "mysecretpassword"
-	s.DbName = "public"
-	s.Host = "localhost"
-	s.Port = "3306"
-	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
-
 	return &testSettings{
-		Settings:      s,
+		// Settings gets set per test case
 		filepath:      path,
 		testDirectory: testDirectory,
 		dockerImage:   "mysql",
@@ -90,26 +81,15 @@ func newMySQLSettings(version, path, testDirectory string) *testSettings {
 			"--sync_binlog=0",
 		},
 		env: []string{
-			"MYSQL_DATABASE=" + s.DbName,
-			"MYSQL_ROOT_PASSWORD=" + s.Pswd,
+			"MYSQL_DATABASE=public",
+			"MYSQL_ROOT_PASSWORD=mysecretpassword",
 		},
 	}
 }
 
 func newPostgresSettings(version, path, testDirectory string) *testSettings {
-	s := settings.New()
-	s.DbType = settings.DBTypePostgresql
-	s.User = "postgres"
-	s.Pswd = "mysecretpassword"
-	s.DbName = "postgres"
-	s.Schema = "public"
-	s.Host = "localhost"
-	s.Port = "5432"
-	s.SSLMode = "disable"
-	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
-
 	return &testSettings{
-		Settings:      s,
+		// Settings gets set per test case
 		filepath:      path,
 		testDirectory: testDirectory,
 		dockerImage:   "postgres",
@@ -122,21 +102,15 @@ func newPostgresSettings(version, path, testDirectory string) *testSettings {
 			"-c", "synchronous_commit=off",
 		},
 		env: []string{
-			"POSTGRES_DB=" + s.DbName,
-			"POSTGRES_PASSWORD=" + s.Pswd,
+			"POSTGRES_DB=postgres",
+			"POSTGRES_PASSWORD=mysecretpassword",
 		},
 	}
 }
 
-func newSQLiteSettings(path, testDirectory, params string) *testSettings {
-	s := settings.New()
-	s.DbType = settings.DBTypeSQLite
-	s.Schema = filepath.Join(path, "database.db") // Only used to keep track of the actual file name without any query params.
-	s.DbName = s.Schema + params
-	s.OutputFilePath = filepath.Join(path, testDirectory, outputDirectoryName)
-
+func newSQLiteSettings(path, testDirectory string) *testSettings {
 	return &testSettings{
-		Settings:      s,
+		// Settings gets set per test case
 		filepath:      path,
 		testDirectory: testDirectory,
 	}
@@ -325,7 +299,7 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 		},
 		{
 			desc:     "sqlite 3",
-			settings: newSQLiteSettings("sqlite3", testDirectory, ""),
+			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
@@ -396,12 +370,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 5",
-			settings: func() *testSettings {
-				s := newMySQLSettings("5", "mysql5", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "mysql 5",
+			settings: newMySQLSettings("5", "mysql5", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -417,12 +387,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -438,12 +404,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 10",
-			settings: func() *testSettings {
-				s := newPostgresSettings("10", "postgres", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "postgres 10",
+			settings: newPostgresSettings("10", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -461,12 +423,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 11",
-			settings: func() *testSettings {
-				s := newPostgresSettings("11", "postgres", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "postgres 11",
+			settings: newPostgresSettings("11", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -484,12 +442,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 12",
-			settings: func() *testSettings {
-				s := newPostgresSettings("12", "postgres", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "postgres 12",
+			settings: newPostgresSettings("12", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -507,12 +461,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 17",
-			settings: func() *testSettings {
-				s := newPostgresSettings("17", "postgres", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "postgres 17",
+			settings: newPostgresSettings("17", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -530,12 +480,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 18",
-			settings: func() *testSettings {
-				s := newPostgresSettings("18", "postgres", testDirectory)
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -553,12 +499,8 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "sqlite 3",
-			settings: func() *testSettings {
-				s := newSQLiteSettings("sqlite3", testDirectory, "")
-				s.Null = settings.NullTypePrimitive
-				return s
-			}(),
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
@@ -630,13 +572,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 5",
-			settings: func() *testSettings {
-				s := newMySQLSettings("5", "mysql5", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table"}
-				return s
-			}(),
+			desc:     "mysql 5",
+			settings: newMySQLSettings("5", "mysql5", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -655,13 +592,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table", "user"}
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -678,13 +610,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 10",
-			settings: func() *testSettings {
-				s := newPostgresSettings("10", "postgres", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
-				return s
-			}(),
+			desc:     "postgres 10",
+			settings: newPostgresSettings("10", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -705,13 +632,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 11",
-			settings: func() *testSettings {
-				s := newPostgresSettings("11", "postgres", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
-				return s
-			}(),
+			desc:     "postgres 11",
+			settings: newPostgresSettings("11", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -732,13 +654,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 12",
-			settings: func() *testSettings {
-				s := newPostgresSettings("12", "postgres", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
-				return s
-			}(),
+			desc:     "postgres 12",
+			settings: newPostgresSettings("12", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -759,13 +676,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 17",
-			settings: func() *testSettings {
-				s := newPostgresSettings("17", "postgres", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
-				return s
-			}(),
+			desc:     "postgres 17",
+			settings: newPostgresSettings("17", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -786,13 +698,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "postgres 18",
-			settings: func() *testSettings {
-				s := newPostgresSettings("18", "postgres", testDirectory)
-				// Note: int_table non-existing
-				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
-				return s
-			}(),
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "pg",
@@ -813,12 +720,8 @@ func TestIntegrationTablesFlag(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "sqlite 3",
-			settings: func() *testSettings {
-				s := newSQLiteSettings("sqlite3", testDirectory, "")
-				s.Tables = settings.StringsFlag{"numeric_table", "text_table", "strict_types"}
-				return s
-			}(),
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
@@ -892,16 +795,8 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.OutputFormat = settings.OutputFormatOriginal
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -984,16 +879,8 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.FileNameFormat = settings.FileNameFormatSnakeCase
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1076,16 +963,8 @@ func TestIntegrationPackageName(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.PackageName = "models"
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1168,16 +1047,8 @@ func TestIntegrationPrefix(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.Prefix = "Prefix_"
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1260,16 +1131,8 @@ func TestIntegrationSuffix(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.Suffix = "_Suffix"
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1352,17 +1215,8 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.Prefix = "Prefix_"
-				s.Suffix = "_Suffix"
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1446,13 +1300,8 @@ func TestIntegrationNoInitialism(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.NoInitialism = true
-				s.Tables = settings.StringsFlag{"user"}
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1531,16 +1380,8 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.TagsNoDb = true
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1623,16 +1464,8 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.TagsMastermindStructable = true
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1653,15 +1486,8 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc: "sqlite 3 with multi pk table",
-			settings: func() *testSettings {
-				s := newSQLiteSettings("sqlite3", testDirectory, "")
-				s.TagsMastermindStructable = true
-
-				s.Tables = settings.StringsFlag{"multi_pk_table"}
-
-				return s
-			}(),
+			desc:     "sqlite 3 with multi pk table",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
@@ -1736,16 +1562,8 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.TagsMastermindStructableOnly = true
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1828,17 +1646,8 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc: "mysql 8",
-			settings: func() *testSettings {
-				s := newMySQLSettings("8", "mysql8", testDirectory)
-				s.TagsMastermindStructableOnly = true
-				s.IsMastermindStructableRecorder = true
-
-				// Only set to reduce the amount of files
-				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "integer_table", "varchar_table", "user"}
-
-				return s
-			}(),
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
