@@ -30,9 +30,10 @@ type Cmd struct {
 }
 
 // New creates a Cmd.
-func New(info VersionInfo) Cmd {
+func New(info VersionInfo, db database.Database) Cmd {
 	return Cmd{
 		info: info,
+		db:   db,
 	}
 }
 
@@ -43,9 +44,10 @@ type VersionInfo struct {
 	BuildTimestamp string
 }
 
-// cmdArgs represents the supported command line args.
-type cmdArgs struct {
+// Args represents the supported command line args.
+type Args struct {
 	usage func()
+
 	*settings.Settings
 	Version bool
 	Help    bool
@@ -56,7 +58,7 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cmdArgs, err := newCmdArgs(args, stderr)
+	cmdArgs, err := NewArgs(args, stderr)
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 		return err
 	}
 
-	if c.db == nil { // Can only be set via UTs.
+	if c.db == nil {
 		c.db = database.New(cmdArgs.Settings)
 	}
 
@@ -103,16 +105,16 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 	return nil
 }
 
-// newCmdArgs creates and prepares the command line arguments with default values.
-func newCmdArgs(args []string, stderr io.Writer) (*cmdArgs, error) {
+// NewArgs creates and prepares the command line arguments with default values.
+func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 	if len(args) == 0 {
 		args = []string{"tables-to-go"}
 	}
 
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	fs.SetOutput(stderr) // key line
+	fs.SetOutput(stderr)
 
-	a := cmdArgs{
+	a := Args{
 		usage:    fs.Usage,
 		Settings: settings.New(),
 	}

@@ -22,7 +22,7 @@ func main() {
 		Revision:       revision,
 		VersionTag:     versionTag,
 		BuildTimestamp: buildTimestamp,
-	})
+	}, nil)
 
 	err := c.Run(ctx, os.Args, os.Stdout, os.Stderr)
 	if err != nil {

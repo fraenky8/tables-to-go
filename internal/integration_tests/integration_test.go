@@ -22,9 +22,8 @@ import (
 	"github.com/ory/dockertest/v4"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/fraenky8/tables-to-go/v2/internal/cli"
+	"github.com/fraenky8/tables-to-go/v2/internal/cmd"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
-	"github.com/fraenky8/tables-to-go/v2/pkg/output"
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
@@ -196,45 +195,158 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 	const testDirectory = "defaultsettings"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc:     "mysql 5",
 			settings: newMySQLSettings("5", "mysql5", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-of", filepath.Join("mysql5", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "mysql 8",
 			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "postgres 10",
 			settings: newPostgresSettings("10", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "postgres 11",
 			settings: newPostgresSettings("11", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "postgres 12",
 			settings: newPostgresSettings("12", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "postgres 17",
 			settings: newPostgresSettings("17", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "postgres 18",
 			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "sqlite 3",
 			settings: newSQLiteSettings("sqlite3", testDirectory, ""),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -244,7 +356,7 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -256,11 +368,17 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -271,8 +389,11 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 	const testDirectory = "nulltypeprimitive"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 5",
@@ -281,6 +402,19 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-null", "primitive",
+				"-of", filepath.Join("mysql5", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "mysql 8",
@@ -289,6 +423,19 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-null", "primitive",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 10",
@@ -297,6 +444,21 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-null", "primitive",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 11",
@@ -305,6 +467,21 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-null", "primitive",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 12",
@@ -313,6 +490,21 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-null", "primitive",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 17",
@@ -321,6 +513,21 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-null", "primitive",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 18",
@@ -329,6 +536,21 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-null", "primitive",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "sqlite 3",
@@ -337,11 +559,28 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				s.Null = settings.NullTypePrimitive
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-null", "primitive",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -351,7 +590,7 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -363,11 +602,17 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -378,8 +623,11 @@ func TestIntegrationTablesFlag(t *testing.T) {
 	const testDirectory = "tablesflag"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 5",
@@ -389,6 +637,22 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "int_table",
+				"-table", "varchar_table",
+				"-of", filepath.Join("mysql5", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "mysql 8",
@@ -398,6 +662,20 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"datetime_table", "float_table", "int_table", "varchar_table", "user"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-table", "datetime_table,float_table,int_table,varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 10",
@@ -407,6 +685,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-table", "date",
+				"-table", "float",
+				"-table", "int_table",
+				"-table", "varchar",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 11",
@@ -416,6 +712,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-table", "date",
+				"-table", "float",
+				"-table", "int_table",
+				"-table", "varchar",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 12",
@@ -425,6 +739,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-table", "date",
+				"-table", "float",
+				"-table", "int_table",
+				"-table", "varchar",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 17",
@@ -434,6 +766,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-table", "date",
+				"-table", "float",
+				"-table", "int_table",
+				"-table", "varchar",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "postgres 18",
@@ -443,6 +793,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"date", "float", "int_table", "varchar"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-table", "date",
+				"-table", "float",
+				"-table", "int_table",
+				"-table", "varchar",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc: "sqlite 3",
@@ -451,11 +819,30 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				s.Tables = settings.StringsFlag{"numeric_table", "text_table", "strict_types"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-table", "numeric_table",
+				"-table", "text_table",
+				"-table", "strict_types",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -465,7 +852,7 @@ func TestIntegrationTablesFlag(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -477,11 +864,17 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -492,8 +885,11 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 	const testDirectory = "outputformatoriginal"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -506,6 +902,24 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-format", "o",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -513,6 +927,14 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -522,7 +944,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -534,11 +956,17 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -549,8 +977,11 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 	const testDirectory = "filenameformatsnakecase"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -563,6 +994,24 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-fn-format", "s",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -570,6 +1019,14 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -579,7 +1036,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -591,11 +1048,17 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -606,8 +1069,11 @@ func TestIntegrationPackageName(t *testing.T) {
 	const testDirectory = "packagename"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -620,6 +1086,24 @@ func TestIntegrationPackageName(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-pn", "models",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -627,6 +1111,14 @@ func TestIntegrationPackageName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -636,7 +1128,7 @@ func TestIntegrationPackageName(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -648,11 +1140,17 @@ func TestIntegrationPackageName(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -663,8 +1161,11 @@ func TestIntegrationPrefix(t *testing.T) {
 	const testDirectory = "prefix"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -677,6 +1178,24 @@ func TestIntegrationPrefix(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-pre", "Prefix_",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -684,6 +1203,14 @@ func TestIntegrationPrefix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -693,7 +1220,7 @@ func TestIntegrationPrefix(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -705,11 +1232,17 @@ func TestIntegrationPrefix(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -720,8 +1253,11 @@ func TestIntegrationSuffix(t *testing.T) {
 	const testDirectory = "suffix"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -734,6 +1270,24 @@ func TestIntegrationSuffix(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-suf", "_Suffix",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -741,6 +1295,14 @@ func TestIntegrationSuffix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -750,7 +1312,7 @@ func TestIntegrationSuffix(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -762,11 +1324,17 @@ func TestIntegrationSuffix(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -777,8 +1345,11 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 	const testDirectory = "prefixsuffix"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -792,6 +1363,25 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-pre", "Prefix_",
+				"-suf", "_Suffix",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -799,6 +1389,14 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -808,7 +1406,7 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -820,11 +1418,17 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -835,8 +1439,11 @@ func TestIntegrationNoInitialism(t *testing.T) {
 	const testDirectory = "noinitialism"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -846,6 +1453,20 @@ func TestIntegrationNoInitialism(t *testing.T) {
 				s.Tables = settings.StringsFlag{"user"}
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-no-initialism",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -853,6 +1474,14 @@ func TestIntegrationNoInitialism(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -862,7 +1491,7 @@ func TestIntegrationNoInitialism(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -874,11 +1503,17 @@ func TestIntegrationNoInitialism(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -889,8 +1524,11 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 	const testDirectory = "tagsnodbflag"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -903,6 +1541,24 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags-no-db",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -910,6 +1566,14 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -919,7 +1583,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -931,11 +1595,17 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -946,8 +1616,11 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 	const testDirectory = "tagsmastermindstructable"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -960,6 +1633,24 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags-structable",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -967,6 +1658,14 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -976,7 +1675,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -988,11 +1687,17 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -1003,8 +1708,11 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 	const testDirectory = "tagsmastermindstructableonly"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -1017,6 +1725,24 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags-structable-only",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -1024,6 +1750,14 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -1033,7 +1767,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -1045,11 +1779,17 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -1060,8 +1800,11 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 	const testDirectory = "ismastermindstructablerecorder"
 
 	tests := []struct {
-		desc     string
-		settings *testSettings
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
 	}{
 		{
 			desc: "mysql 8",
@@ -1075,6 +1818,25 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 
 				return s
 			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags-structable-only",
+				"-structable-recorder",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
@@ -1082,6 +1844,14 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
 			db := setupDatabase(t, test.settings)
 			defer func() {
 				if !t.Failed() {
@@ -1091,7 +1861,7 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 
 			loadTestData(t, db.SQLDriver(), test.settings)
 
-			err := os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
 			if err != nil {
 				t.Fatalf("could not create output file path: %v", err)
 			}
@@ -1103,11 +1873,17 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 				t.Logf("running tests against database %s\n", version)
 			}
 
-			writer := output.NewFileWriter(test.settings.Settings.OutputFilePath)
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
 
-			app := cli.New(test.settings.Settings, db, writer, os.Stderr)
-			err = app.Run(t.Context())
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
 			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
 
 			checkFiles(t, test.settings)
 		})
@@ -1233,9 +2009,10 @@ func setupSQLite(t *testing.T, s *testSettings) database.Database {
 	if err != nil {
 		t.Fatalf("could not create sqlite: %v", err)
 	}
+
 	t.Cleanup(func() {
 		_ = db.Close()
-		err := os.Remove(s.Schema)
+		err := os.Remove(filepath.Join(s.filepath, "database.db"))
 		if err != nil {
 			t.Log(err)
 		}

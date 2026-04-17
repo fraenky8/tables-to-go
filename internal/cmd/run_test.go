@@ -70,7 +70,7 @@ func TestNewCmdArgs(t *testing.T) {
 	tests := []struct {
 		desc     string
 		args     []string
-		expected *cmdArgs
+		expected *Args
 		isErr    assert.ErrorAssertionFunc
 	}{
 		{
@@ -84,7 +84,7 @@ func TestNewCmdArgs(t *testing.T) {
 		{
 			desc: "empty args defaults to binary name",
 			args: []string{},
-			expected: &cmdArgs{
+			expected: &Args{
 				Settings: settings.New(),
 			},
 			isErr: assert.NoError,
@@ -92,7 +92,7 @@ func TestNewCmdArgs(t *testing.T) {
 		{
 			desc: "help flag is parsed",
 			args: []string{"tables-to-go", "-help"},
-			expected: &cmdArgs{
+			expected: &Args{
 				Settings: settings.New(),
 				Help:     true,
 			},
@@ -103,7 +103,7 @@ func TestNewCmdArgs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			var stderr bytes.Buffer
-			actual, err := newCmdArgs(test.args, &stderr)
+			actual, err := NewArgs(test.args, &stderr)
 			test.isErr(t, err)
 			if actual != nil {
 				actual.usage = nil
@@ -278,8 +278,7 @@ func Test_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			cmd := New(version)
-			cmd.db = tt.db
+			cmd := New(version, tt.db)
 
 			var stdout, stderr bytes.Buffer
 			err := cmd.Run(context.Background(), tt.args, &stdout, &stderr)
