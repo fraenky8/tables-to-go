@@ -107,7 +107,6 @@ func New(s *settings.Settings) Database {
 }
 
 // Connect establishes a connection to the database with the given DSN.
-// It pings the database to ensure it is reachable.
 func (gdb *GeneralDatabase) Connect(ctx context.Context, dsn string) (err error) {
 	gdb.DB, err = sqlx.ConnectContext(ctx, gdb.driver, dsn)
 	if err != nil {
@@ -115,13 +114,17 @@ func (gdb *GeneralDatabase) Connect(ctx context.Context, dsn string) (err error)
 		if gdb.Settings.Pswd != "" {
 			usingPswd = "yes"
 		}
+		// Yes, sqlx can return a non-nil and connected DB (but failed ping'ed)
+		// in case of a ping error. Hence, lets try to close it.
+		_ = gdb.Close()
+
 		return fmt.Errorf(
 			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %w",
 			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
 		)
 	}
 
-	return gdb.PingContext(ctx)
+	return nil
 }
 
 // SQLDriver returns the underlying SQL driver
@@ -131,7 +134,12 @@ func (gdb *GeneralDatabase) SQLDriver() *sqlx.DB {
 
 // Close closes the database connection.
 func (gdb *GeneralDatabase) Close() error {
-	return gdb.DB.Close()
+	if gdb.DB != nil {
+		err := gdb.DB.Close()
+		gdb.DB = nil
+		return err
+	}
+	return nil
 }
 
 // IsNullable returns true if the column is a nullable column.
