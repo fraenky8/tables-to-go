@@ -1652,6 +1652,27 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
+		{
+			desc: "sqlite 3 with multi pk table",
+			settings: func() *testSettings {
+				s := newSQLiteSettings("sqlite3", testDirectory, "")
+				s.TagsMastermindStructable = true
+
+				s.Tables = settings.StringsFlag{"multi_pk_table"}
+
+				return s
+			}(),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-tags-structable",
+				"-table", "multi_pk_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
 	}

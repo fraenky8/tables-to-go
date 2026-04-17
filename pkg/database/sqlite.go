@@ -133,7 +133,7 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 		}
 
 		isPrimaryKey := ""
-		if columns[i].PrimaryKey == 1 {
+		if columns[i].PrimaryKey > 0 {
 			isPrimaryKey = "PK"
 		}
 
