@@ -18,7 +18,9 @@ import (
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
-const legacyTagsDeprecationWarning = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+const (
+	legacyTagsDeprecationWarning = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+)
 
 var (
 	// ErrFlagParse is returned in case the parsing of flags returns an error.

@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Special Tags
 const (
 	TagDB         = "db"
 	TagStructable = "structable"

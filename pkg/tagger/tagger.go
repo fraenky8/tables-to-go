@@ -8,14 +8,6 @@ import (
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
-const (
-	tagsDisabled = 0
-
-	// number is an ascending sequence of i*2 to determine which tags to generate later
-	tagDb         = 1
-	tagMastermind = 2
-)
-
 var stringPool = sync.Pool{
 	New: func() any {
 		return new(strings.Builder)
@@ -29,42 +21,26 @@ type Tagger interface {
 
 // Taggers represents the supported tags to generate.
 type Taggers struct {
-	settings *settings.Settings
-
-	taggers     map[int]Tagger
-	enabledTags int
+	taggers []Tagger
 }
 
 // NewTaggers is the constructor function to create the supported taggers.
 func NewTaggers(s *settings.Settings) *Taggers {
-	t := &Taggers{
-		settings:    s,
-		enabledTags: tagDb,
-		taggers: map[int]Tagger{
-			tagDb:         new(Db),
-			tagMastermind: new(Mastermind),
-		},
-	}
+	resolved := s.ResolveTags()
 
-	t.enableTags()
+	t := &Taggers{taggers: make([]Tagger, 0, len(resolved.Tags))}
+	for _, tag := range resolved.Tags {
+		switch tag {
+		case settings.TagDB:
+			t.taggers = append(t.taggers, new(Db))
+		case settings.TagStructable:
+			t.taggers = append(t.taggers, new(Mastermind))
+		default:
+			t.taggers = append(t.taggers, NewGeneric(tag))
+		}
+	}
 
 	return t
-}
-
-// enableTags enables the tags to generate as given by the settings.
-// If multiple, standalone tags where specified (the ones with "only" in their names),
-// the last specified standalone tag wins.
-func (t *Taggers) enableTags() {
-	if t.settings.TagsNoDb {
-		t.enabledTags = tagsDisabled
-	}
-	if t.settings.TagsMastermindStructable {
-		t.enabledTags |= tagMastermind
-	}
-	if t.settings.TagsMastermindStructableOnly {
-		t.enabledTags = tagsDisabled
-		t.enabledTags |= tagMastermind
-	}
 }
 
 // GenerateTag creates based on the enabled tags and the given database and column
@@ -76,12 +52,14 @@ func (t *Taggers) GenerateTag(db database.Database, column database.Column) (tag
 		stringPool.Put(sb)
 	}()
 
-	for bit := 1; bit <= t.enabledTags; bit *= 2 {
-		shouldTag := t.enabledTags&bit > 0
-		if shouldTag {
-			sb.WriteString(t.taggers[bit].GenerateTag(db, column))
-			sb.WriteString(" ")
+	for i := range t.taggers {
+		tag := t.taggers[i].GenerateTag(db, column)
+		if tag == "" {
+			continue
 		}
+
+		sb.WriteString(tag)
+		sb.WriteString(" ")
 	}
 
 	tags = sb.String()
