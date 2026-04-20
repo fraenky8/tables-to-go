@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"slices"
@@ -24,13 +25,13 @@ var (
 type Database interface {
 	SQLDriver() *sqlx.DB
 	DSN() (string, error)
-	Connect() error
+	Connect(ctx context.Context) error
 	Close() error
-	Version() (string, error)
+	Version(ctx context.Context) (string, error)
 
-	GetTables(tables ...string) ([]*Table, error)
-	PrepareGetColumnsOfTableStmt() error
-	GetColumnsOfTable(table *Table) error
+	GetTables(ctx context.Context, tables ...string) ([]*Table, error)
+	PrepareGetColumnsOfTableStmt(ctx context.Context) error
+	GetColumnsOfTable(ctx context.Context, table *Table) error
 
 	IsPrimaryKey(column Column) bool
 	IsAutoIncrement(column Column) bool
@@ -63,27 +64,27 @@ type Table struct {
 
 // Column stores information about a column.
 type Column struct {
-	OrdinalPosition        int            `db:"ordinal_position"`
 	Name                   string         `db:"column_name"`
 	DataType               string         `db:"data_type"`
-	DefaultValue           sql.NullString `db:"column_default"`
 	IsNullable             string         `db:"is_nullable"`
-	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
-	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
-	ColumnKey              string         `db:"column_key"`      // mysql specific
-	Extra                  string         `db:"extra"`           // mysql specific
+	ColumnKey              string         `db:"column_key"` // mysql specific
+	Extra                  string         `db:"extra"`      // mysql specific
+	DefaultValue           sql.NullString `db:"column_default"`
 	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific
+	CharacterMaximumLength sql.NullInt64  `db:"character_maximum_length"`
+	NumericPrecision       sql.NullInt64  `db:"numeric_precision"`
+	OrdinalPosition        int            `db:"ordinal_position"`
 }
 
 // GeneralDatabase represents a base "class" database - for all other concrete
 // databases it implements partly the Database interface.
 type GeneralDatabase struct {
 	GetColumnsOfTableStmt *sqlx.Stmt
-	driver                string
-
 	*settings.Settings
 	*sqlx.DB
+
+	driver string
 }
 
 // New creates a new Database based on the given type in the settings.
@@ -106,21 +107,24 @@ func New(s *settings.Settings) Database {
 }
 
 // Connect establishes a connection to the database with the given DSN.
-// It pings the database to ensure it is reachable.
-func (gdb *GeneralDatabase) Connect(dsn string) (err error) {
-	gdb.DB, err = sqlx.Connect(gdb.driver, dsn)
+func (gdb *GeneralDatabase) Connect(ctx context.Context, dsn string) (err error) {
+	gdb.DB, err = sqlx.ConnectContext(ctx, gdb.driver, dsn)
 	if err != nil {
 		usingPswd := "no"
 		if gdb.Settings.Pswd != "" {
 			usingPswd = "yes"
 		}
+		// Yes, sqlx can return a non-nil and connected DB (but failed ping'ed)
+		// in case of a ping error. Hence, lets try to close it.
+		_ = gdb.Close()
+
 		return fmt.Errorf(
 			"could not connect to database (type=%q, user=%q, database=%q, host='%v:%v', using password: %v): %w",
 			gdb.DbType, gdb.User, gdb.DbName, gdb.Host, gdb.Port, usingPswd, err,
 		)
 	}
 
-	return gdb.Ping()
+	return nil
 }
 
 // SQLDriver returns the underlying SQL driver
@@ -130,7 +134,12 @@ func (gdb *GeneralDatabase) SQLDriver() *sqlx.DB {
 
 // Close closes the database connection.
 func (gdb *GeneralDatabase) Close() error {
-	return gdb.DB.Close()
+	if gdb.DB != nil {
+		err := gdb.DB.Close()
+		gdb.DB = nil
+		return err
+	}
+	return nil
 }
 
 // IsNullable returns true if the column is a nullable column.

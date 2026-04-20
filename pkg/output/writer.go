@@ -34,7 +34,7 @@ func NewFileWriter(path string) *FileWriter {
 
 // Write is the implementation of the Writer interface. The FilerWriter writes
 // decorated content to the file specified by the given path and table name.
-func (w FileWriter) Write(tableName string, content string) error {
+func (w FileWriter) Write(tableName, content string) error {
 	fileName := path.Join(w.path, tableName+FileWriterExtension)
 
 	decorated, err := w.decorate(content)

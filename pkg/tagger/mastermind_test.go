@@ -55,7 +55,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name,PRIMARY_KEY"`,
 			},
 			{
-				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
+				desc: "PK and autoincrement column generates Mastermind-tag with PK and autoincrement indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
 					s.DbType = settings.DBTypePostgresql
@@ -108,7 +108,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name,PRIMARY_KEY"`,
 			},
 			{
-				desc: "PK and AI column generates Mastermind-tag with PK and AI indicator",
+				desc: "PK and autoincrement column generates Mastermind-tag with PK and autoincrement indicator",
 				settings: func() *settings.Settings {
 					s := settings.New()
 					s.DbType = settings.DBTypeMySQL
@@ -140,7 +140,23 @@ func TestMastermind_GenerateTag(t *testing.T) {
 				expected: `stbl:"column_name"`,
 			},
 			{
-				desc: "PK column generates Mastermind-tag with PK indicator and AI indicator",
+				desc: "PK column with autoincrement flag generates Mastermind-tag with PK indicator and autoincrement indicator",
+				settings: func() *settings.Settings {
+					s := settings.New()
+					s.DbType = settings.DBTypeSQLite
+					s.TagsNoDb = true
+					s.TagsMastermindStructable = true
+					return s
+				},
+				column: database.Column{
+					Name:      "column_name",
+					ColumnKey: "PK",
+					Extra:     "auto_increment",
+				},
+				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
+			},
+			{
+				desc: "PK column without autoincrement flag generates Mastermind-tag with PK indicator only",
 				settings: func() *settings.Settings {
 					s := settings.New()
 					s.DbType = settings.DBTypeSQLite
@@ -152,7 +168,7 @@ func TestMastermind_GenerateTag(t *testing.T) {
 					Name:      "column_name",
 					ColumnKey: "PK",
 				},
-				expected: `stbl:"column_name,PRIMARY_KEY,SERIAL,AUTO_INCREMENT"`,
+				expected: `stbl:"column_name,PRIMARY_KEY"`,
 			},
 		},
 	}

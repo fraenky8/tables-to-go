@@ -31,8 +31,8 @@ type Tagger interface {
 type Taggers struct {
 	settings *settings.Settings
 
-	enabledTags int
 	taggers     map[int]Tagger
+	enabledTags int
 }
 
 // NewTaggers is the constructor function to create the supported taggers.

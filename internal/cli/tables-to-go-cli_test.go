@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +10,10 @@ import (
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
+)
+
+const (
+	anyCtx = mock.Anything
 )
 
 type mockDB struct {
@@ -19,8 +25,8 @@ func newMockDB(db database.Database) *mockDB {
 	return &mockDB{Database: db}
 }
 
-func (db *mockDB) Connect() error {
-	args := db.Called()
+func (db *mockDB) Connect(ctx context.Context) error {
+	args := db.Called(ctx)
 	return args.Error(0)
 }
 
@@ -29,12 +35,17 @@ func (db *mockDB) Close() error {
 	return args.Error(0)
 }
 
-func (db *mockDB) GetTables(tables ...string) ([]*database.Table, error) {
+func (db *mockDB) GetTables(ctx context.Context, tables ...string) ([]*database.Table, error) {
 	var args mock.Arguments
 	if len(tables) == 0 {
-		args = db.Called()
+		args = db.Called(ctx)
 	} else {
-		args = db.Called(tables)
+		callArgs := make([]any, 0, len(tables)+1)
+		callArgs = append(callArgs, ctx)
+		for i := range tables {
+			callArgs = append(callArgs, tables[i])
+		}
+		args = db.Called(callArgs...)
 	}
 	err := args.Error(1)
 	if err != nil {
@@ -43,13 +54,13 @@ func (db *mockDB) GetTables(tables ...string) ([]*database.Table, error) {
 	return args.Get(0).([]*database.Table), nil
 }
 
-func (db *mockDB) PrepareGetColumnsOfTableStmt() error {
-	args := db.Called()
+func (db *mockDB) PrepareGetColumnsOfTableStmt(ctx context.Context) error {
+	args := db.Called(ctx)
 	return args.Error(0)
 }
 
-func (db *mockDB) GetColumnsOfTable(table *database.Table) error {
-	args := db.Called(table)
+func (db *mockDB) GetColumnsOfTable(ctx context.Context, table *database.Table) error {
+	args := db.Called(ctx, table)
 	return args.Error(0)
 }
 
@@ -66,7 +77,9 @@ func (w *mockWriter) Write(tableName, content string) error {
 	return args.Error(0)
 }
 
-func TestCamelCaseString(t *testing.T) {
+func TestApp_camelCaseString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		desc     string
 		input    string
@@ -90,7 +103,8 @@ func TestCamelCaseString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			actual := camelCaseString(tt.input)
+			app := New(settings.New(), nil, nil, os.Stderr)
+			actual := app.camelCaseString(tt.input)
 			assert.Equal(t, tt.expected, actual, "test case input: "+tt.input)
 		})
 	}
@@ -153,7 +167,9 @@ func TestToInitialisms(t *testing.T) {
 	}
 }
 
-func TestRun_StringTextColumns(t *testing.T) {
+func TestApp_Run_StringTextColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -183,13 +199,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -201,7 +217,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -223,13 +241,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -241,7 +259,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -264,13 +284,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -282,7 +302,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -309,13 +331,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -327,7 +349,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -355,13 +379,13 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -373,7 +397,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -416,16 +442,16 @@ func TestRun_StringTextColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -444,7 +470,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -453,7 +481,9 @@ func TestRun_StringTextColumns(t *testing.T) {
 	}
 }
 
-func TestRun_IntegerColumns(t *testing.T) {
+func TestApp_Run_IntegerColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -483,13 +513,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -501,7 +531,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -523,13 +555,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -541,7 +573,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -564,13 +598,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -582,7 +616,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -609,13 +645,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -627,7 +663,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -655,13 +693,13 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -673,7 +711,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -716,16 +756,16 @@ func TestRun_IntegerColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -744,7 +784,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -753,7 +795,9 @@ func TestRun_IntegerColumns(t *testing.T) {
 	}
 }
 
-func TestRun_FloatColumns(t *testing.T) {
+func TestApp_Run_FloatColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -783,13 +827,13 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -801,7 +845,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -823,13 +869,13 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -841,7 +887,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -864,13 +912,13 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -882,7 +930,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -909,13 +959,13 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -927,7 +977,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -955,13 +1007,13 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -973,7 +1025,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1016,16 +1070,16 @@ func TestRun_FloatColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1044,7 +1098,9 @@ func TestRun_FloatColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1053,7 +1109,9 @@ func TestRun_FloatColumns(t *testing.T) {
 	}
 }
 
-func TestRun_TemporalColumns(t *testing.T) {
+func TestApp_Run_TemporalColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1083,13 +1141,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1101,7 +1159,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1123,13 +1183,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1141,7 +1201,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1164,13 +1226,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1182,7 +1244,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1209,13 +1273,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1227,7 +1291,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1255,13 +1321,13 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1273,7 +1339,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1316,16 +1384,16 @@ func TestRun_TemporalColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1344,7 +1412,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1353,7 +1423,9 @@ func TestRun_TemporalColumns(t *testing.T) {
 	}
 }
 
-func TestRun_BooleanColumns(t *testing.T) {
+func TestApp_Run_BooleanColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1383,13 +1455,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1401,7 +1473,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1423,13 +1497,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1441,7 +1515,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1464,13 +1540,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1482,7 +1558,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1509,13 +1587,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1527,7 +1605,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1555,13 +1635,13 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1573,7 +1653,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1616,16 +1698,16 @@ func TestRun_BooleanColumns(t *testing.T) {
 
 						mdb := newMockDB(db)
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1644,7 +1726,9 @@ func TestRun_BooleanColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1654,6 +1738,8 @@ func TestRun_BooleanColumns(t *testing.T) {
 }
 
 func TestRun_UnknownColumns(t *testing.T) {
+	t.Parallel()
+
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 
@@ -1685,15 +1771,15 @@ func TestRun_UnknownColumns(t *testing.T) {
 								},
 							},
 						}
-						//
+
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1705,7 +1791,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1728,13 +1816,13 @@ func TestRun_UnknownColumns(t *testing.T) {
 						}
 						//
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1746,7 +1834,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1770,13 +1860,13 @@ func TestRun_UnknownColumns(t *testing.T) {
 						}
 						//
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1788,7 +1878,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1816,13 +1908,13 @@ func TestRun_UnknownColumns(t *testing.T) {
 						}
 						//
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1834,7 +1926,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1863,13 +1957,13 @@ func TestRun_UnknownColumns(t *testing.T) {
 						}
 						//
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table).
+							On("GetColumnsOfTable", anyCtx, table).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1881,7 +1975,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 
@@ -1925,16 +2021,16 @@ func TestRun_UnknownColumns(t *testing.T) {
 						}
 
 						mdb.
-							On("GetTables").
+							On("GetTables", anyCtx).
 							Return([]*database.Table{table1, table2}, nil)
 						mdb.
-							On("PrepareGetColumnsOfTableStmt").
+							On("PrepareGetColumnsOfTableStmt", anyCtx).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table1).
+							On("GetColumnsOfTable", anyCtx, table1).
 							Return(nil)
 						mdb.
-							On("GetColumnsOfTable", table2).
+							On("GetColumnsOfTable", anyCtx, table2).
 							Return(nil)
 
 						w := newMockWriter()
@@ -1953,7 +2049,9 @@ func TestRun_UnknownColumns(t *testing.T) {
 							).
 							Return(nil)
 
-						err := Run(s, mdb, w)
+						app := New(s, mdb, w, os.Stderr)
+
+						err := app.Run(t.Context())
 						assert.NoError(t, err)
 					})
 				})
@@ -1971,6 +2069,7 @@ func TestValidVariableName(t *testing.T) {
 		expected bool
 	}
 	tests := []testCase{
+		{"empty", "", false},
 		{"basic", "MyVariable_2", true},
 		{"specialChars", "MyVar;iable", false},
 		{"brackets", "MyVariabl(e)", false},
@@ -2016,75 +2115,235 @@ func TestReplaceSpace(t *testing.T) {
 	}
 }
 
-func TestFormatColumnName(t *testing.T) {
+func TestApp_formatColumnName(t *testing.T) {
 	t.Parallel()
 
-	t.Run("pass", func(t *testing.T) {
-		type testCase struct {
-			name     string
-			input    string
-			original string
-			camel    string
-		}
-		tests := []testCase{
-			{"startWithNumber", "1fish2fish", "X_1fish2fish", "X1fish2fish"},
-			{"containsSpaces", "my column\twith\nmany\u200bspaces", "My_column_with_many_spaces", "MyColumnWithManySpaces"},
-			{"titleCase", "MyColumn", "MyColumn", "MyColumn"},
-			{"snakeCase", "my_column", "My_column", "MyColumn"},
-			{"titleSnake", "My_Column", "My_Column", "MyColumn"},
-			{"numbersOnly", "123", "X_123", "X123"},
-			{"nonEnglish", "火", "火", "火"},
-			{"nonEnglishUpper", "Λλ", "Λλ", "Λλ"},
-		}
-
-		camelSettings := settings.New()
-		camelSettings.OutputFormat = settings.OutputFormatCamelCase
-		t.Run("camelcase", func(t *testing.T) {
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					output, err := formatColumnName(camelSettings, tc.input, "MyTable")
-					if err != nil {
-						t.Error(err)
-					} else if output != tc.camel {
-						t.Errorf("camelcase format of %q = %q, expected %q", tc.input, output, tc.camel)
-					}
-				})
-			}
+	tests := []struct {
+		desc     string
+		app      *App
+		column   string
+		expected string
+		isErr    assert.ErrorAssertionFunc
+	}{
+		{
+			desc: "camel case startWithNumber",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				s.Verbose = true // for coverage
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "1fish2fish",
+			expected: "X1fish2fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case startWithNumber",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "1fish2fish",
+			expected: "X_1fish2fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case startWithNumberFollowedBySpace",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "1 fish",
+			expected: "X1_fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case startWithNumberFollowedBySpace",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "1 fish",
+			expected: "X_1_fish",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case containsSpaces",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "my column\twith\nmany\u200bspaces",
+			expected: "MyColumnWithManySpaces",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case containsSpaces",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "my column\twith\nmany\u200bspaces",
+			expected: "My_column_with_many_spaces",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case titleCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "MyColumn",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case titleCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "MyColumn",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case snakeCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "my_column",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case snakeCase",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "my_column",
+			expected: "My_column",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case titleSnake",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "My_Column",
+			expected: "MyColumn",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case titleSnake",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "My_Column",
+			expected: "My_Column",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case numbersOnly",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "123",
+			expected: "X123",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case numbersOnly",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "123",
+			expected: "X_123",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case nonEnglish",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "火",
+			expected: "火",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case nonEnglish",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "火",
+			expected: "火",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "camel case nonEnglishUpper",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatCamelCase
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "Λλ",
+			expected: "Λλ",
+			isErr:    assert.NoError,
+		},
+		{
+			desc: "original case nonEnglishUpper",
+			app: func() *App {
+				s := settings.New()
+				s.OutputFormat = settings.OutputFormatOriginal
+				return New(s, nil, nil, os.Stderr)
+			}(),
+			column:   "Λλ",
+			expected: "Λλ",
+			isErr:    assert.NoError,
+		},
+		{
+			desc:     "semicolons returns error",
+			app:      New(settings.New(), nil, nil, os.Stderr),
+			column:   "MyColumn;",
+			expected: "",
+			isErr:    assert.Error,
+		},
+		{
+			desc:     "brackets returns error",
+			app:      New(settings.New(), nil, nil, os.Stderr),
+			column:   "MyColumn()",
+			expected: "",
+			isErr:    assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			actual, err := tt.app.formatColumnName(tt.column, "MyTable")
+			tt.isErr(t, err)
+			assert.Equal(t, tt.expected, actual)
 		})
-
-		originalSettings := settings.New()
-		originalSettings.OutputFormat = settings.OutputFormatOriginal
-		t.Run("original", func(t *testing.T) {
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					output, err := formatColumnName(originalSettings, tc.input, "MyTable")
-					if err != nil {
-						t.Error(err)
-					} else if output != tc.original {
-						t.Errorf("originalCase format of %q = %q, expected %q", tc.input, output, tc.original)
-					}
-				})
-			}
-		})
-	})
-
-	t.Run("fail", func(t *testing.T) {
-		type testCase struct {
-			name  string
-			input string
-		}
-		tests := []testCase{
-			{"semicolons", "MyColumn;"},
-			{"brackets", "MyColumn()"},
-		}
-		s := settings.New()
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				_, err := formatColumnName(s, tc.input, "MyTable")
-				if err == nil {
-					t.Errorf("formatColumnName(%q) should have thrown error but didn't", tc.input)
-				}
-			})
-		}
-	})
+	}
 }

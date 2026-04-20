@@ -1,15 +1,22 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 
 	// sqlite3 database driver
 	_ "modernc.org/sqlite"
+)
+
+const (
+	// flag to be used to indicate that this column is the one and only auto-increment one.
+	autoincrementFlag = "auto_increment"
 )
 
 // SQLite implements the Database interface with help of GeneralDatabase.
@@ -29,12 +36,12 @@ func NewSQLite(s *settings.Settings) *SQLite {
 
 // Connect connects to the database by the given data source name (dsn) of the
 // concrete database.
-func (s *SQLite) Connect() error {
+func (s *SQLite) Connect(ctx context.Context) error {
 	dsn, err := s.DSN()
 	if err != nil {
 		return err
 	}
-	return s.GeneralDatabase.Connect(dsn)
+	return s.GeneralDatabase.Connect(ctx, dsn)
 }
 
 // DSN creates the DSN String to connect to this database.
@@ -52,9 +59,9 @@ func (s *SQLite) DSN() (string, error) {
 }
 
 // Version reports the actual version of the Sqlite database.
-func (s *SQLite) Version() (string, error) {
+func (s *SQLite) Version(ctx context.Context) (string, error) {
 	var version string
-	err := s.Get(&version, `SELECT sqlite_version()`)
+	err := s.GetContext(ctx, &version, `SELECT sqlite_version()`)
 	if err != nil {
 		return "", err
 	}
@@ -62,13 +69,13 @@ func (s *SQLite) Version() (string, error) {
 }
 
 // GetTables gets all tables for a given database by name.
-func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
+func (s *SQLite) GetTables(ctx context.Context, tables ...string) ([]*Table, error) {
 
 	var args []any
 	in := s.andInClause("name", tables, &args)
 
 	var dbTables []*Table
-	err := s.Select(&dbTables, `
+	err := s.SelectContext(ctx, &dbTables, `
 		SELECT name AS table_name
 		FROM sqlite_master
 		WHERE type = 'table'
@@ -78,8 +85,8 @@ func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
 	if s.Verbose {
 		if err != nil {
-			fmt.Println("> Error at GetTables()")
-			fmt.Printf("> database: %q\r\n", s.DbName)
+			fmt.Fprintln(os.Stderr, "> Error at GetTables()")
+			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
 		}
 	}
 
@@ -88,66 +95,77 @@ func (s *SQLite) GetTables(tables ...string) ([]*Table, error) {
 
 // PrepareGetColumnsOfTableStmt prepares the statement for retrieving the
 // columns of a specific table for a given database. Unused in Sqlite.
-func (s *SQLite) PrepareGetColumnsOfTableStmt() (err error) {
+func (s *SQLite) PrepareGetColumnsOfTableStmt(context.Context) error {
 	return nil
 }
 
 // GetColumnsOfTable executes the statement for retrieving the columns of a
 // specific table for a given database.
-func (s *SQLite) GetColumnsOfTable(table *Table) (err error) {
+func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
+	type column struct {
+		Name         string         `db:"name"`
+		DataType     string         `db:"type"`
+		DefaultValue sql.NullString `db:"dflt_value"`
+		CID          int            `db:"cid"`
+		NotNull      int            `db:"notnull"`
+		PrimaryKey   int            `db:"pk"`
+	}
 
-	rows, err := s.Queryx(`
+	var columns []column
+	err := s.SelectContext(ctx, &columns, `
 		SELECT * 
-		FROM PRAGMA_TABLE_INFO('` + table.Name + `')
-	`)
+		FROM PRAGMA_TABLE_INFO(?)
+	`, table.Name)
 	if err != nil {
 		if s.Verbose {
-			fmt.Printf("> Error at GetColumnsOfTable(%v)\r\n", table.Name)
-			fmt.Printf("> database: %q\r\n", s.DbName)
+			fmt.Fprintf(os.Stderr, "> Error at GetColumnsOfTable(%v)\r\n", table.Name)
+			fmt.Fprintf(os.Stderr, "> database: %q\r\n", s.DbName)
 		}
 		return err
 	}
 
-	type column struct {
-		CID          int            `db:"cid"`
-		Name         string         `db:"name"`
-		DataType     string         `db:"type"`
-		NotNull      int            `db:"notnull"`
-		DefaultValue sql.NullString `db:"dflt_value"`
-		PrimaryKey   int            `db:"pk"`
-	}
-
-	for rows.Next() {
-		var col column
-		err = rows.StructScan(&col)
-		if err != nil {
-			return err
+	var (
+		pkCount, pkCandidate int
+	)
+	table.Columns = make([]Column, 0, len(columns))
+	for i := range columns {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
 
 		isNullable := "YES"
-		if col.NotNull == 1 {
+		if columns[i].NotNull == 1 {
 			isNullable = "NO"
 		}
 
 		isPrimaryKey := ""
-		if col.PrimaryKey == 1 {
+		if columns[i].PrimaryKey > 0 {
+			pkCount++
+			pkCandidate = i
 			isPrimaryKey = "PK"
 		}
 
 		table.Columns = append(table.Columns, Column{
-			OrdinalPosition:        col.CID,
-			Name:                   col.Name,
-			DataType:               strings.ToLower(col.DataType),
-			DefaultValue:           col.DefaultValue,
+			OrdinalPosition:        columns[i].CID,
+			Name:                   columns[i].Name,
+			DataType:               strings.ToLower(columns[i].DataType),
+			DefaultValue:           columns[i].DefaultValue,
 			IsNullable:             isNullable,
 			CharacterMaximumLength: sql.NullInt64{},
 			NumericPrecision:       sql.NullInt64{},
 			// reuse mysql column_key as primary key indicator
 			ColumnKey:      isPrimaryKey,
-			Extra:          "",
 			ConstraintName: sql.NullString{},
 			ConstraintType: sql.NullString{},
 		})
+	}
+
+	// We have one and only one PK and if it's INTEGER we treat it as our
+	// autoincrement column without double-checking `sqlite_sequence`.
+	if pkCount == 1 && table.Columns[pkCandidate].DataType == "integer" {
+		table.Columns[pkCandidate].Extra = autoincrementFlag
 	}
 
 	return nil
@@ -160,7 +178,7 @@ func (s *SQLite) IsPrimaryKey(column Column) bool {
 
 // IsAutoIncrement checks if the column is an auto_increment column.
 func (s *SQLite) IsAutoIncrement(column Column) bool {
-	return column.ColumnKey == "PK"
+	return column.Extra == autoincrementFlag
 }
 
 // GetStringDatatypes returns the string datatypes for the SQLite database.
