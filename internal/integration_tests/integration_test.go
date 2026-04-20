@@ -1486,14 +1486,14 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc:     "sqlite 3 with multi pk table",
+			desc:     "sqlite 3 with pk tables",
 			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
 				"-d", filepath.Join("sqlite3", "database.db"),
 				"-tags-structable",
-				"-table", "multi_pk_table",
+				"-table", "single_pk_implicit_autoincrement_table,single_pk_explicit_autoincrement_table,single_pk_text_table,multi_int_pk_table,multi_text_pk_table",
 				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",

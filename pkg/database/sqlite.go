@@ -14,6 +14,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const (
+	// flag to be used to indicate that this column is the one and only auto-increment one.
+	autoincrementFlag = "auto_increment"
+)
+
 // SQLite implements the Database interface with help of GeneralDatabase.
 type SQLite struct {
 	*GeneralDatabase
@@ -119,6 +124,9 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 		return err
 	}
 
+	var (
+		pkCount, pkCandidate int
+	)
 	table.Columns = make([]Column, 0, len(columns))
 	for i := range columns {
 		select {
@@ -134,6 +142,8 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 
 		isPrimaryKey := ""
 		if columns[i].PrimaryKey > 0 {
+			pkCount++
+			pkCandidate = i
 			isPrimaryKey = "PK"
 		}
 
@@ -152,6 +162,12 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 		})
 	}
 
+	// We have one and only one PK and if it's INTEGER we treat it as our
+	// autoincrement column without double-checking `sqlite_sequence`.
+	if pkCount == 1 && table.Columns[pkCandidate].DataType == "integer" {
+		table.Columns[pkCandidate].Extra = autoincrementFlag
+	}
+
 	return nil
 }
 
@@ -162,7 +178,7 @@ func (s *SQLite) IsPrimaryKey(column Column) bool {
 
 // IsAutoIncrement checks if the column is an auto_increment column.
 func (s *SQLite) IsAutoIncrement(column Column) bool {
-	return column.ColumnKey == "PK"
+	return column.Extra == autoincrementFlag
 }
 
 // GetStringDatatypes returns the string datatypes for the SQLite database.
