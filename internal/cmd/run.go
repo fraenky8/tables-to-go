@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"syscall"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
@@ -19,7 +20,8 @@ import (
 )
 
 const (
-	legacyTagsDeprecationWarning = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+	legacyTagsDeprecationWarning     = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+	recorderWithoutStructableWarning = "warning: -structable-recorder is set without structable tags; generated code may not work as expected"
 )
 
 var (
@@ -172,6 +174,7 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 	}
 
 	printLegacyTagsWarning(stderr, a.Settings)
+	printRecorderWithoutStructableWarning(stderr, a.Settings)
 
 	return &a, nil
 }
@@ -182,6 +185,19 @@ func printLegacyTagsWarning(w io.Writer, s *settings.Settings) {
 	}
 
 	_, _ = fmt.Fprintln(w, legacyTagsDeprecationWarning)
+}
+
+func printRecorderWithoutStructableWarning(w io.Writer, s *settings.Settings) {
+	if !s.IsMastermindStructableRecorder {
+		return
+	}
+
+	resolved := s.ResolveTags()
+	if slices.Contains(resolved.Tags, settings.TagStructable) {
+		return
+	}
+
+	_, _ = fmt.Fprintln(w, recorderWithoutStructableWarning)
 }
 
 func printVersion(w io.Writer, info VersionInfo) {

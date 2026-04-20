@@ -185,6 +185,47 @@ func TestNewCmdArgs_printLegacyTagsWarning(t *testing.T) {
 	}
 }
 
+func TestNewCmdArgs_printRecorderWithoutStructableWarning(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		args     []string
+		expected assert.ComparisonAssertionFunc
+	}{
+		{
+			desc:     "recorder with default db tags emits warning",
+			args:     []string{"tables-to-go", "-structable-recorder"},
+			expected: assert.Contains,
+		},
+		{
+			desc:     "recorder with explicit structable tag emits no warning",
+			args:     []string{"tables-to-go", "-structable-recorder", "-tags", "structable"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "recorder with legacy structable tag emits no warning",
+			args:     []string{"tables-to-go", "-structable-recorder", "-tags-structable"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "no recorder emits no warning",
+			args:     []string{"tables-to-go", "-tags", "db"},
+			expected: assert.NotContains,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stderr bytes.Buffer
+
+			_, err := NewArgs(test.args, &stderr)
+			assert.NoError(t, err)
+			test.expected(t, stderr.String(), recorderWithoutStructableWarning)
+		})
+	}
+}
+
 func Test_Run(t *testing.T) {
 	t.Parallel()
 
