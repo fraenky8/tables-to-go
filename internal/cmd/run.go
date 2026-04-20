@@ -18,6 +18,8 @@ import (
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
 )
 
+const legacyTagsDeprecationWarning = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+
 var (
 	// ErrFlagParse is returned in case the parsing of flags returns an error.
 	ErrFlagParse = errors.New("error parsing flags")
@@ -149,10 +151,10 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 
 	fs.BoolVar(&a.NoInitialism, "no-initialism", a.NoInitialism, "disable the conversion to upper-case words in column names")
 
+	fs.Var(&a.Tags, "tags", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json")
 	fs.BoolVar(&a.TagsNoDb, "tags-no-db", a.TagsNoDb, "do not create db-tags")
-
-	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)")
-	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "DEPRECATED: use -tags structable")
+	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "DEPRECATED: use -tags structable")
 	fs.BoolVar(&a.IsMastermindStructableRecorder, "structable-recorder", a.IsMastermindStructableRecorder, "generate a structable.Recorder field")
 
 	// NOOP to disable the print of usage when an error occurs.
@@ -167,7 +169,17 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 		return nil, ErrFlagParse
 	}
 
+	printLegacyTagsWarning(stderr, a.Settings)
+
 	return &a, nil
+}
+
+func printLegacyTagsWarning(w io.Writer, s *settings.Settings) {
+	if !s.TagsMastermindStructable && !s.TagsMastermindStructableOnly {
+		return
+	}
+
+	_, _ = fmt.Fprintln(w, legacyTagsDeprecationWarning)
 }
 
 func printVersion(w io.Writer, info VersionInfo) {
