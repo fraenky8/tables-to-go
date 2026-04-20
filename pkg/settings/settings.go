@@ -65,6 +65,7 @@ type Settings struct {
 	Null           NullType
 
 	Tables StringsFlag
+	Tags   StringsFlag
 
 	NoInitialism bool
 
