@@ -223,7 +223,7 @@ func (app *App) generateImports(content *strings.Builder, columnInfo columnInfo)
 	}
 
 	if app.settings.IsMastermindStructableRecorder {
-		content.WriteString("\t\n\"github.com/Masterminds/structable\"\n")
+		content.WriteString("\n\t\"github.com/Masterminds/structable\"\n")
 	}
 
 	content.WriteString(")\n\n")
