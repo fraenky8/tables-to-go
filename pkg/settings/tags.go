@@ -12,7 +12,10 @@ const (
 )
 
 var (
-	tagAliases = map[string]string{
+	canonicalTags = map[string]string{
+		TagDB:         TagDB,
+		TagStructable: TagStructable,
+
 		"sqlx": TagDB,
 		"stbl": TagStructable,
 	}
@@ -72,11 +75,13 @@ func (r *ResolvedTags) removeTag(tag string) {
 }
 
 func normalizeTag(value string) string {
-	tag := strings.ToLower(strings.TrimSpace(value))
+	tag := strings.TrimSpace(value)
+	if tag == "" {
+		return ""
+	}
 
-	alias, ok := tagAliases[tag]
-	if ok {
-		return alias
+	if t, ok := canonicalTags[strings.ToLower(tag)]; ok {
+		return t
 	}
 
 	return tag

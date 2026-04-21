@@ -31,13 +31,13 @@ func TestSettings_ResolveTags(t *testing.T) {
 			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
-			desc: "explicit tags normalize aliases trims and dedupe",
+			desc: "explicit tags normalize known tags and preserve custom tag casing",
 			settings: func() *Settings {
 				s := New()
-				s.Tags = StringsFlag{" db ", "stbl", "json", "sqlx", "JSON"}
+				s.Tags = StringsFlag{" db ", "stbl", "json", "sqlx", "JSON", "STRUCTABLE"}
 				return s
 			},
-			expected: ResolvedTags{TagDB, TagStructable, "json"},
+			expected: ResolvedTags{TagDB, TagStructable, "json", "JSON"},
 		},
 		{
 			desc: "empty and whitespace tags are ignored",
@@ -119,6 +119,50 @@ func TestSettings_ResolveTags(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			actual := test.settings().ResolveTags()
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestResolvedTags_removeTag(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc      string
+		resolved  ResolvedTags
+		removeTag string
+		expected  ResolvedTags
+	}{
+		{
+			desc:      "removing from empty tags keeps empty result",
+			resolved:  ResolvedTags{},
+			removeTag: TagDB,
+			expected:  ResolvedTags{},
+		},
+		{
+			desc:      "removing missing tag keeps tags unchanged",
+			resolved:  ResolvedTags{TagDB, TagStructable, "json"},
+			removeTag: "yaml",
+			expected:  ResolvedTags{TagDB, TagStructable, "json"},
+		},
+		{
+			desc:      "removing existing tag deletes it",
+			resolved:  ResolvedTags{TagDB, TagStructable, "json"},
+			removeTag: TagStructable,
+			expected:  ResolvedTags{TagDB, "json"},
+		},
+		{
+			desc:      "removing only tag leaves empty result",
+			resolved:  ResolvedTags{TagDB},
+			removeTag: TagDB,
+			expected:  ResolvedTags{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			actual := test.resolved
+			actual.removeTag(test.removeTag)
 			assert.Equal(t, test.expected, actual)
 		})
 	}
