@@ -14,16 +14,14 @@ func TestTaggers_GenerateTags(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		settings func() *settings.Settings
+		tags     settings.ResolvedTags
 		column   database.Column
 		expected string
 	}{
 		{
 			desc: "enabled db-tag (default) without other tags generates only db-tags",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = false
-				return s
+			tags: settings.ResolvedTags{
+				settings.TagDB,
 			},
 			column: database.Column{
 				Name: "column_name",
@@ -31,22 +29,26 @@ func TestTaggers_GenerateTags(t *testing.T) {
 			expected: "`db:\"column_name\"`",
 		},
 		{
-			desc: "disabled db-tag without other tags generates no tags",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = true
-				return s
-			},
+			desc:     "disabled db-tag without other tags generates no tags",
+			tags:     settings.ResolvedTags{},
 			column:   database.Column{},
 			expected: "",
 		},
 		{
-			desc: "default db-tag with enabled Mastermind-tag creates db- and Mastermind-tags",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = false
-				s.TagsMastermindStructable = true
-				return s
+			desc: "structable tag maps to mastermind tagger",
+			tags: settings.ResolvedTags{
+				settings.TagStructable,
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`stbl:\"column_name\"`",
+		},
+		{
+			desc: "explicit structable tag creates db and structable tags",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				settings.TagStructable,
 			},
 			column: database.Column{
 				Name: "column_name",
@@ -54,12 +56,54 @@ func TestTaggers_GenerateTags(t *testing.T) {
 			expected: "`db:\"column_name\" stbl:\"column_name\"`",
 		},
 		{
+			desc: "unknown tag creates passthrough tag",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				"json",
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`db:\"column_name\" json:\"column_name\"`",
+		},
+		{
+			desc: "mixed tags preserve configured order",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				"json",
+				settings.TagStructable,
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`db:\"column_name\" json:\"column_name\" stbl:\"column_name\"`",
+		},
+		{
+			desc: "mixed new and legacy structable adds structable once",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				settings.TagStructable,
+				"json",
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`db:\"column_name\" stbl:\"column_name\" json:\"column_name\"`",
+		},
+		{
+			desc: "mixed new and legacy structable only keeps standalone structable",
+			tags: settings.ResolvedTags{
+				settings.TagStructable,
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`stbl:\"column_name\"`",
+		},
+		{
 			desc: "disabled db-tag with enabled Mastermind-tag creates only Mastermind-tags",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = true
-				s.TagsMastermindStructable = true
-				return s
+			tags: settings.ResolvedTags{
+				settings.TagStructable,
 			},
 			column: database.Column{
 				Name: "column_name",
@@ -68,23 +112,30 @@ func TestTaggers_GenerateTags(t *testing.T) {
 		},
 		{
 			desc: "default db-tag with enabled standalone Mastermind-tag creates only standalone Mastermind-tag",
-			settings: func() *settings.Settings {
-				s := settings.New()
-				s.TagsNoDb = false
-				s.TagsMastermindStructableOnly = true
-				return s
+			tags: settings.ResolvedTags{
+				settings.TagStructable,
 			},
 			column: database.Column{
 				Name: "column_name",
 			},
 			expected: "`stbl:\"column_name\"`",
 		},
+		{
+			desc: "empty tag gets ignored",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				"",
+			},
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`db:\"column_name\"`",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			s := test.settings()
-			taggers := NewTaggers(s)
-			db := database.New(s)
+			taggers := NewTaggers(test.tags)
+			db := database.New(settings.New())
 			actual := taggers.GenerateTag(db, test.column)
 			assert.Equal(t, test.expected, actual)
 		})

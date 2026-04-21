@@ -10,12 +10,18 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"syscall"
 
 	"github.com/fraenky8/tables-to-go/v2/internal/cli"
 	"github.com/fraenky8/tables-to-go/v2/pkg/database"
 	"github.com/fraenky8/tables-to-go/v2/pkg/output"
 	"github.com/fraenky8/tables-to-go/v2/pkg/settings"
+)
+
+const (
+	legacyTagsDeprecationWarning     = "warning: -tags-structable and -tags-structable-only are deprecated; use -tag (for -tags-structable-only compatibility use -tag structable -tags-no-db)"
+	recorderWithoutStructableWarning = "warning: -structable-recorder is set without structable tags; generated code may not work as expected"
 )
 
 var (
@@ -74,7 +80,7 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 		return nil
 	}
 
-	if err := cmdArgs.Verify(); err != nil {
+	if err := cmdArgs.Settings.Verify(); err != nil {
 		return err
 	}
 
@@ -149,10 +155,10 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 
 	fs.BoolVar(&a.NoInitialism, "no-initialism", a.NoInitialism, "disable the conversion to upper-case words in column names")
 
+	fs.Var(&a.Tags, "tag", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json\nAliases: stbl => structable, sqlx => db\nAny provided valid tag key is emitted as a struct tag, e.g. -tag json")
 	fs.BoolVar(&a.TagsNoDb, "tags-no-db", a.TagsNoDb, "do not create db-tags")
-
-	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)")
-	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)")
+	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "DEPRECATED: use -tag structable")
+	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "DEPRECATED: use -tag structable with -tags-no-db (legacy only semantics still override extra custom tags)")
 	fs.BoolVar(&a.IsMastermindStructableRecorder, "structable-recorder", a.IsMastermindStructableRecorder, "generate a structable.Recorder field")
 
 	// NOOP to disable the print of usage when an error occurs.
@@ -167,7 +173,32 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 		return nil, ErrFlagParse
 	}
 
+	a.Settings.ResolveTags()
+
+	printLegacyTagsWarning(stderr, a.Settings)
+	printRecorderWithoutStructableWarning(stderr, a.Settings)
+
 	return &a, nil
+}
+
+func printLegacyTagsWarning(w io.Writer, s *settings.Settings) {
+	if !s.TagsMastermindStructable && !s.TagsMastermindStructableOnly {
+		return
+	}
+
+	_, _ = fmt.Fprintln(w, legacyTagsDeprecationWarning)
+}
+
+func printRecorderWithoutStructableWarning(w io.Writer, s *settings.Settings) {
+	if !s.IsMastermindStructableRecorder {
+		return
+	}
+
+	if slices.Contains(s.ResolvedTags(), settings.TagStructable) {
+		return
+	}
+
+	_, _ = fmt.Fprintln(w, recorderWithoutStructableWarning)
 }
 
 func printVersion(w io.Writer, info VersionInfo) {

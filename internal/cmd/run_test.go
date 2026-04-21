@@ -85,7 +85,11 @@ func TestNewCmdArgs(t *testing.T) {
 			desc: "empty args defaults to binary name",
 			args: []string{},
 			expected: &Args{
-				Settings: settings.New(),
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.ResolveTags()
+					return s
+				}(),
 			},
 			isErr: assert.NoError,
 		},
@@ -93,8 +97,12 @@ func TestNewCmdArgs(t *testing.T) {
 			desc: "help flag is parsed",
 			args: []string{"tables-to-go", "-help"},
 			expected: &Args{
-				Settings: settings.New(),
-				Help:     true,
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.ResolveTags()
+					return s
+				}(),
+				Help: true,
 			},
 			isErr: assert.NoError,
 		},
@@ -109,6 +117,119 @@ func TestNewCmdArgs(t *testing.T) {
 				actual.usage = nil
 			}
 			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestNewCmdArgs_Tags(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		args     []string
+		expected settings.StringsFlag
+	}{
+		{
+			desc:     "single tags value",
+			args:     []string{"tables-to-go", "-tag", "structable"},
+			expected: settings.StringsFlag{"structable"},
+		},
+		{
+			desc:     "multiple tags values and comma separated",
+			args:     []string{"tables-to-go", "-tag", "db,structable", "-tag", "json"},
+			expected: settings.StringsFlag{"db", "structable", "json"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stderr bytes.Buffer
+
+			actual, err := NewArgs(test.args, &stderr)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, actual.Tags)
+		})
+	}
+}
+
+func TestNewCmdArgs_printLegacyTagsWarning(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		args     []string
+		expected assert.ComparisonAssertionFunc
+	}{
+		{
+			desc:     "no legacy tags flag emits no warning",
+			args:     []string{"tables-to-go", "-tag", "db"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "deprecated tags flag emits warning",
+			args:     []string{"tables-to-go", "-tags-structable"},
+			expected: assert.Contains,
+		},
+		{
+			desc:     "multiple deprecated tags flags emit warning",
+			args:     []string{"tables-to-go", "-tags-no-db", "-tags-structable-only"},
+			expected: assert.Contains,
+		},
+		{
+			desc:     "tags-no-db alone emits no warning",
+			args:     []string{"tables-to-go", "-tags-no-db"},
+			expected: assert.NotContains,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stderr bytes.Buffer
+
+			_, err := NewArgs(test.args, &stderr)
+			assert.NoError(t, err)
+			test.expected(t, stderr.String(), legacyTagsDeprecationWarning)
+		})
+	}
+}
+
+func TestNewCmdArgs_printRecorderWithoutStructableWarning(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		args     []string
+		expected assert.ComparisonAssertionFunc
+	}{
+		{
+			desc:     "recorder with default db tags emits warning",
+			args:     []string{"tables-to-go", "-structable-recorder"},
+			expected: assert.Contains,
+		},
+		{
+			desc:     "recorder with explicit structable tag emits no warning",
+			args:     []string{"tables-to-go", "-structable-recorder", "-tag", "structable"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "recorder with legacy structable tag emits no warning",
+			args:     []string{"tables-to-go", "-structable-recorder", "-tags-structable"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "no recorder emits no warning",
+			args:     []string{"tables-to-go", "-tag", "db"},
+			expected: assert.NotContains,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stderr bytes.Buffer
+
+			_, err := NewArgs(test.args, &stderr)
+			assert.NoError(t, err)
+			test.expected(t, stderr.String(), recorderWithoutStructableWarning)
 		})
 	}
 }

@@ -37,7 +37,7 @@ type App struct {
 func New(s *settings.Settings, db database.Database, out output.Writer, stderr io.Writer) *App {
 	return &App{
 		settings: s,
-		taggers:  tagger.NewTaggers(s),
+		taggers:  tagger.NewTaggers(s.ResolvedTags()),
 		db:       db,
 		out:      out,
 		caser:    cases.Title(language.English, cases.NoLower),

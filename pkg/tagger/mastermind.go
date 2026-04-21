@@ -10,12 +10,12 @@ type Mastermind struct{}
 // GenerateTag for Mastermind to satisfy the Tagger interface.
 func (t Mastermind) GenerateTag(db database.Database, column database.Column) string {
 
-	isPk := ""
+	var isPk string
 	if db.IsPrimaryKey(column) {
 		isPk = ",PRIMARY_KEY"
 	}
 
-	isAutoIncrement := ""
+	var isAutoIncrement string
 	if db.IsAutoIncrement(column) {
 		isAutoIncrement = ",SERIAL,AUTO_INCREMENT"
 	}
