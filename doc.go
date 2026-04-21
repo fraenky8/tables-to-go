@@ -79,12 +79,16 @@
 //		  	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
 //		-table value
 //		  	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
+//		-tags value
+//		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json
+//		  	Aliases: stbl => structable, sqlx => db
+//		  	Any provided tag name is emitted as a struct tag, e.g. -tags json
 //		-tags-no-db
 //		  	do not create db-tags
 //		-tags-structable
-//		  	generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
+//		  	DEPRECATED: use -tags structable
 //		-tags-structable-only
-//		  	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+//		  	DEPRECATED: use -tags structable with -tags-no-db (legacy only semantics still override extra custom tags)
 //		-u string
 //		  	user to connect to the database
 //		-v	verbose output

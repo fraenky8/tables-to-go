@@ -51,12 +51,6 @@ containing the structs will get created (default: current working directory).
 * automatically typed struct fields, either with `sql.Null*` or primitive `*builtinType`
 pointer types
 * struct fields with `db`-tags for ready to use in database code
-* **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
-  * only primary key & auto increment columns supported
-  * struct fields with `stbl` tags
-  * ability to generate structs only for Masterminds/structable:
-    * without `db`-tags
-    * with or without `structable.Recorder` 
 * **currently supported**:
   * PostgreSQL (10, 11, 12, 17, 18 tested)
   * MySQL (5.5+, 8 tested)
@@ -64,9 +58,15 @@ pointer types
 * currently, the following basic data types are supported:
   * numeric: integer, serial, double, real, float
   * character: varying, text, char, varchar, binary, varbinary, blob
-  * date/time: timestamp, date, datetime, year, time with time zone, timestamp 
-  with time zone, time without time zone, timestamp without time zone
+  * date/time: timestamp, date, datetime, year, time with time zone, timestamp
+    with time zone, time without time zone, timestamp without time zone
   * others: boolean
+* **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
+  * only primary key & auto increment columns supported
+  * struct fields with `stbl` tags
+  * ability to generate structs only for Masterminds/structable:
+    * without `db`-tags
+    * with or without `structable.Recorder`
 
 ## Examples
 
@@ -162,33 +162,6 @@ Filter for specific tables via (multiple) `-table` flags:
 tables-to-go -v -of ../path/to/my/models -table foobar -table foo,bar,baz
 ```
 
-### Where Are The JSON-Tags?
-
-This is a common question asked by contributors and bug reporters.
-
-Fetching data from a database and representation of this data in the end 
-(JSON, HTML template, cli, ...) are two different concerns and should be
-decoupled. Therefore, this tool will not generate `json` tags for the structs.
-
-There are tools like [gomodifytags](https://github.com/fatih/gomodifytags) which
-enables you to generate `json` tags for existing structs. 
-The call for this tool applied to the example above looks like the following:
-
-```
-gomodifytags -file SomeUserInfo.go -w -all -add-tags json
-```
-
-This adds the `json` tags directly to the file:
-
-```go
-type SomeUserInfo struct {
-	ID        int             `db:"id" json:"id"`
-	FirstName sql.NullString  `db:"first_name" json:"first_name"`
-	LastName  string          `db:"last_name" json:"last_name"`
-	Height    sql.NullFloat64 `db:"height" json:"height"`
-}
-```
-
 ### Command-line Flags
 
 Print usage with `-?` or `-help`
@@ -237,12 +210,16 @@ Usage of tables-to-go:
     	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
   -table value
     	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
+  -tags value
+     	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json
+     	Aliases: stbl => structable, sqlx => db
+     	Any provided tag name is emitted as a struct tag, e.g. -tags json
   -tags-no-db
     	do not create db-tags
   -tags-structable
-    	generate struct with tags for use in Masterminds/structable (https://github.com/Masterminds/structable)
+     	DEPRECATED: use -tags structable
   -tags-structable-only
-    	generate struct with tags ONLY for use in Masterminds/structable (https://github.com/Masterminds/structable)
+     	DEPRECATED: use -tags structable with -tags-no-db (legacy only semantics still override extra custom tags)
   -u string
     	user to connect to the database
   -v	verbose output
@@ -251,6 +228,19 @@ Usage of tables-to-go:
   -vv
     	more verbose output
 ```
+
+### Tags Behavior
+
+Long term goal is to replace the single `-tags-*` flags with a single `-tags`
+flag. To not break backwards compatibility in v2 the following behavior applies:
+
+| Current Tag flags       | Equivalent                                           | Notes                                                        |
+|-------------------------|------------------------------------------------------|--------------------------------------------------------------|
+| `-tags-structable`      | `-tags structable` or explicit `-tags db,structable` | The `db` tag is still added implicitly (current v2 behavior) |
+| `-tags-structable-only` | Combination of `-tags structable -tags-no-db`        | Legacy "only" semantics win and can override extra custom tags |
+| `-tags-no-db`           | no change                                            | Explicitly disables `db` tag generation                      |
+| `-tags db,json`         | new                                                  | Any provided tag name is emitted                             |
+| `-tags stbl,sqlx`       | new                                                  | Aliases are applied                                          |
 
 ## Contributing
 

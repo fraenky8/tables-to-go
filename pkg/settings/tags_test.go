@@ -88,6 +88,18 @@ func TestSettings_ResolveTags(t *testing.T) {
 			},
 		},
 		{
+			desc: "legacy tags structable only overrides explicit custom tags",
+			settings: func() *Settings {
+				s := New()
+				s.Tags = StringsFlag{"json", "structable"}
+				s.TagsMastermindStructableOnly = true
+				return s
+			},
+			expected: ResolvedTags{
+				Tags: StringsFlag{TagStructable},
+			},
+		},
+		{
 			desc: "known and unknown tags are preserved in order",
 			settings: func() *Settings {
 				s := New()

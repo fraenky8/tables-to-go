@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	legacyTagsDeprecationWarning     = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags instead"
+	legacyTagsDeprecationWarning     = "warning: -tags-structable and -tags-structable-only are deprecated; use -tags (for -tags-structable-only compatibility use -tags structable -tags-no-db)"
 	recorderWithoutStructableWarning = "warning: -structable-recorder is set without structable tags; generated code may not work as expected"
 )
 
@@ -155,10 +155,10 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 
 	fs.BoolVar(&a.NoInitialism, "no-initialism", a.NoInitialism, "disable the conversion to upper-case words in column names")
 
-	fs.Var(&a.Tags, "tags", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json")
+	fs.Var(&a.Tags, "tags", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json\nAliases: stbl => structable, sqlx => db\nAny provided tag name is emitted as a struct tag, e.g. -tags json")
 	fs.BoolVar(&a.TagsNoDb, "tags-no-db", a.TagsNoDb, "do not create db-tags")
 	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "DEPRECATED: use -tags structable")
-	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "DEPRECATED: use -tags structable")
+	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "DEPRECATED: use -tags structable with -tags-no-db (legacy only semantics still override extra custom tags)")
 	fs.BoolVar(&a.IsMastermindStructableRecorder, "structable-recorder", a.IsMastermindStructableRecorder, "generate a structable.Recorder field")
 
 	// NOOP to disable the print of usage when an error occurs.
