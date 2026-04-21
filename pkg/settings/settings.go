@@ -44,6 +44,8 @@ var (
 
 // Settings stores the supported settings / command line arguments.
 type Settings struct {
+	tags ResolvedTags
+
 	DbType DBType
 
 	User    string
@@ -92,6 +94,8 @@ func New() *Settings {
 	}
 
 	return &Settings{
+		tags: ResolvedTags{TagDB},
+
 		Verbose:  false,
 		VVerbose: false,
 		Force:    false,
@@ -148,11 +152,20 @@ func (s *Settings) Verify() (err error) {
 		return errors.New("name of package can not be empty")
 	}
 
+	if err = s.tags.Validate(); err != nil {
+		return err
+	}
+
 	if s.VVerbose {
 		s.Verbose = true
 	}
 
 	return err
+}
+
+// ResolvedTags returns already resolved tags.
+func (s *Settings) ResolvedTags() ResolvedTags {
+	return s.tags
 }
 
 func (s *Settings) verifyOutputPath() (err error) {

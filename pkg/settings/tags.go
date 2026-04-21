@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 )
@@ -25,32 +27,46 @@ var (
 // tag-related settings.
 type ResolvedTags StringsFlag
 
-// ResolveTags resolves tag configuration from the generic tags list and legacy
-// tag booleans.
-func (s *Settings) ResolveTags() ResolvedTags {
+// ResolveTags computes and caches effective tags from Settings fields.
+// Call once after Settings initialization and after (re)configuring tag-related
+// fields, before Verify. Changes to tag-related fields made after this call
+// are not reflected until ResolveTags is called again.
+func (s *Settings) ResolveTags() {
 	if s.TagsMastermindStructableOnly {
-		return ResolvedTags{TagStructable}
+		s.tags = ResolvedTags{TagStructable}
+		return
 	}
+	// Make this method stateless and resetting any resolved tags before so we
+	// don't leak additional tags when invoked multiple times.
+	s.tags = s.tags[:0]
 
-	var resolved ResolvedTags
 	// Backwards compatibility, always create `db` tags except s.TagsNoDb was provided.
-	resolved.addTag(TagDB)
+	s.tags.addTag(TagDB)
 
 	if s.TagsMastermindStructable {
-		resolved.addTag(TagStructable)
+		s.tags.addTag(TagStructable)
 	}
 
 	for i := range s.Tags {
-		resolved.addTag(s.Tags[i])
+		s.tags.addTag(s.Tags[i])
 	}
 
 	// Yes, we remove the `db` tag again even if we added it previously to not
 	// allow to reintroduce it via s.Tags db although s.TagsNoDb was provided.
 	if s.TagsNoDb {
-		resolved.removeTag(TagDB)
+		s.tags.removeTag(TagDB)
+	}
+}
+
+// Validate validates resolved tags.
+func (r ResolvedTags) Validate() error {
+	for i := range r {
+		if err := validateTagKey(r[i]); err != nil {
+			return err
+		}
 	}
 
-	return resolved
+	return nil
 }
 
 func (r *ResolvedTags) addTag(value string) {
@@ -85,4 +101,21 @@ func normalizeTag(value string) string {
 	}
 
 	return tag
+}
+
+func validateTagKey(value string) error {
+	tag := strings.TrimSpace(value)
+	if tag == "" {
+		return fmt.Errorf("invalid tag key %q: key must not be empty", value)
+	}
+
+	if strings.ContainsRune(tag, '`') {
+		return fmt.Errorf("invalid tag key %q: key must not contain backtick", tag)
+	}
+
+	if _, ok := reflect.StructTag(tag + `:"x"`).Lookup(tag); !ok {
+		return fmt.Errorf("invalid tag key %q: key must follow Go struct tag key syntax", tag)
+	}
+
+	return nil
 }

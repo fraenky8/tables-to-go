@@ -85,7 +85,11 @@ func TestNewCmdArgs(t *testing.T) {
 			desc: "empty args defaults to binary name",
 			args: []string{},
 			expected: &Args{
-				Settings: settings.New(),
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.ResolveTags()
+					return s
+				}(),
 			},
 			isErr: assert.NoError,
 		},
@@ -93,8 +97,12 @@ func TestNewCmdArgs(t *testing.T) {
 			desc: "help flag is parsed",
 			args: []string{"tables-to-go", "-help"},
 			expected: &Args{
-				Settings: settings.New(),
-				Help:     true,
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.ResolveTags()
+					return s
+				}(),
+				Help: true,
 			},
 			isErr: assert.NoError,
 		},

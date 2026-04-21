@@ -26,7 +26,7 @@ type Taggers struct {
 
 // NewTaggers is the constructor function to create the supported taggers.
 func NewTaggers(s *settings.Settings) *Taggers {
-	tags := s.ResolveTags()
+	tags := s.ResolvedTags()
 
 	t := &Taggers{taggers: make([]Tagger, 0, len(tags))}
 	for _, tag := range tags {

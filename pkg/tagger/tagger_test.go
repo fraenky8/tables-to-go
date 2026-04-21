@@ -127,6 +127,7 @@ func TestTaggers_GenerateTags(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			s := test.settings
+			s.ResolveTags()
 			taggers := NewTaggers(s)
 			db := database.New(s)
 			actual := taggers.GenerateTag(db, test.column)

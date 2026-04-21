@@ -11,14 +11,12 @@ func TestSettings_ResolveTags(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		settings func() *Settings
+		settings *Settings
 		expected ResolvedTags
 	}{
 		{
-			desc: "default settings resolve to db tag",
-			settings: func() *Settings {
-				return New()
-			},
+			desc:     "default settings resolve to db tag",
+			settings: New(),
 			expected: ResolvedTags{TagDB},
 		},
 		{
@@ -27,7 +25,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.Tags = StringsFlag{"structable"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
@@ -36,7 +34,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.Tags = StringsFlag{" db ", "stbl", "json", "sqlx", "JSON", "STRUCTABLE"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagDB, TagStructable, "json", "JSON"},
 		},
 		{
@@ -45,7 +43,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.Tags = StringsFlag{"", "   ", "\t", "structable"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
@@ -54,7 +52,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.TagsNoDb = true
 				return s
-			},
+			}(),
 			expected: ResolvedTags{},
 		},
 		{
@@ -64,7 +62,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.TagsNoDb = true
 				s.Tags = StringsFlag{"db", "json"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{"json"},
 		},
 		{
@@ -74,7 +72,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.TagsNoDb = true
 				s.Tags = StringsFlag{"sqlx", "json"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{"json"},
 		},
 		{
@@ -83,8 +81,19 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.TagsMastermindStructable = true
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagDB, TagStructable},
+		},
+		{
+			desc: "resolving twice on same settings resets previous resolved tags",
+			settings: func() *Settings {
+				s := New()
+				s.TagsMastermindStructable = true
+				s.ResolveTags()
+				s.TagsMastermindStructable = false
+				return s
+			}(),
+			expected: ResolvedTags{TagDB},
 		},
 		{
 			desc: "legacy tags structable only forces structable",
@@ -92,7 +101,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.TagsMastermindStructableOnly = true
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagStructable},
 		},
 		{
@@ -102,7 +111,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.Tags = StringsFlag{"json", "structable"}
 				s.TagsMastermindStructableOnly = true
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagStructable},
 		},
 		{
@@ -111,15 +120,93 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s := New()
 				s.Tags = StringsFlag{"structable", "json", "yaml"}
 				return s
-			},
+			}(),
 			expected: ResolvedTags{TagDB, TagStructable, "json", "yaml"},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			actual := test.settings().ResolveTags()
+			test.settings.ResolveTags()
+			actual := test.settings.ResolvedTags()
 			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestResolvedTags_Validate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		resolved ResolvedTags
+		isErr    assert.ErrorAssertionFunc
+	}{
+		{
+			desc:     "empty custom tag key returns error when validating resolved tags directly",
+			resolved: ResolvedTags{""},
+			isErr:    assert.Error,
+		},
+		{
+			desc:     "whitespace custom tag key returns error when validating resolved tags directly",
+			resolved: ResolvedTags{"   "},
+			isErr:    assert.Error,
+		},
+		{
+			desc: "custom tag key with backtick returns error",
+			resolved: func() ResolvedTags {
+				s := New()
+				s.Tags = StringsFlag{"json`x"}
+				s.ResolveTags()
+				return s.ResolvedTags()
+			}(),
+			isErr: assert.Error,
+		},
+		{
+			desc: "custom tag key with reflect invalid syntax returns error",
+			resolved: func() ResolvedTags {
+				s := New()
+				s.Tags = StringsFlag{"json:key"}
+				s.ResolveTags()
+				return s.ResolvedTags()
+			}(),
+			isErr: assert.Error,
+		},
+		{
+			desc: "default resolved tags are valid",
+			resolved: func() ResolvedTags {
+				s := New()
+				return s.ResolvedTags()
+			}(),
+			isErr: assert.NoError,
+		},
+		{
+			desc: "valid custom tag key is accepted",
+			resolved: func() ResolvedTags {
+				s := New()
+				s.Tags = StringsFlag{"json"}
+				s.ResolveTags()
+				return s.ResolvedTags()
+			}(),
+			isErr: assert.NoError,
+		},
+		{
+			desc: "structable only override ignores invalid provided custom tags",
+			resolved: func() ResolvedTags {
+				s := New()
+				s.Tags = StringsFlag{"json:key"}
+				s.TagsMastermindStructableOnly = true
+				s.ResolveTags()
+				return s.ResolvedTags()
+			}(),
+			isErr: assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.resolved.Validate()
+			test.isErr(t, err)
 		})
 	}
 }

@@ -213,7 +213,7 @@ Usage of tables-to-go:
   -tags value
      	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json
      	Aliases: stbl => structable, sqlx => db
-     	Any provided tag name is emitted as a struct tag, e.g. -tags json
+      	Any provided valid tag key is emitted as a struct tag, e.g. -tags json
   -tags-no-db
     	do not create db-tags
   -tags-structable
@@ -234,13 +234,13 @@ Usage of tables-to-go:
 Long term goal is to replace the single `-tags-*` flags with a single `-tags`
 flag. To not break backwards compatibility in v2 the following behavior applies:
 
-| Current Tag flags       | Equivalent                                           | Notes                                                        |
-|-------------------------|------------------------------------------------------|--------------------------------------------------------------|
-| `-tags-structable`      | `-tags structable` or explicit `-tags db,structable` | The `db` tag is still added implicitly (current v2 behavior) |
+| Current Tag flags       | Equivalent                                           | Notes                                                          |
+|-------------------------|------------------------------------------------------|----------------------------------------------------------------|
+| `-tags-structable`      | `-tags structable` or explicit `-tags db,structable` | The `db` tag is still added implicitly (current v2 behavior)   |
 | `-tags-structable-only` | Combination of `-tags structable -tags-no-db`        | Legacy "only" semantics win and can override extra custom tags |
-| `-tags-no-db`           | no change                                            | Explicitly disables `db` tag generation                      |
-| `-tags db,json`         | new                                                  | Any provided tag name is emitted                             |
-| `-tags stbl,sqlx`       | new                                                  | Aliases are applied                                          |
+| `-tags-no-db`           | no change                                            | Explicitly disables `db` tag generation                        |
+| `-tags db,json`         | new                                                  | Any provided **valid** tag key is emitted                      |
+| `-tags stbl,sqlx`       | new                                                  | Aliases are applied                                            |
 
 ## Contributing
 

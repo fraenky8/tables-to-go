@@ -82,7 +82,7 @@
 //		-tags value
 //		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json
 //		  	Aliases: stbl => structable, sqlx => db
-//		  	Any provided tag name is emitted as a struct tag, e.g. -tags json
+//		  	Any provided valid tag key is emitted as a struct tag, e.g. -tags json
 //		-tags-no-db
 //		  	do not create db-tags
 //		-tags-structable

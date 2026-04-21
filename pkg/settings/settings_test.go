@@ -59,6 +59,16 @@ func TestSettings_Verify(t *testing.T) {
 			},
 			isError: assert.NoError,
 		},
+		{
+			desc: "invalid custom tag key produces error",
+			settings: func() *Settings {
+				s := New()
+				s.Tags = StringsFlag{"json:key"}
+				s.ResolveTags()
+				return s
+			},
+			isError: assert.Error,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
