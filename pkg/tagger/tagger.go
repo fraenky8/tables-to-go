@@ -26,10 +26,10 @@ type Taggers struct {
 
 // NewTaggers is the constructor function to create the supported taggers.
 func NewTaggers(s *settings.Settings) *Taggers {
-	resolved := s.ResolveTags()
+	tags := s.ResolveTags()
 
-	t := &Taggers{taggers: make([]Tagger, 0, len(resolved.Tags))}
-	for _, tag := range resolved.Tags {
+	t := &Taggers{taggers: make([]Tagger, 0, len(tags))}
+	for _, tag := range tags {
 		switch tag {
 		case settings.TagDB:
 			t.taggers = append(t.taggers, new(Db))

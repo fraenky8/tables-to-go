@@ -192,8 +192,7 @@ func printRecorderWithoutStructableWarning(w io.Writer, s *settings.Settings) {
 		return
 	}
 
-	resolved := s.ResolveTags()
-	if slices.Contains(resolved.Tags, settings.TagStructable) {
+	if slices.Contains(s.ResolveTags(), settings.TagStructable) {
 		return
 	}
 

@@ -126,52 +126,52 @@ func New() *Settings {
 }
 
 // Verify verifies the Settings and checks the given output paths.
-func (settings *Settings) Verify() (err error) {
+func (s *Settings) Verify() (err error) {
 
-	if err = settings.verifyOutputPath(); err != nil {
+	if err = s.verifyOutputPath(); err != nil {
 		return err
 	}
 
-	if settings.OutputFilePath, err = settings.prepareOutputPath(); err != nil {
+	if s.OutputFilePath, err = s.prepareOutputPath(); err != nil {
 		return err
 	}
 
-	if settings.Port == "" {
-		settings.Port = dbDefaultPorts[settings.DbType]
+	if s.Port == "" {
+		s.Port = dbDefaultPorts[s.DbType]
 	}
 
-	if settings.SSLMode == "" {
-		settings.SSLMode = "disable"
+	if s.SSLMode == "" {
+		s.SSLMode = "disable"
 	}
 
-	if settings.PackageName == "" {
+	if s.PackageName == "" {
 		return errors.New("name of package can not be empty")
 	}
 
-	if settings.VVerbose {
-		settings.Verbose = true
+	if s.VVerbose {
+		s.Verbose = true
 	}
 
 	return err
 }
 
-func (settings *Settings) verifyOutputPath() (err error) {
+func (s *Settings) verifyOutputPath() (err error) {
 
-	info, err := os.Stat(settings.OutputFilePath)
+	info, err := os.Stat(s.OutputFilePath)
 
 	if os.IsNotExist(err) {
-		return fmt.Errorf("output file path %q does not exists", settings.OutputFilePath)
+		return fmt.Errorf("output file path %q does not exists", s.OutputFilePath)
 	}
 
 	if !info.Mode().IsDir() {
-		return fmt.Errorf("output file path %q is not a directory", settings.OutputFilePath)
+		return fmt.Errorf("output file path %q is not a directory", s.OutputFilePath)
 	}
 
 	return err
 }
 
-func (settings *Settings) prepareOutputPath() (outputFilePath string, err error) {
-	outputFilePath, err = filepath.Abs(settings.OutputFilePath)
+func (s *Settings) prepareOutputPath() (outputFilePath string, err error) {
+	outputFilePath, err = filepath.Abs(s.OutputFilePath)
 	outputFilePath += string(filepath.Separator)
 	return outputFilePath, err
 }
@@ -198,24 +198,24 @@ func SprintfSupportedNullTypes() string {
 
 // IsNullTypeSQL returns true if the type given by the command line args is of
 // null type SQL
-func (settings *Settings) IsNullTypeSQL() bool {
-	return settings.Null == NullTypeSQL
+func (s *Settings) IsNullTypeSQL() bool {
+	return s.Null == NullTypeSQL
 }
 
 // ShouldInitialism returns whether column names should be converted
 // to initialisms or not.
-func (settings *Settings) ShouldInitialism() bool {
-	return !settings.NoInitialism
+func (s *Settings) ShouldInitialism() bool {
+	return !s.NoInitialism
 }
 
 // IsOutputFormatCamelCase returns if the type given by command line args is of
 // camel-case format.
-func (settings *Settings) IsOutputFormatCamelCase() bool {
-	return settings.OutputFormat == OutputFormatCamelCase
+func (s *Settings) IsOutputFormatCamelCase() bool {
+	return s.OutputFormat == OutputFormatCamelCase
 }
 
 // IsFileNameFormatSnakeCase returns if the type given by the command line args
 // is snake-case format.
-func (settings *Settings) IsFileNameFormatSnakeCase() bool {
-	return settings.FileNameFormat == FileNameFormatSnakeCase
+func (s *Settings) IsFileNameFormatSnakeCase() bool {
+	return s.FileNameFormat == FileNameFormatSnakeCase
 }

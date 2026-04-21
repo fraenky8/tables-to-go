@@ -83,7 +83,7 @@ func TestTaggers_GenerateTags(t *testing.T) {
 			column: database.Column{
 				Name: "column_name",
 			},
-			expected: "`db:\"column_name\" json:\"column_name\" stbl:\"column_name\"`",
+			expected: "`db:\"column_name\" stbl:\"column_name\" json:\"column_name\"`",
 		},
 		{
 			desc: "mixed new and legacy structable only keeps standalone structable",

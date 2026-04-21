@@ -19,9 +19,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 			settings: func() *Settings {
 				return New()
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB},
-			},
+			expected: ResolvedTags{TagDB},
 		},
 		{
 			desc: "explicit tags keep default db unless disabled",
@@ -30,9 +28,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.Tags = StringsFlag{"structable"}
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB, TagStructable},
-			},
+			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
 			desc: "explicit tags normalize aliases trims and dedupe",
@@ -41,9 +37,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.Tags = StringsFlag{" db ", "stbl", "json", "sqlx", "JSON"}
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB, TagStructable, "json"},
-			},
+			expected: ResolvedTags{TagDB, TagStructable, "json"},
 		},
 		{
 			desc: "empty and whitespace tags are ignored",
@@ -52,9 +46,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.Tags = StringsFlag{"", "   ", "\t", "structable"}
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB, TagStructable},
-			},
+			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
 			desc: "legacy tags no db removes default db",
@@ -66,15 +58,33 @@ func TestSettings_ResolveTags(t *testing.T) {
 			expected: ResolvedTags{},
 		},
 		{
+			desc: "legacy tags no db removes explicit db tag",
+			settings: func() *Settings {
+				s := New()
+				s.TagsNoDb = true
+				s.Tags = StringsFlag{"db", "json"}
+				return s
+			},
+			expected: ResolvedTags{"json"},
+		},
+		{
+			desc: "legacy tags no db removes explicit sqlx alias",
+			settings: func() *Settings {
+				s := New()
+				s.TagsNoDb = true
+				s.Tags = StringsFlag{"sqlx", "json"}
+				return s
+			},
+			expected: ResolvedTags{"json"},
+		},
+		{
 			desc: "legacy tags structable adds structable",
 			settings: func() *Settings {
 				s := New()
 				s.TagsMastermindStructable = true
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB, TagStructable},
-			},
+			expected: ResolvedTags{TagDB, TagStructable},
 		},
 		{
 			desc: "legacy tags structable only forces structable",
@@ -83,9 +93,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.TagsMastermindStructableOnly = true
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagStructable},
-			},
+			expected: ResolvedTags{TagStructable},
 		},
 		{
 			desc: "legacy tags structable only overrides explicit custom tags",
@@ -95,9 +103,7 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.TagsMastermindStructableOnly = true
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagStructable},
-			},
+			expected: ResolvedTags{TagStructable},
 		},
 		{
 			desc: "known and unknown tags are preserved in order",
@@ -106,67 +112,13 @@ func TestSettings_ResolveTags(t *testing.T) {
 				s.Tags = StringsFlag{"structable", "json", "yaml"}
 				return s
 			},
-			expected: ResolvedTags{
-				Tags: StringsFlag{TagDB, TagStructable, "json", "yaml"},
-			},
+			expected: ResolvedTags{TagDB, TagStructable, "json", "yaml"},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			actual := test.settings().ResolveTags()
-			assert.Equal(t, test.expected, actual)
-		})
-	}
-}
-
-func TestSettings_UsesLegacyTagFlags(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		desc     string
-		settings func() *Settings
-		expected bool
-	}{
-		{
-			desc: "no legacy tags flags in use",
-			settings: func() *Settings {
-				return New()
-			},
-			expected: false,
-		},
-		{
-			desc: "legacy tags no db in use",
-			settings: func() *Settings {
-				s := New()
-				s.TagsNoDb = true
-				return s
-			},
-			expected: true,
-		},
-		{
-			desc: "legacy tags structable in use",
-			settings: func() *Settings {
-				s := New()
-				s.TagsMastermindStructable = true
-				return s
-			},
-			expected: true,
-		},
-		{
-			desc: "legacy tags structable only in use",
-			settings: func() *Settings {
-				s := New()
-				s.TagsMastermindStructableOnly = true
-				return s
-			},
-			expected: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			actual := test.settings().UsesLegacyTagFlags()
 			assert.Equal(t, test.expected, actual)
 		})
 	}
