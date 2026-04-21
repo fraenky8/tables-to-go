@@ -173,15 +173,13 @@ func TestMastermind_GenerateTag(t *testing.T) {
 		},
 	}
 
-	tagger := new(Mastermind)
-
 	for dbType := range settings.SupportedDbTypes {
 		t.Run(dbType.String(), func(t *testing.T) {
 			tests := tests[dbType]
 			for _, test := range tests {
 				t.Run(test.desc, func(t *testing.T) {
 					db := database.New(test.settings())
-					actual := tagger.GenerateTag(db, test.column)
+					actual := Mastermind{}.GenerateTag(db, test.column)
 					assert.Equal(t, test.expected, actual)
 				})
 			}
