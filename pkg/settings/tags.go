@@ -10,12 +10,14 @@ import (
 // Special Tags
 const (
 	TagDB         = "db"
+	TagGorm       = "gorm"
 	TagStructable = "structable"
 )
 
 var (
 	canonicalTags = map[string]string{
 		TagDB:         TagDB,
+		TagGorm:       TagGorm,
 		TagStructable: TagStructable,
 
 		"sqlx": TagDB,

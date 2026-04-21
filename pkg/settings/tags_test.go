@@ -32,10 +32,29 @@ func TestSettings_ResolveTags(t *testing.T) {
 			desc: "explicit tags normalize known tags and preserve custom tag casing",
 			settings: func() *Settings {
 				s := New()
-				s.Tags = StringsFlag{" db ", "stbl", "json", "sqlx", "JSON", "STRUCTABLE"}
+				s.Tags = StringsFlag{" db ", "stbl", "gorm", "json", "sqlx", "JSON", "STRUCTABLE", "GORM"}
 				return s
 			}(),
-			expected: ResolvedTags{TagDB, TagStructable, "json", "JSON"},
+			expected: ResolvedTags{TagDB, TagStructable, TagGorm, "json", "JSON"},
+		},
+		{
+			desc: "explicit gorm tag keeps default db unless disabled",
+			settings: func() *Settings {
+				s := New()
+				s.Tags = StringsFlag{"gorm"}
+				return s
+			}(),
+			expected: ResolvedTags{TagDB, TagGorm},
+		},
+		{
+			desc: "legacy tags no db removes default db with gorm remaining",
+			settings: func() *Settings {
+				s := New()
+				s.TagsNoDb = true
+				s.Tags = StringsFlag{"gorm", "db"}
+				return s
+			}(),
+			expected: ResolvedTags{TagGorm},
 		},
 		{
 			desc: "empty and whitespace tags are ignored",
