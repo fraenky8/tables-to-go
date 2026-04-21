@@ -73,6 +73,32 @@ func TestTaggers_GenerateTags(t *testing.T) {
 			expected: "`db:\"column_name\" json:\"column_name\" stbl:\"column_name\"`",
 		},
 		{
+			desc: "mixed new and legacy structable adds structable once",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.Tags = settings.StringsFlag{"db", "json"}
+				s.TagsMastermindStructable = true
+				return s
+			}(),
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`db:\"column_name\" json:\"column_name\" stbl:\"column_name\"`",
+		},
+		{
+			desc: "mixed new and legacy structable only keeps standalone structable",
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.Tags = settings.StringsFlag{"db", "json"}
+				s.TagsMastermindStructableOnly = true
+				return s
+			}(),
+			column: database.Column{
+				Name: "column_name",
+			},
+			expected: "`stbl:\"column_name\"`",
+		},
+		{
 			desc: "disabled db-tag with enabled Mastermind-tag creates only Mastermind-tags",
 			settings: func() *settings.Settings {
 				s := settings.New()

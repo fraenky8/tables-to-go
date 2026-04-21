@@ -1486,6 +1486,28 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
+			desc:     "mysql 8 via -tags flag",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags", "structable",
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
 			desc:     "sqlite 3 with pk tables",
 			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
@@ -1493,6 +1515,20 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				"-t", "sqlite3",
 				"-d", filepath.Join("sqlite3", "database.db"),
 				"-tags-structable",
+				"-table", "single_pk_implicit_autoincrement_table,single_pk_explicit_autoincrement_table,single_pk_text_table,multi_int_pk_table,multi_text_pk_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3 with pk tables via -tags flag",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-tags", "structable",
 				"-table", "single_pk_implicit_autoincrement_table,single_pk_explicit_autoincrement_table,single_pk_text_table,multi_int_pk_table,multi_text_pk_table",
 				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
 			},
@@ -1562,7 +1598,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 		expectedStderr string
 	}{
 		{
-			desc:     "mysql 8",
+			desc:     "mysql 8 via -tags-structable-only",
 			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
@@ -1577,6 +1613,109 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-table", "float_table",
 				"-table", "integer_table",
 				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 8 via -tags=structable and -tags-no-db",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags", "structable",
+				"-tags-no-db", // Required to get the "-tags-structable-only" behavior with new "-tags" flag
+				"-table", "datetime_table",
+				"-table", "float_table",
+				"-table", "integer_table",
+				"-table", "varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		// Skipping all other DB types since it's not related to the type itself,
+		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationTagsFlagUnknownTag(t *testing.T) {
+	const testDirectory = "tagsflagunknowntag"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tags", "db,json",
 				"-table", "user",
 				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
 			},
