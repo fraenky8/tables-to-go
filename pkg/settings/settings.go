@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 var (
@@ -165,7 +166,7 @@ func (s *Settings) Verify() (err error) {
 
 // ResolvedTags returns already resolved tags.
 func (s *Settings) ResolvedTags() ResolvedTags {
-	return s.tags
+	return slices.Clone(s.tags)
 }
 
 func (s *Settings) verifyOutputPath() (err error) {
