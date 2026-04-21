@@ -79,16 +79,16 @@
 //		  	type of database to use, currently supported: [pg mysql sqlite3] (default pg)
 //		-table value
 //		  	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
-//		-tags value
-//		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tags db -tags sqlx,json
+//		-tag value
+//		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json
 //		  	Aliases: stbl => structable, sqlx => db
-//		  	Any provided valid tag key is emitted as a struct tag, e.g. -tags json
+//		  	Any provided valid tag key is emitted as a struct tag, e.g. -tag json
 //		-tags-no-db
 //		  	do not create db-tags
 //		-tags-structable
-//		  	DEPRECATED: use -tags structable
+//		  	DEPRECATED: use -tag structable
 //		-tags-structable-only
-//		  	DEPRECATED: use -tags structable with -tags-no-db (legacy only semantics still override extra custom tags)
+//		  	DEPRECATED: use -tag structable with -tags-no-db (legacy only semantics still override extra custom tags)
 //		-u string
 //		  	user to connect to the database
 //		-v	verbose output

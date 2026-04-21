@@ -1486,7 +1486,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc:     "mysql 8 via -tags flag",
+			desc:     "mysql 8 via -tag flag",
 			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
@@ -1496,7 +1496,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				"-d", "public",
 				"-h", "localhost",
 				"-port", "3306",
-				"-tags", "structable",
+				"-tag", "structable",
 				"-table", "datetime_table",
 				"-table", "float_table",
 				"-table", "integer_table",
@@ -1522,13 +1522,13 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc:     "sqlite 3 with pk tables via -tags flag",
+			desc:     "sqlite 3 with pk tables via -tag flag",
 			settings: newSQLiteSettings("sqlite3", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "sqlite3",
 				"-d", filepath.Join("sqlite3", "database.db"),
-				"-tags", "structable",
+				"-tag", "structable",
 				"-table", "single_pk_implicit_autoincrement_table,single_pk_explicit_autoincrement_table,single_pk_text_table,multi_int_pk_table,multi_text_pk_table",
 				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
 			},
@@ -1620,7 +1620,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
-			desc:     "mysql 8 via -tags=structable and -tags-no-db",
+			desc:     "mysql 8 via -tag=structable and -tags-no-db",
 			settings: newMySQLSettings("8", "mysql8", testDirectory),
 			args: []string{
 				"tables-to-go",
@@ -1630,8 +1630,8 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-d", "public",
 				"-h", "localhost",
 				"-port", "3306",
-				"-tags", "structable",
-				"-tags-no-db", // Required to get the "-tags-structable-only" behavior with new "-tags" flag
+				"-tag", "structable",
+				"-tags-no-db", // Required to get the "-tags-structable-only" behavior with new "-tag" flag
 				"-table", "datetime_table",
 				"-table", "float_table",
 				"-table", "integer_table",
@@ -1654,7 +1654,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-h", "localhost",
 				"-port", "3306",
 				"-tags-structable-only",
-				"-tags", "json",
+				"-tag", "json",
 				"-table", "datetime_table",
 				"-table", "float_table",
 				"-table", "integer_table",
@@ -1738,7 +1738,7 @@ func TestIntegrationTagsFlagUnknownTag(t *testing.T) {
 				"-d", "public",
 				"-h", "localhost",
 				"-port", "3306",
-				"-tags", "db,json",
+				"-tag", "db,json",
 				"-table", "user",
 				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
 			},

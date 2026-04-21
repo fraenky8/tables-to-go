@@ -131,12 +131,12 @@ func TestNewCmdArgs_Tags(t *testing.T) {
 	}{
 		{
 			desc:     "single tags value",
-			args:     []string{"tables-to-go", "-tags", "structable"},
+			args:     []string{"tables-to-go", "-tag", "structable"},
 			expected: settings.StringsFlag{"structable"},
 		},
 		{
 			desc:     "multiple tags values and comma separated",
-			args:     []string{"tables-to-go", "-tags", "db,structable", "-tags", "json"},
+			args:     []string{"tables-to-go", "-tag", "db,structable", "-tag", "json"},
 			expected: settings.StringsFlag{"db", "structable", "json"},
 		},
 	}
@@ -162,7 +162,7 @@ func TestNewCmdArgs_printLegacyTagsWarning(t *testing.T) {
 	}{
 		{
 			desc:     "no legacy tags flag emits no warning",
-			args:     []string{"tables-to-go", "-tags", "db"},
+			args:     []string{"tables-to-go", "-tag", "db"},
 			expected: assert.NotContains,
 		},
 		{
@@ -208,7 +208,7 @@ func TestNewCmdArgs_printRecorderWithoutStructableWarning(t *testing.T) {
 		},
 		{
 			desc:     "recorder with explicit structable tag emits no warning",
-			args:     []string{"tables-to-go", "-structable-recorder", "-tags", "structable"},
+			args:     []string{"tables-to-go", "-structable-recorder", "-tag", "structable"},
 			expected: assert.NotContains,
 		},
 		{
@@ -218,7 +218,7 @@ func TestNewCmdArgs_printRecorderWithoutStructableWarning(t *testing.T) {
 		},
 		{
 			desc:     "no recorder emits no warning",
-			args:     []string{"tables-to-go", "-tags", "db"},
+			args:     []string{"tables-to-go", "-tag", "db"},
 			expected: assert.NotContains,
 		},
 	}
