@@ -25,16 +25,16 @@ type Taggers struct {
 }
 
 // NewTaggers is the constructor function to create the supported taggers.
-func NewTaggers(s *settings.Settings) *Taggers {
-	tags := s.ResolvedTags()
-
-	t := &Taggers{taggers: make([]Tagger, 0, len(tags))}
+func NewTaggers(tags settings.ResolvedTags) *Taggers {
+	t := &Taggers{
+		taggers: make([]Tagger, 0, len(tags)),
+	}
 	for _, tag := range tags {
 		switch tag {
 		case settings.TagDB:
-			t.taggers = append(t.taggers, new(Db))
+			t.taggers = append(t.taggers, Db{})
 		case settings.TagStructable:
-			t.taggers = append(t.taggers, new(Mastermind))
+			t.taggers = append(t.taggers, Mastermind{})
 		default:
 			t.taggers = append(t.taggers, NewGeneric(tag))
 		}
@@ -45,7 +45,7 @@ func NewTaggers(s *settings.Settings) *Taggers {
 
 // GenerateTag creates based on the enabled tags and the given database and column
 // the tag for the struct field.
-func (t *Taggers) GenerateTag(db database.Database, column database.Column) (tags string) {
+func (t *Taggers) GenerateTag(db database.Database, column database.Column) string {
 	sb := stringPool.Get().(*strings.Builder)
 	defer func() {
 		sb.Reset()
@@ -62,7 +62,7 @@ func (t *Taggers) GenerateTag(db database.Database, column database.Column) (tag
 		sb.WriteString(" ")
 	}
 
-	tags = sb.String()
+	tags := sb.String()
 
 	if len(tags) > 0 {
 		tags = "`" + strings.TrimSpace(tags) + "`"
