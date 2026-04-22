@@ -1,6 +1,7 @@
 package tagger
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
@@ -33,6 +34,8 @@ func NewTaggers(tags settings.ResolvedTags) *Taggers {
 		switch tag {
 		case settings.TagDB:
 			t.taggers = append(t.taggers, Db{})
+		case settings.TagGorm:
+			t.taggers = append(t.taggers, Gorm{})
 		case settings.TagStructable:
 			t.taggers = append(t.taggers, Mastermind{})
 		default:
@@ -65,8 +68,16 @@ func (t *Taggers) GenerateTag(db database.Database, column database.Column) stri
 	tags := sb.String()
 
 	if len(tags) > 0 {
-		tags = "`" + strings.TrimSpace(tags) + "`"
+		tags = toStructTagLiteral(strings.TrimSpace(tags))
 	}
 
 	return tags
+}
+
+func toStructTagLiteral(tags string) string {
+	if strings.ContainsRune(tags, '`') {
+		return strconv.Quote(tags)
+	}
+
+	return "`" + tags + "`"
 }

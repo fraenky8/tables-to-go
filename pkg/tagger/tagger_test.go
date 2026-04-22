@@ -1,6 +1,7 @@
 package tagger
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,13 +71,54 @@ func TestTaggers_GenerateTags(t *testing.T) {
 			desc: "mixed tags preserve configured order",
 			tags: settings.ResolvedTags{
 				settings.TagDB,
+				settings.TagGorm,
 				"json",
 				settings.TagStructable,
 			},
 			column: database.Column{
-				Name: "column_name",
+				Name:       "column_name",
+				IsNullable: "YES",
 			},
-			expected: "`db:\"column_name\" json:\"column_name\" stbl:\"column_name\"`",
+			expected: "`db:\"column_name\" gorm:\"column:column_name\" json:\"column_name\" stbl:\"column_name\"`",
+		},
+		{
+			desc: "gorm tag maps to gorm tagger",
+			tags: settings.ResolvedTags{
+				settings.TagGorm,
+			},
+			column: database.Column{
+				Name:       "column_name",
+				IsNullable: "YES",
+			},
+			expected: "`gorm:\"column:column_name\"`",
+		},
+		{
+			desc: "gorm tag with backtick in value uses interpreted string literal",
+			tags: settings.ResolvedTags{
+				settings.TagGorm,
+			},
+			column: database.Column{
+				Name:       "column_name",
+				IsNullable: "YES",
+				DefaultValue: sql.NullString{
+					String: "contains `tick",
+					Valid:  true,
+				},
+			},
+			expected: "\"gorm:\\\"column:column_name;default:contains `tick\\\"\"",
+		},
+		{
+			desc: "gorm tag in combination keeps configured order",
+			tags: settings.ResolvedTags{
+				settings.TagDB,
+				settings.TagGorm,
+				"json",
+			},
+			column: database.Column{
+				Name:       "column_name",
+				IsNullable: "YES",
+			},
+			expected: "`db:\"column_name\" gorm:\"column:column_name\" json:\"column_name\"`",
 		},
 		{
 			desc: "mixed new and legacy structable adds structable once",
