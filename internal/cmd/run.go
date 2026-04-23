@@ -133,6 +133,7 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 	fs.BoolVar(&a.VVerbose, "vv", a.VVerbose, "more verbose output")
 	fs.BoolVar(&a.Version, "version", a.Version, "show version and build information")
 	fs.BoolVar(&a.Force, "f", a.Force, "force; skip tables that encounter errors")
+	fs.BoolVar(&a.GenHeader, "gen-header", a.GenHeader, "add generated code header to output files")
 
 	fs.Var(&a.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	fs.StringVar(&a.User, "u", a.User, "user to connect to the database")
