@@ -142,8 +142,20 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 
 	var (
 		structFields strings.Builder
-		columnInfo   columnInfo
-		columns      = make(map[string]struct{}, len(table.Columns))
+	)
+	if app.settings.IsGormModel || app.settings.IsMastermindStructableRecorder {
+		if app.settings.IsGormModel {
+			structFields.WriteString("gorm.Model\n")
+		}
+		if app.settings.IsMastermindStructableRecorder {
+			structFields.WriteString("structable.Recorder\n")
+		}
+		structFields.WriteString("\n")
+	}
+
+	var (
+		columnInfo columnInfo
+		columns    = make(map[string]struct{}, len(table.Columns))
 	)
 	for _, column := range table.Columns {
 		columnName, err := app.formatColumnName(column.Name, table.Name)
@@ -182,10 +194,6 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 		structFields.WriteString("\n")
 	}
 
-	if app.settings.IsMastermindStructableRecorder {
-		structFields.WriteString("\t\nstructable.Recorder\n")
-	}
-
 	var fileContent strings.Builder
 
 	// write header infos
@@ -208,7 +216,7 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 
 func (app *App) generateImports(content *strings.Builder, columnInfo columnInfo) {
 
-	if !columnInfo.isNullableOrTemporal() && !app.settings.IsMastermindStructableRecorder {
+	if !columnInfo.isNullableOrTemporal() && !app.settings.IsMastermindStructableRecorder && !app.settings.IsGormModel {
 		return
 	}
 
@@ -222,8 +230,14 @@ func (app *App) generateImports(content *strings.Builder, columnInfo columnInfo)
 		content.WriteString("\t\"time\"\n")
 	}
 
-	if app.settings.IsMastermindStructableRecorder {
-		content.WriteString("\n\t\"github.com/Masterminds/structable\"\n")
+	if app.settings.IsGormModel || app.settings.IsMastermindStructableRecorder {
+		content.WriteString("\n")
+		if app.settings.IsGormModel {
+			content.WriteString("\t\"gorm.io/gorm\"\n")
+		}
+		if app.settings.IsMastermindStructableRecorder {
+			content.WriteString("\t\"github.com/Masterminds/structable\"\n")
+		}
 	}
 
 	content.WriteString(")\n\n")

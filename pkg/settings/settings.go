@@ -77,9 +77,7 @@ type Settings struct {
 	TagsMastermindStructable       bool
 	TagsMastermindStructableOnly   bool
 	IsMastermindStructableRecorder bool
-
-	// TODO not implemented yet
-	TagsGorm bool
+	IsGormModel                    bool
 
 	Verbose  bool
 	VVerbose bool
@@ -125,8 +123,7 @@ func New() *Settings {
 		TagsMastermindStructable:       false,
 		TagsMastermindStructableOnly:   false,
 		IsMastermindStructableRecorder: false,
-
-		TagsGorm: false,
+		IsGormModel:                    false,
 	}
 }
 
@@ -169,7 +166,7 @@ func (s *Settings) ResolvedTags() ResolvedTags {
 	return slices.Clone(s.tags)
 }
 
-func (s *Settings) verifyOutputPath() (err error) {
+func (s *Settings) verifyOutputPath() error {
 
 	info, err := os.Stat(s.OutputFilePath)
 
@@ -184,8 +181,8 @@ func (s *Settings) verifyOutputPath() (err error) {
 	return err
 }
 
-func (s *Settings) prepareOutputPath() (outputFilePath string, err error) {
-	outputFilePath, err = filepath.Abs(s.OutputFilePath)
+func (s *Settings) prepareOutputPath() (string, error) {
+	outputFilePath, err := filepath.Abs(s.OutputFilePath)
 	outputFilePath += string(filepath.Separator)
 	return outputFilePath, err
 }

@@ -45,6 +45,8 @@
 //		  	format of the filename: camelCase (c, default) or snake_case (s) (default c)
 //		-format value
 //		  	format of struct fields (columns): camelCase (c) or original (o) (default c)
+//		-gorm-model
+//		  	generate an embedded gorm.Model field
 //		-h string
 //		  	host of database (default "127.0.0.1")
 //		-help
@@ -80,7 +82,7 @@
 //		-table value
 //		  	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
 //		-tag value
-//		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json
+//		  	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json,gorm
 //		  	Aliases: stbl => structable, sqlx => db
 //		  	Any provided valid tag key is emitted as a struct tag, e.g. -tag json
 //		-tags-no-db

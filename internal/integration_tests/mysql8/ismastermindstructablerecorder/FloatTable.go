@@ -7,6 +7,8 @@ import (
 )
 
 type FloatTable struct {
+	structable.Recorder
+
 	Col                      sql.NullFloat64 `stbl:"col"`
 	FloatNn                  float64         `stbl:"float_nn"`
 	FloatNnUnique            float64         `stbl:"float_nn_unique,PRIMARY_KEY"`
@@ -30,6 +32,4 @@ type FloatTable struct {
 	FloatDefConstUniqueCheck sql.NullFloat64 `stbl:"float_def_const_unique_check"`
 	FloatDefFunc             sql.NullFloat64 `stbl:"float_def_func"`
 	FloatDefFuncUniqueCheck  sql.NullFloat64 `stbl:"float_def_func_unique_check"`
-
-	structable.Recorder
 }

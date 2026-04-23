@@ -7,6 +7,8 @@ import (
 )
 
 type VarcharTable struct {
+	structable.Recorder
+
 	Col                        sql.NullString `stbl:"col"`
 	VarcharCap                 sql.NullString `stbl:"varchar_cap"`
 	VarcharNn                  string         `stbl:"varchar_nn"`
@@ -32,6 +34,4 @@ type VarcharTable struct {
 	VarcharDefConstUniqueCheck sql.NullString `stbl:"varchar_def_const_unique_check"`
 	VarcharDefFunc             sql.NullString `stbl:"varchar_def_func"`
 	VarcharDefFuncUniqueCheck  sql.NullString `stbl:"varchar_def_func_unique_check"`
-
-	structable.Recorder
 }

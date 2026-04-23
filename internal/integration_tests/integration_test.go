@@ -1453,6 +1453,118 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 	}
 }
 
+func TestIntegrationTagsGorm(t *testing.T) {
+	const testDirectory = "tagsgorm"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tag", "gorm",
+				"-table", "user,constraint_combo_ref,constraint_combo_not_null_unique_pk_def_const",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-tag", "gorm",
+				"-table", "character_varying_pk,constraint_combo_ref",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-tag", "gorm",
+				"-table", "single_pk_implicit_autoincrement_table,single_pk_text_table,constraint_combo_not_null_unique_pk_def_const",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
 func TestIntegrationTagsMastermindStructable(t *testing.T) {
 	const testDirectory = "tagsmastermindstructable"
 
@@ -1832,6 +1944,466 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 		},
 		// Skipping all other DB types since it's not related to the type itself,
 		// and testing for one type covers all others.
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationIsMastermindStructableRecorderWarning(t *testing.T) {
+	const testDirectory = "ismastermindstructablerecorderwarning"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-structable-recorder",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -structable-recorder is set without structable tags.*running for.*done!.*`,
+		},
+		{
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-structable-recorder",
+				"-table", "constraint_combo_ref",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -structable-recorder is set without structable tags.*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-structable-recorder",
+				"-table", "single_pk_text_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -structable-recorder is set without structable tags.*running for.*done!.*`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationIsGormModel(t *testing.T) {
+	const testDirectory = "isgormmodel"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tag", "gorm",
+				"-gorm-model",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-tag", "gorm",
+				"-gorm-model",
+				"-table", "constraint_combo_ref",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-tag", "gorm",
+				"-gorm-model",
+				"-table", "single_pk_text_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationIsGormModelWarning(t *testing.T) {
+	const testDirectory = "isgormmodelwarning"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-gorm-model",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -gorm-model is set without gorm tags.*running for.*done!.*`,
+		},
+		{
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-gorm-model",
+				"-table", "constraint_combo_ref",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -gorm-model is set without gorm tags.*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-gorm-model",
+				"-table", "single_pk_text_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*warning: -gorm-model is set without gorm tags.*running for.*done!.*`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			args, err := cmd.NewArgs(test.args, &stderr)
+			if err != nil {
+				t.Fatalf("could not parse args %q: %v", test.args, err)
+			}
+			test.settings.Settings = args.Settings
+
+			db := setupDatabase(t, test.settings)
+			defer func() {
+				if !t.Failed() {
+					_ = os.RemoveAll(test.settings.Settings.OutputFilePath)
+				}
+			}()
+
+			loadTestData(t, db.SQLDriver(), test.settings)
+
+			err = os.MkdirAll(test.settings.Settings.OutputFilePath, 0755)
+			if err != nil {
+				t.Fatalf("could not create output file path: %v", err)
+			}
+
+			version, err := db.Version(t.Context())
+			if err != nil {
+				t.Logf("could not get version: %v", err)
+			} else {
+				t.Logf("running tests against database %s\n", version)
+			}
+
+			// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+			err = db.Close()
+			if err != nil {
+				t.Fatalf("could not close setup database connection before run: %v", err)
+			}
+
+			c := cmd.New(cmd.VersionInfo{}, db)
+			err = c.Run(t.Context(), test.args, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Regexp(t, test.expectedStdout, stdout.String())
+			assert.Regexp(t, test.expectedStderr, stderr.String())
+
+			checkFiles(t, test.settings)
+		})
+	}
+}
+
+func TestIntegrationEmbeddedStructs(t *testing.T) {
+	const testDirectory = "embeddedstructs"
+
+	tests := []struct {
+		desc           string
+		settings       *testSettings
+		args           []string
+		expectedStdout string
+		expectedStderr string
+	}{
+		{
+			desc:     "mysql 8",
+			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-tag", "gorm",
+				"-tag", "structable",
+				"-gorm-model",
+				"-structable-recorder",
+				"-table", "user",
+				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "postgres 18",
+			settings: newPostgresSettings("18", "postgres", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "pg",
+				"-u", "postgres",
+				"-p", "mysecretpassword",
+				"-d", "postgres",
+				"-s", "public",
+				"-h", "localhost",
+				"-port", "5432",
+				"-sslmode", "disable",
+				"-tag", "gorm",
+				"-tag", "structable",
+				"-gorm-model",
+				"-structable-recorder",
+				"-table", "constraint_combo_ref",
+				"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "sqlite 3",
+			settings: newSQLiteSettings("sqlite3", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "sqlite3",
+				"-d", filepath.Join("sqlite3", "database.db"),
+				"-tag", "gorm",
+				"-tag", "structable",
+				"-gorm-model",
+				"-structable-recorder",
+				"-table", "single_pk_text_table",
+				"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
 	}
 
 	for _, test := range tests {

@@ -167,6 +167,291 @@ func TestToInitialisms(t *testing.T) {
 	}
 }
 
+func TestApp_Run(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc       string
+		columnType func(db database.Database) []string
+		isNullable string
+		withTime   bool
+		settings   *settings.Settings
+		expected   string
+	}{
+		{
+			desc: "string column with gorm model",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\n\t\"gorm.io/gorm\"\n)\n\ntype TestTable struct {\ngorm.Model\n\nColumnName string `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "integer column with structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetIntegerDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\nstructable.Recorder\n\nColumnName int `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "float column with both embedded fields",
+			columnType: func(db database.Database) []string {
+				return db.GetFloatDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\n\t\"gorm.io/gorm\"\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\ngorm.Model\nstructable.Recorder\n\nColumnName float64 `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "temporal column without embedded fields",
+			columnType: func(db database.Database) []string {
+				return db.GetTemporalDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings:   settings.New(),
+			expected:   "package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName time.Time `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "temporal column with gorm model",
+			columnType: func(db database.Database) []string {
+				return db.GetTemporalDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n)\n\ntype TestTable struct {\ngorm.Model\n\nColumnName time.Time `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "temporal column with gorm model and structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetTemporalDatatypes()
+			},
+			isNullable: "",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\ngorm.Model\nstructable.Recorder\n\nColumnName time.Time `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "nullable string column",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   false,
+			settings:   settings.New(),
+			expected:   "package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "nullable string column with structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\nstructable.Recorder\n\nColumnName sql.NullString `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "nullable string column with gorm model",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\n\t\"gorm.io/gorm\"\n)\n\ntype TestTable struct {\ngorm.Model\n\nColumnName sql.NullString `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "nullable string column with gorm model and structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\n\t\"gorm.io/gorm\"\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\ngorm.Model\nstructable.Recorder\n\nColumnName sql.NullString `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "nullable string and temporal columns",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   true,
+			settings:   settings.New(),
+			expected:   "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+		},
+		{
+			desc: "nullable string and temporal columns with gorm model",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   true,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n)\n\ntype TestTable struct {\ngorm.Model\n\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+		},
+		{
+			desc: "nullable string and temporal columns with structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   true,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\nstructable.Recorder\n\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+		},
+		{
+			desc: "nullable string and temporal columns with gorm model and structable recorder",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			isNullable: "YES",
+			withTime:   true,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.IsGormModel = true
+				s.IsMastermindStructableRecorder = true
+				return s
+			}(),
+			expected: "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n\t\"github.com/Masterminds/structable\"\n)\n\ntype TestTable struct {\ngorm.Model\nstructable.Recorder\n\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+		},
+		{
+			desc: "boolean column without embedded fields",
+			columnType: func(_ database.Database) []string {
+				return []string{"boolean"}
+			},
+			isNullable: "",
+			withTime:   false,
+			settings:   settings.New(),
+			expected:   "package dto\n\ntype TestTable struct {\nColumnName bool `db:\"column_name\"`\n}",
+		},
+	}
+
+	for dbType := range settings.SupportedDbTypes {
+		t.Run(dbType.String(), func(t *testing.T) {
+			s := settings.New()
+			s.DbType = dbType
+			db := database.New(s)
+
+			for _, test := range tests {
+				t.Run(test.desc, func(t *testing.T) {
+					columnTypes := test.columnType(db)
+					if len(columnTypes) == 0 {
+						t.Skipf("%s: no datatypes found for %q", dbType, test.desc)
+					}
+					columnType := columnTypes[0] // We only test for one of them.
+
+					columns := []database.Column{
+						{
+							OrdinalPosition: 1,
+							Name:            "column_name",
+							DataType:        columnType,
+							IsNullable:      test.isNullable,
+						},
+					}
+
+					if test.withTime {
+						temporalTypes := db.GetTemporalDatatypes()
+						if len(temporalTypes) == 0 {
+							t.Skipf("%s: no temporal datatypes found for %q", dbType, test.desc)
+						}
+
+						columns = append(columns, database.Column{
+							OrdinalPosition: 2,
+							Name:            "column_name_2",
+							DataType:        temporalTypes[0],
+						})
+					}
+
+					table := &database.Table{
+						Name:    "test_table",
+						Columns: columns,
+					}
+
+					s := *test.settings
+					s.DbType = dbType
+
+					mdb := newMockDB(db)
+					mdb.
+						On("GetTables", anyCtx).
+						Return([]*database.Table{table}, nil)
+					mdb.
+						On("PrepareGetColumnsOfTableStmt", anyCtx).
+						Return(nil)
+					mdb.
+						On("GetColumnsOfTable", anyCtx, table).
+						Return(nil)
+
+					w := newMockWriter()
+					w.
+						On(
+							"Write",
+							"TestTable",
+							test.expected,
+						).
+						Return(nil)
+
+					app := New(&s, mdb, w, os.Stderr)
+
+					err := app.Run(t.Context())
+					assert.NoError(t, err)
+				})
+			}
+		})
+	}
+}
+
 func TestApp_Run_StringTextColumns(t *testing.T) {
 	t.Parallel()
 

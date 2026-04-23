@@ -106,6 +106,32 @@ func TestNewCmdArgs(t *testing.T) {
 			},
 			isErr: assert.NoError,
 		},
+		{
+			desc: "single tags value is parsed",
+			args: []string{"tables-to-go", "-tag", "structable"},
+			expected: &Args{
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.Tags = settings.StringsFlag{"structable"}
+					s.ResolveTags()
+					return s
+				}(),
+			},
+			isErr: assert.NoError,
+		},
+		{
+			desc: "gorm model flag is parsed",
+			args: []string{"tables-to-go", "-gorm-model"},
+			expected: &Args{
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.IsGormModel = true
+					s.ResolveTags()
+					return s
+				}(),
+			},
+			isErr: assert.NoError,
+		},
 	}
 
 	for _, test := range tests {
@@ -117,37 +143,6 @@ func TestNewCmdArgs(t *testing.T) {
 				actual.usage = nil
 			}
 			assert.Equal(t, test.expected, actual)
-		})
-	}
-}
-
-func TestNewCmdArgs_Tags(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		desc     string
-		args     []string
-		expected settings.StringsFlag
-	}{
-		{
-			desc:     "single tags value",
-			args:     []string{"tables-to-go", "-tag", "structable"},
-			expected: settings.StringsFlag{"structable"},
-		},
-		{
-			desc:     "multiple tags values and comma separated",
-			args:     []string{"tables-to-go", "-tag", "db,structable", "-tag", "json"},
-			expected: settings.StringsFlag{"db", "structable", "json"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			var stderr bytes.Buffer
-
-			actual, err := NewArgs(test.args, &stderr)
-			assert.NoError(t, err)
-			assert.Equal(t, test.expected, actual.Tags)
 		})
 	}
 }
@@ -230,6 +225,47 @@ func TestNewCmdArgs_printRecorderWithoutStructableWarning(t *testing.T) {
 			_, err := NewArgs(test.args, &stderr)
 			assert.NoError(t, err)
 			test.expected(t, stderr.String(), recorderWithoutStructableWarning)
+		})
+	}
+}
+
+func TestNewCmdArgs_printGormModelWithoutGormWarning(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		args     []string
+		expected assert.ComparisonAssertionFunc
+	}{
+		{
+			desc:     "gorm model with default db tags emits warning",
+			args:     []string{"tables-to-go", "-gorm-model"},
+			expected: assert.Contains,
+		},
+		{
+			desc:     "gorm model with explicit gorm tag emits no warning",
+			args:     []string{"tables-to-go", "-gorm-model", "-tag", "gorm"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "gorm tag without gorm model emits no warning",
+			args:     []string{"tables-to-go", "-tag", "gorm"},
+			expected: assert.NotContains,
+		},
+		{
+			desc:     "no gorm model emits no warning",
+			args:     []string{"tables-to-go", "-tag", "db"},
+			expected: assert.NotContains,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var stderr bytes.Buffer
+
+			_, err := NewArgs(test.args, &stderr)
+			assert.NoError(t, err)
+			test.expected(t, stderr.String(), gormModelWithoutGormWarning)
 		})
 	}
 }
