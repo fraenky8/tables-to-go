@@ -61,6 +61,13 @@ pointer types
   * date/time: timestamp, date, datetime, year, time with time zone, timestamp
     with time zone, time without time zone, timestamp without time zone
   * others: boolean
+* **partial support for [GORM](https://gorm.io/)**
+  * struct fields with `gorm` tags via `-tag gorm`
+    * We only generate a subset of [available tags](https://gorm.io/docs/models.html#Fields-Tags)
+    since we only ever read existing tables and assume to not create those tables
+    via the generated structs by this tool. If you need full GORM support,
+    use their [gen-tool](https://gorm.io/gen/gen_tool.html).
+  * optional `gorm.Model` embedding via `-gorm-model`
 * **partial support for [Masterminds/structable](https://github.com/Masterminds/structable)**
   * only primary key & auto increment columns supported
   * struct fields with `stbl` tags
@@ -176,6 +183,8 @@ Usage of tables-to-go:
     	format of the filename: camelCase (c, default) or snake_case (s) (default c)
   -format value
     	format of struct fields (columns): camelCase (c) or original (o) (default c)
+  -gorm-model
+    	generate an embedded gorm.Model field
   -h string
     	host of database (default "127.0.0.1")
   -help
@@ -211,7 +220,7 @@ Usage of tables-to-go:
   -table value
     	Filter for the specified table(s). Can be used multiple times or with comma separated values without spaces. Example: -table foobar -table foo,bar,baz
   -tag value
-     	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json
+     	List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json,gorm
      	Aliases: stbl => structable, sqlx => db
       	Any provided valid tag key is emitted as a struct tag, e.g. -tag json
   -tags-no-db
