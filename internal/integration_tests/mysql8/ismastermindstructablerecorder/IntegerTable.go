@@ -7,6 +7,8 @@ import (
 )
 
 type IntegerTable struct {
+	structable.Recorder
+
 	I                          sql.NullInt64 `stbl:"i"`
 	IntegerNn                  int           `stbl:"integer_nn"`
 	IntegerNnUnique            int           `stbl:"integer_nn_unique,PRIMARY_KEY"`
@@ -26,6 +28,4 @@ type IntegerTable struct {
 	IntegerDefConstUniqueCheck sql.NullInt64 `stbl:"integer_def_const_unique_check"`
 	IntegerDefFunc             sql.NullInt64 `stbl:"integer_def_func"`
 	IntegerDefFuncUniqueCheck  sql.NullInt64 `stbl:"integer_def_func_unique_check"`
-
-	structable.Recorder
 }

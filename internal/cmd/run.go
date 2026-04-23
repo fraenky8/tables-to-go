@@ -22,6 +22,7 @@ import (
 const (
 	legacyTagsDeprecationWarning     = "warning: -tags-structable and -tags-structable-only are deprecated; use -tag (for -tags-structable-only compatibility use -tag structable -tags-no-db)"
 	recorderWithoutStructableWarning = "warning: -structable-recorder is set without structable tags; generated code may not work as expected"
+	gormModelWithoutGormWarning      = "warning: -gorm-model is set without gorm tags; generated code may not work as expected"
 )
 
 var (
@@ -155,11 +156,12 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 
 	fs.BoolVar(&a.NoInitialism, "no-initialism", a.NoInitialism, "disable the conversion to upper-case words in column names")
 
-	fs.Var(&a.Tags, "tag", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json\nAliases: stbl => structable, sqlx => db\nAny provided valid tag key is emitted as a struct tag, e.g. -tag json")
+	fs.Var(&a.Tags, "tag", "List of struct tags. Can be used multiple times or with comma separated values without spaces. Example: -tag db -tag sqlx,json,gorm\nAliases: stbl => structable, sqlx => db\nAny provided valid tag key is emitted as a struct tag, e.g. -tag json")
 	fs.BoolVar(&a.TagsNoDb, "tags-no-db", a.TagsNoDb, "do not create db-tags")
 	fs.BoolVar(&a.TagsMastermindStructable, "tags-structable", a.TagsMastermindStructable, "DEPRECATED: use -tag structable")
 	fs.BoolVar(&a.TagsMastermindStructableOnly, "tags-structable-only", a.TagsMastermindStructableOnly, "DEPRECATED: use -tag structable with -tags-no-db (legacy only semantics still override extra custom tags)")
 	fs.BoolVar(&a.IsMastermindStructableRecorder, "structable-recorder", a.IsMastermindStructableRecorder, "generate a structable.Recorder field")
+	fs.BoolVar(&a.IsGormModel, "gorm-model", a.IsGormModel, "generate an embedded gorm.Model field")
 
 	// NOOP to disable the print of usage when an error occurs.
 	fs.Usage = func() {}
@@ -177,6 +179,7 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 
 	printLegacyTagsWarning(stderr, a.Settings)
 	printRecorderWithoutStructableWarning(stderr, a.Settings)
+	printGormModelWithoutGormWarning(stderr, a.Settings)
 
 	return &a, nil
 }
@@ -199,6 +202,18 @@ func printRecorderWithoutStructableWarning(w io.Writer, s *settings.Settings) {
 	}
 
 	_, _ = fmt.Fprintln(w, recorderWithoutStructableWarning)
+}
+
+func printGormModelWithoutGormWarning(w io.Writer, s *settings.Settings) {
+	if !s.IsGormModel {
+		return
+	}
+
+	if slices.Contains(s.ResolvedTags(), settings.TagGorm) {
+		return
+	}
+
+	_, _ = fmt.Fprintln(w, gormModelWithoutGormWarning)
 }
 
 func printVersion(w io.Writer, info VersionInfo) {

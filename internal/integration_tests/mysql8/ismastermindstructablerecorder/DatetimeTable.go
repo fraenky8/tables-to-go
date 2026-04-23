@@ -8,6 +8,8 @@ import (
 )
 
 type DatetimeTable struct {
+	structable.Recorder
+
 	Datetime                    sql.NullTime `stbl:"datetime"`
 	DatetimeNn                  time.Time    `stbl:"datetime_nn"`
 	DatetimeNnUnique            time.Time    `stbl:"datetime_nn_unique,PRIMARY_KEY"`
@@ -31,6 +33,4 @@ type DatetimeTable struct {
 	DatetimeDefConstUniqueCheck sql.NullTime `stbl:"datetime_def_const_unique_check"`
 	DatetimeDefFunc             sql.NullTime `stbl:"datetime_def_func"`
 	DatetimeDefFuncUniqueCheck  sql.NullTime `stbl:"datetime_def_func_unique_check"`
-
-	structable.Recorder
 }
