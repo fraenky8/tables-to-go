@@ -2454,6 +2454,67 @@ func TestIntegrationEmbeddedStructs(t *testing.T) {
 	}
 }
 
+func TestIntegrationGenHeader(t *testing.T) {
+	const testDirectory = "genheader"
+
+	var stdout, stderr bytes.Buffer
+
+	testSettings := newMySQLSettings("8", "mysql8", testDirectory)
+	args := []string{
+		"tables-to-go",
+		"-t", "mysql",
+		"-u", "root",
+		"-p", "mysecretpassword",
+		"-d", "public",
+		"-h", "localhost",
+		"-port", "3306",
+		"-table", "user",
+		"-gen-header",
+		"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+	}
+
+	parsedArgs, err := cmd.NewArgs(args, &stderr)
+	if err != nil {
+		t.Fatalf("could not parse args %q: %v", args, err)
+	}
+	testSettings.Settings = parsedArgs.Settings
+
+	db := setupDatabase(t, testSettings)
+	defer func() {
+		if !t.Failed() {
+			_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+		}
+	}()
+
+	loadTestData(t, db.SQLDriver(), testSettings)
+
+	err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+	if err != nil {
+		t.Fatalf("could not create output file path: %v", err)
+	}
+
+	version, err := db.Version(t.Context())
+	if err != nil {
+		t.Logf("could not get version: %v", err)
+	} else {
+		t.Logf("running tests against database %s\n", version)
+	}
+
+	// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+	err = db.Close()
+	if err != nil {
+		t.Fatalf("could not close setup database connection before run: %v", err)
+	}
+
+	c := cmd.New(cmd.VersionInfo{VersionTag: "v0.0.0-test"}, db)
+	err = c.Run(t.Context(), args, &stdout, &stderr)
+	assert.NoError(t, err)
+	assert.Regexp(t, "^$", stdout.String())
+	assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+	checkFiles(t, testSettings)
+}
+
 func checkFiles(t *testing.T, s *testSettings) {
 	expectedPattern := filepath.Join(s.filepath, s.testDirectory, "*.go")
 	expectedFiles, err := filepath.Glob(expectedPattern)
