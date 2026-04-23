@@ -85,8 +85,10 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 		return err
 	}
 
-	info, _, _ := resolveVersionInfo(c.info)
-	cmdArgs.Settings.GeneratorVersion = info.VersionTag
+	if cmdArgs.Settings.GenHeader {
+		info, _, _ := resolveVersionInfo(c.info)
+		cmdArgs.Settings.GeneratorVersion = info.VersionTag
+	}
 
 	if c.db == nil {
 		c.db = database.New(cmdArgs.Settings)
