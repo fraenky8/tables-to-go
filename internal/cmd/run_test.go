@@ -132,6 +132,19 @@ func TestNewCmdArgs(t *testing.T) {
 			},
 			isErr: assert.NoError,
 		},
+		{
+			desc: "gen header flag is parsed",
+			args: []string{"tables-to-go", "-gen-header"},
+			expected: &Args{
+				Settings: func() *settings.Settings {
+					s := settings.New()
+					s.GenHeader = true
+					s.ResolveTags()
+					return s
+				}(),
+			},
+			isErr: assert.NoError,
+		},
 	}
 
 	for _, test := range tests {

@@ -67,6 +67,8 @@ type Settings struct {
 	Suffix         string
 	Null           NullType
 
+	GeneratorVersion string
+
 	Tables StringsFlag
 	Tags   StringsFlag
 
@@ -79,9 +81,10 @@ type Settings struct {
 	IsMastermindStructableRecorder bool
 	IsGormModel                    bool
 
-	Verbose  bool
-	VVerbose bool
-	Force    bool // continue through errors
+	Verbose   bool
+	VVerbose  bool
+	Force     bool // continue through errors
+	GenHeader bool
 }
 
 // New constructs Settings with default values.
@@ -95,9 +98,11 @@ func New() *Settings {
 	return &Settings{
 		tags: ResolvedTags{TagDB},
 
-		Verbose:  false,
-		VVerbose: false,
-		Force:    false,
+		Verbose:          false,
+		VVerbose:         false,
+		Force:            false,
+		GenHeader:        false,
+		GeneratorVersion: "",
 
 		DbType:         DBTypePostgresql,
 		User:           "",

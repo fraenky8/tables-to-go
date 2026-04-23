@@ -85,6 +85,11 @@ func (c *Cmd) Run(ctx context.Context, args []string, stdout, stderr io.Writer) 
 		return err
 	}
 
+	if cmdArgs.Settings.GenHeader {
+		info, _, _ := resolveVersionInfo(c.info)
+		cmdArgs.Settings.GeneratorVersion = info.VersionTag
+	}
+
 	if c.db == nil {
 		c.db = database.New(cmdArgs.Settings)
 	}
@@ -133,6 +138,7 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 	fs.BoolVar(&a.VVerbose, "vv", a.VVerbose, "more verbose output")
 	fs.BoolVar(&a.Version, "version", a.Version, "show version and build information")
 	fs.BoolVar(&a.Force, "f", a.Force, "force; skip tables that encounter errors")
+	fs.BoolVar(&a.GenHeader, "gen-header", a.GenHeader, "add generated code header to output files")
 
 	fs.Var(&a.DbType, "t", fmt.Sprintf("type of database to use, currently supported: %v", settings.SprintfSupportedDbTypes()))
 	fs.StringVar(&a.User, "u", a.User, "user to connect to the database")
@@ -217,25 +223,7 @@ func printGormModelWithoutGormWarning(w io.Writer, s *settings.Settings) {
 }
 
 func printVersion(w io.Writer, info VersionInfo) {
-	var (
-		goOS, goArch = runtime.GOOS, runtime.GOARCH
-	)
-	buildInfo, ok := debug.ReadBuildInfo()
-	if ok {
-		if info.VersionTag == "" {
-			info.VersionTag = buildInfo.Main.Version
-		}
-		for _, s := range buildInfo.Settings {
-			switch s.Key {
-			case "vcs.revision":
-				info.Revision = s.Value[:min(8, len(s.Value))]
-			case "GOOS":
-				goOS = s.Value
-			case "GOARCH":
-				goArch = s.Value
-			}
-		}
-	}
+	info, goOS, goArch := resolveVersionInfo(info)
 
 	_, _ = fmt.Fprintf(w, "tables-to-go/%s-%s %s/%s built with %s",
 		info.VersionTag, info.Revision, goOS, goArch, runtime.Version())
@@ -244,4 +232,30 @@ func printVersion(w io.Writer, info VersionInfo) {
 		_, _ = fmt.Fprintf(w, " on %s", info.BuildTimestamp)
 	}
 	_, _ = fmt.Fprintln(w)
+}
+
+func resolveVersionInfo(info VersionInfo) (VersionInfo, string, string) {
+	goOS, goArch := runtime.GOOS, runtime.GOARCH
+
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		return info, goOS, goArch
+	}
+
+	if info.VersionTag == "" {
+		info.VersionTag = buildInfo.Main.Version
+	}
+
+	for _, s := range buildInfo.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			info.Revision = s.Value[:min(8, len(s.Value))]
+		case "GOOS":
+			goOS = s.Value
+		case "GOARCH":
+			goArch = s.Value
+		}
+	}
+
+	return info, goOS, goArch
 }

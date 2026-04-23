@@ -48,6 +48,7 @@ containing the structs will get created (default: current working directory).
 * convert your tables to structs
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formatted files with imports
+* optional generated file header via `-gen-header` following Go's `Code generated ... DO NOT EDIT.` convention
 * automatically typed struct fields, either with `sql.Null*` or primitive `*builtinType`
 pointer types
 * struct fields with `db`-tags for ready to use in database code
@@ -169,6 +170,12 @@ Filter for specific tables via (multiple) `-table` flags:
 tables-to-go -v -of ../path/to/my/models -table foobar -table foo,bar,baz
 ```
 
+Generate files with a Go-style generated header:
+
+```
+tables-to-go -v -gen-header -table user
+```
+
 ### Command-line Flags
 
 Print usage with `-?` or `-help`
@@ -183,6 +190,8 @@ Usage of tables-to-go:
     	format of the filename: camelCase (c, default) or snake_case (s) (default c)
   -format value
     	format of struct fields (columns): camelCase (c) or original (o) (default c)
+  -gen-header
+    	add generated code header to output files
   -gorm-model
     	generate an embedded gorm.Model field
   -h string
