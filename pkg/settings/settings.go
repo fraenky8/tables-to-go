@@ -67,6 +67,8 @@ type Settings struct {
 	Suffix         string
 	Null           NullType
 
+	GeneratorVersion string
+
 	Tables StringsFlag
 	Tags   StringsFlag
 
@@ -96,10 +98,11 @@ func New() *Settings {
 	return &Settings{
 		tags: ResolvedTags{TagDB},
 
-		Verbose:   false,
-		VVerbose:  false,
-		Force:     false,
-		GenHeader: false,
+		Verbose:          false,
+		VVerbose:         false,
+		Force:            false,
+		GenHeader:        false,
+		GeneratorVersion: "",
 
 		DbType:         DBTypePostgresql,
 		User:           "",
