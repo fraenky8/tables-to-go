@@ -208,6 +208,22 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
 			desc:     "postgres 10",
 			settings: newPostgresSettings("10", "postgres", testDirectory),
 			args: []string{
@@ -389,6 +405,23 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		{
 			desc:     "mysql 8",
 			settings: newMySQLSettings("8", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-null", "primitive",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -594,6 +627,24 @@ func TestIntegrationTablesFlag(t *testing.T) {
 		{
 			desc:     "mysql 8",
 			settings: newMySQLSettings("8", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-table", "datetime_table,float_table,int_table,varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
