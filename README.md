@@ -54,7 +54,7 @@ pointer types
 * struct fields with `db`-tags for ready to use in database code
 * **currently supported**:
   * PostgreSQL (10, 11, 12, 17, 18 tested)
-  * MySQL (5.5+, 8 tested)
+  * MySQL (5.5+, 8, 9 tested)
   * SQLite (3 tested)
 * currently, the following basic data types are supported:
   * numeric: integer, serial, double, real, float

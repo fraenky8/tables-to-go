@@ -193,7 +193,7 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 		},
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -202,7 +202,23 @@ func TestIntegrationDefaultSettings(t *testing.T) {
 				"-d", "public",
 				"-h", "localhost",
 				"-port", "3306",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -388,7 +404,7 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 		},
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -398,7 +414,24 @@ func TestIntegrationNullTypePrimitive(t *testing.T) {
 				"-h", "localhost",
 				"-port", "3306",
 				"-null", "primitive",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-null", "primitive",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -593,7 +626,7 @@ func TestIntegrationTablesFlag(t *testing.T) {
 		},
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -604,7 +637,25 @@ func TestIntegrationTablesFlag(t *testing.T) {
 				"-port", "3306",
 				"-table", "datetime_table,float_table,int_table,varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+			},
+			expectedStdout: "^$",
+			expectedStderr: `(?s).*running for.*done!.*`,
+		},
+		{
+			desc:     "mysql 9",
+			settings: newMySQLSettings("9", "mysql", testDirectory),
+			args: []string{
+				"tables-to-go",
+				"-t", "mysql",
+				"-u", "root",
+				"-p", "mysecretpassword",
+				"-d", "public",
+				"-h", "localhost",
+				"-port", "3306",
+				"-table", "datetime_table,float_table,int_table,varchar_table",
+				"-table", "user",
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -796,7 +847,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -811,7 +862,7 @@ func TestIntegrationOutputFormatOriginal(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -880,7 +931,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -895,7 +946,7 @@ func TestIntegrationFileNameFormatSnakeCase(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -964,7 +1015,7 @@ func TestIntegrationPackageName(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -979,7 +1030,7 @@ func TestIntegrationPackageName(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1048,7 +1099,7 @@ func TestIntegrationPrefix(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1063,7 +1114,7 @@ func TestIntegrationPrefix(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1132,7 +1183,7 @@ func TestIntegrationSuffix(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1147,7 +1198,7 @@ func TestIntegrationSuffix(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1216,7 +1267,7 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1232,7 +1283,7 @@ func TestIntegrationPrefixSuffix(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1301,7 +1352,7 @@ func TestIntegrationNoInitialism(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1312,7 +1363,7 @@ func TestIntegrationNoInitialism(t *testing.T) {
 				"-port", "3306",
 				"-no-initialism",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1381,7 +1432,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1396,7 +1447,7 @@ func TestIntegrationTagsNoDB(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1465,7 +1516,7 @@ func TestIntegrationTagsGorm(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1476,7 +1527,7 @@ func TestIntegrationTagsGorm(t *testing.T) {
 				"-port", "3306",
 				"-tag", "gorm",
 				"-table", "user,constraint_combo_ref,constraint_combo_not_null_unique_pk_def_const",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1577,7 +1628,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1592,14 +1643,14 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "mysql 8 via -tag flag",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1614,7 +1665,7 @@ func TestIntegrationTagsMastermindStructable(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1711,7 +1762,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8 via -tags-structable-only",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1726,14 +1777,14 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "mysql 8 via -tag=structable and -tags-no-db",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1749,14 +1800,14 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
 		},
 		{
 			desc:     "mysql 8 via -tags-structable-only and custom tag",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1772,7 +1823,7 @@ func TestIntegrationTagsMastermindStructableOnly(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1841,7 +1892,7 @@ func TestIntegrationTagsFlagUnknownTag(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1852,7 +1903,7 @@ func TestIntegrationTagsFlagUnknownTag(t *testing.T) {
 				"-port", "3306",
 				"-tag", "db,json",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -1921,7 +1972,7 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -1937,7 +1988,7 @@ func TestIntegrationIsMastermindStructableRecorder(t *testing.T) {
 				"-table", "integer_table",
 				"-table", "varchar_table",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -2006,7 +2057,7 @@ func TestIntegrationIsMastermindStructableRecorderWarning(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -2017,7 +2068,7 @@ func TestIntegrationIsMastermindStructableRecorderWarning(t *testing.T) {
 				"-port", "3306",
 				"-structable-recorder",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*warning: -structable-recorder is set without structable tags.*running for.*done!.*`,
@@ -2118,7 +2169,7 @@ func TestIntegrationIsGormModel(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -2130,7 +2181,7 @@ func TestIntegrationIsGormModel(t *testing.T) {
 				"-tag", "gorm",
 				"-gorm-model",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -2233,7 +2284,7 @@ func TestIntegrationIsGormModelWarning(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -2244,7 +2295,7 @@ func TestIntegrationIsGormModelWarning(t *testing.T) {
 				"-port", "3306",
 				"-gorm-model",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*warning: -gorm-model is set without gorm tags.*running for.*done!.*`,
@@ -2345,7 +2396,7 @@ func TestIntegrationEmbeddedStructs(t *testing.T) {
 	}{
 		{
 			desc:     "mysql 8",
-			settings: newMySQLSettings("8", "mysql8", testDirectory),
+			settings: newMySQLSettings("8", "mysql", testDirectory),
 			args: []string{
 				"tables-to-go",
 				"-t", "mysql",
@@ -2359,7 +2410,7 @@ func TestIntegrationEmbeddedStructs(t *testing.T) {
 				"-gorm-model",
 				"-structable-recorder",
 				"-table", "user",
-				"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+				"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 			},
 			expectedStdout: "^$",
 			expectedStderr: `(?s).*running for.*done!.*`,
@@ -2459,7 +2510,7 @@ func TestIntegrationGenHeader(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 
-	testSettings := newMySQLSettings("8", "mysql8", testDirectory)
+	testSettings := newMySQLSettings("8", "mysql", testDirectory)
 	args := []string{
 		"tables-to-go",
 		"-t", "mysql",
@@ -2470,7 +2521,7 @@ func TestIntegrationGenHeader(t *testing.T) {
 		"-port", "3306",
 		"-table", "user",
 		"-gen-header",
-		"-of", filepath.Join("mysql8", testDirectory, outputDirectoryName),
+		"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 	}
 
 	parsedArgs, err := cmd.NewArgs(args, &stderr)
