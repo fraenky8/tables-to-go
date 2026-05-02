@@ -2566,6 +2566,364 @@ func TestIntegrationGenHeader(t *testing.T) {
 	checkFiles(t, testSettings)
 }
 
+func TestIntegrationCommentsLine(t *testing.T) {
+	const testDirectory = "commentsline"
+
+	t.Run("mysql 8", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newMySQLSettings("8", "mysql", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "mysql",
+			"-u", "root",
+			"-p", "mysecretpassword",
+			"-d", "public",
+			"-h", "localhost",
+			"-port", "3306",
+			"-comments",
+			"-table", "user",
+			"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+
+	t.Run("postgres 18", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newPostgresSettings("18", "postgres", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "pg",
+			"-u", "postgres",
+			"-p", "mysecretpassword",
+			"-d", "postgres",
+			"-s", "public",
+			"-h", "localhost",
+			"-port", "5432",
+			"-sslmode", "disable",
+			"-comments",
+			"-table", "user",
+			"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+
+	t.Run("sqlite 3", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newSQLiteSettings("sqlite3", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "sqlite3",
+			"-d", filepath.Join("sqlite3", "database.db"),
+			"-comments",
+			"-table", "user",
+			"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+}
+
+func TestIntegrationCommentsInline(t *testing.T) {
+	const testDirectory = "commentsinline"
+
+	t.Run("mysql 8", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newMySQLSettings("8", "mysql", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "mysql",
+			"-u", "root",
+			"-p", "mysecretpassword",
+			"-d", "public",
+			"-h", "localhost",
+			"-port", "3306",
+			"-comments=inline",
+			"-table", "user",
+			"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+
+	t.Run("postgres 18", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newPostgresSettings("18", "postgres", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "pg",
+			"-u", "postgres",
+			"-p", "mysecretpassword",
+			"-d", "postgres",
+			"-s", "public",
+			"-h", "localhost",
+			"-port", "5432",
+			"-sslmode", "disable",
+			"-comments=inline",
+			"-table", "user",
+			"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+
+	t.Run("sqlite 3", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+
+		testSettings := newSQLiteSettings("sqlite3", testDirectory)
+		args := []string{
+			"tables-to-go",
+			"-t", "sqlite3",
+			"-d", filepath.Join("sqlite3", "database.db"),
+			"-comments=inline",
+			"-table", "user",
+			"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
+		}
+
+		parsedArgs, err := cmd.NewArgs(args, &stderr)
+		if err != nil {
+			t.Fatalf("could not parse args %q: %v", args, err)
+		}
+		testSettings.Settings = parsedArgs.Settings
+
+		db := setupDatabase(t, testSettings)
+		defer func() {
+			if !t.Failed() {
+				_ = os.RemoveAll(testSettings.Settings.OutputFilePath)
+			}
+		}()
+
+		loadTestData(t, db.SQLDriver(), testSettings)
+
+		err = os.MkdirAll(testSettings.Settings.OutputFilePath, 0755)
+		if err != nil {
+			t.Fatalf("could not create output file path: %v", err)
+		}
+
+		version, err := db.Version(t.Context())
+		if err != nil {
+			t.Logf("could not get version: %v", err)
+		} else {
+			t.Logf("running tests against database %s\n", version)
+		}
+
+		// Close setup connection so Cmd.Run owns one connect/close lifecycle.
+		err = db.Close()
+		if err != nil {
+			t.Fatalf("could not close setup database connection before run: %v", err)
+		}
+
+		c := cmd.New(cmd.VersionInfo{}, db)
+		err = c.Run(t.Context(), args, &stdout, &stderr)
+		assert.NoError(t, err)
+		assert.Regexp(t, "^$", stdout.String())
+		assert.Regexp(t, `(?s).*running for.*done!.*`, stderr.String())
+
+		checkFiles(t, testSettings)
+	})
+}
+
 func checkFiles(t *testing.T, s *testSettings) {
 	expectedPattern := filepath.Join(s.filepath, s.testDirectory, "*.go")
 	expectedFiles, err := filepath.Glob(expectedPattern)
