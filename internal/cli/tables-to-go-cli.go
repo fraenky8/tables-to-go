@@ -22,6 +22,11 @@ var (
 	// some strings for idiomatic go in column names
 	// see https://github.com/golang/go/wiki/CodeReviewComments#initialisms
 	initialisms = []string{"ID", "JSON", "XML", "HTTP", "URL", "UUID"}
+
+	commentNewlineReplacer = strings.NewReplacer(
+		"\r\n", "\n",
+		"\r", "\n",
+	)
 )
 
 // App is the dependency container for this CLI tool.
@@ -155,8 +160,10 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 	}
 
 	var (
-		columnInfo columnInfo
-		columns    = make(map[string]struct{}, len(table.Columns))
+		columnInfo             columnInfo
+		columns                = make(map[string]struct{}, len(table.Columns))
+		shouldGenerateComments = app.settings.ShouldGenerateComments()
+		shouldInlineComments   = app.settings.ShouldInlineComments()
 	)
 	for _, column := range table.Columns {
 		columnName, err := app.formatColumnName(column.Name, table.Name)
@@ -187,11 +194,18 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 			columnInfo.isNullable = col.isNullable
 		}
 
+		if shouldGenerateComments && !shouldInlineComments {
+			generateLineComments(&structFields, column.Comment)
+		}
+
 		structFields.WriteString(columnName)
 		structFields.WriteString(" ")
 		structFields.WriteString(columnType)
 		structFields.WriteString(" ")
 		structFields.WriteString(app.taggers.GenerateTag(app.db, column))
+		if shouldGenerateComments && shouldInlineComments {
+			generateInlineComment(&structFields, column.Comment)
+		}
 		structFields.WriteString("\n")
 	}
 
@@ -205,6 +219,10 @@ func (app *App) createTableStructString(table *database.Table) (string, string, 
 
 	// write imports
 	app.generateImports(&fileContent, columnInfo)
+
+	if shouldGenerateComments {
+		generateLineComments(&fileContent, table.Comment)
+	}
 
 	// write struct with fields
 	fileContent.WriteString("type ")
@@ -374,6 +392,33 @@ func replaceSpace(r rune) rune {
 		return '_'
 	}
 	return r
+}
+
+func generateLineComments(content *strings.Builder, comment string) {
+	normalized := normalizeComment(comment)
+	if normalized == "" {
+		return
+	}
+
+	content.WriteString("// ")
+	content.WriteString(strings.ReplaceAll(normalized, "\n", "\n// "))
+	content.WriteString("\n")
+}
+
+func generateInlineComment(content *strings.Builder, comment string) {
+	normalized := normalizeComment(comment)
+	if normalized == "" {
+		return
+	}
+
+	content.WriteString(" // ")
+	content.WriteString(strings.Join(strings.Fields(normalized), " "))
+}
+
+func normalizeComment(comment string) string {
+	comment = strings.ToValidUTF8(comment, "")
+	comment = commentNewlineReplacer.Replace(comment)
+	return strings.TrimSpace(comment)
 }
 
 // FormatColumnName checks for invalid characters and transforms a column name
