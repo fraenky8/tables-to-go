@@ -146,8 +146,24 @@ func TestNewCmdArgs(t *testing.T) {
 			isErr: assert.NoError,
 		},
 		{
-			desc: "comments flag without value is parsed as line mode",
-			args: []string{"tables-to-go", "-comments"},
+			desc:     "comments flag without value returns parse sentinel error",
+			args:     []string{"tables-to-go", "-comments"},
+			expected: nil,
+			isErr: func(t assert.TestingT, err error, i ...any) bool {
+				return assert.ErrorIs(t, err, ErrFlagParse)
+			},
+		},
+		{
+			desc:     "comments flag with empty value returns parse sentinel error",
+			args:     []string{"tables-to-go", "-comments="},
+			expected: nil,
+			isErr: func(t assert.TestingT, err error, i ...any) bool {
+				return assert.ErrorIs(t, err, ErrFlagParse)
+			},
+		},
+		{
+			desc: "comments flag with line value is parsed",
+			args: []string{"tables-to-go", "-comments", "line"},
 			expected: &Args{
 				Settings: func() *settings.Settings {
 					s := settings.New()
@@ -160,24 +176,11 @@ func TestNewCmdArgs(t *testing.T) {
 		},
 		{
 			desc: "comments flag with inline value is parsed",
-			args: []string{"tables-to-go", "-comments=inline"},
+			args: []string{"tables-to-go", "-comments", "inline"},
 			expected: &Args{
 				Settings: func() *settings.Settings {
 					s := settings.New()
 					s.Comments = settings.CommentsModeInline
-					s.ResolveTags()
-					return s
-				}(),
-			},
-			isErr: assert.NoError,
-		},
-		{
-			desc: "comments flag with empty value is parsed as line mode",
-			args: []string{"tables-to-go", "-comments="},
-			expected: &Args{
-				Settings: func() *settings.Settings {
-					s := settings.New()
-					s.Comments = settings.CommentsModeLine
 					s.ResolveTags()
 					return s
 				}(),

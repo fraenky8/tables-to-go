@@ -49,7 +49,7 @@
 //
 //	go run tables-to-go.go -help
 //		-?	shows help and usage
-//		-comments
+//		-comments value
 //		  	generate table and column comments in structs: [off line inline] (default off)
 //		-d string
 //		  	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. ?_pragma=busy_timeout(5000) (default "postgres")

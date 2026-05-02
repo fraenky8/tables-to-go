@@ -2581,7 +2581,7 @@ func TestIntegrationCommentsLine(t *testing.T) {
 			"-d", "public",
 			"-h", "localhost",
 			"-port", "3306",
-			"-comments",
+			"-comments=line",
 			"-table", "user",
 			"-of", filepath.Join("mysql", testDirectory, outputDirectoryName),
 		}
@@ -2642,7 +2642,7 @@ func TestIntegrationCommentsLine(t *testing.T) {
 			"-h", "localhost",
 			"-port", "5432",
 			"-sslmode", "disable",
-			"-comments",
+			"-comments=line",
 			"-table", "user",
 			"-of", filepath.Join("postgres", testDirectory, outputDirectoryName),
 		}
@@ -2697,7 +2697,7 @@ func TestIntegrationCommentsLine(t *testing.T) {
 			"tables-to-go",
 			"-t", "sqlite3",
 			"-d", filepath.Join("sqlite3", "database.db"),
-			"-comments",
+			"-comments=line",
 			"-table", "user",
 			"-of", filepath.Join("sqlite3", testDirectory, outputDirectoryName),
 		}

@@ -49,9 +49,10 @@ containing the structs will get created (default: current working directory).
 * table with name `a_foo_bar` will become file `AFooBar.go` with struct `AFooBar`
 * properly formatted files with imports
 * optional generated file header via `-gen-header` following Go's `Code generated ... DO NOT EDIT.` convention
-* optional generation of table and column comments via `-comments`
-  * `-comments` (or `-comments=line`) writes comments above structs and fields
+* optional generation of table and column comments via `-comments=<mode>`
+  * `-comments=line` writes comments above structs and fields
   * `-comments=inline` writes column comments inline on the field line
+  * `-comments=off` disables comments generation
   * Not supported and hence a NOOP for SQLite.
 * automatically typed struct fields, either with `sql.Null*` or primitive `*builtinType`
 pointer types
@@ -180,10 +181,10 @@ Generate files with a Go-style generated header:
 tables-to-go -v -gen-header -table user
 ```
 
-Generate table and column comments with default line mode:
+Generate table and column comments in line mode:
 
 ```
-tables-to-go -v -comments -table user
+tables-to-go -v -comments=line -table user
 ```
 
 Generate inline field comments:
@@ -199,7 +200,7 @@ Print usage with `-?` or `-help`
 ```
 Usage of tables-to-go:
   -?	shows help and usage
-  -comments
+  -comments value
     	generate table and column comments in structs: [off line inline] (default off)
   -d string
     	database name; for sqlite3, URL query params '_pragma=<fn()>' can be added, e.g. path/to/database.db?_pragma=busy_timeout(5000) (default "postgres")

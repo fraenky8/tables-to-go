@@ -129,17 +129,6 @@ const (
 func (cm *CommentsMode) Set(s string) error {
 	value := strings.ToLower(strings.TrimSpace(s))
 
-	// Support `-comments` and `-comments=` as default line mode.
-	if value == "" || value == "true" {
-		*cm = CommentsModeLine
-		return nil
-	}
-
-	if value == "false" {
-		*cm = CommentsModeOff
-		return nil
-	}
-
 	*cm = CommentsMode(value)
 	if !supportedCommentsModes[*cm] {
 		return fmt.Errorf("comments mode %q not supported", *cm)
@@ -152,11 +141,6 @@ func (cm *CommentsMode) Set(s string) error {
 // flag.Value interface.
 func (cm CommentsMode) String() string {
 	return string(cm)
-}
-
-// IsBoolFlag allows the flag to be used as `-comments`.
-func (cm CommentsMode) IsBoolFlag() bool {
-	return true
 }
 
 // StringsFlag can be used to specify multiple occurrences of a flag and hence
