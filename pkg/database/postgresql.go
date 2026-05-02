@@ -98,7 +98,9 @@ func (pg *Postgresql) GetTables(ctx context.Context, tables ...string) ([]*Table
 
 	var dbTables []*Table
 	err := pg.SelectContext(ctx, &dbTables, `
-		SELECT table_name
+		SELECT
+			table_name,
+			COALESCE(obj_description((quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass, 'pg_class'), '') AS table_comment
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = $1
@@ -124,6 +126,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt(ctx context.Context) (err err
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
+			COALESCE(col_description((quote_ident(ic.table_schema) || '.' || quote_ident(ic.table_name))::regclass, ic.ordinal_position), '') AS column_comment,
 			LOWER(ic.data_type) AS data_type,
 			ic.column_default,
 			ic.is_nullable,
