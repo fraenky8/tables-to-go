@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -171,21 +172,25 @@ func TestApp_Run(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		desc       string
-		columnType func(db database.Database) []string
-		tableName  string
-		isNullable string
-		withTime   bool
-		settings   *settings.Settings
-		expected   string
+		desc          string
+		columnType    func(db database.Database) []string
+		tableName     string
+		tableComment  string
+		columnComment string
+		isNullable    string
+		withTime      bool
+		settings      *settings.Settings
+		expected      string
 	}{
 		{
 			desc: "string column with gorm model",
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -198,8 +203,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetIntegerDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsMastermindStructableRecorder = true
@@ -212,8 +219,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetFloatDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -227,18 +236,22 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetTemporalDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
-			settings:   settings.New(),
-			expected:   "package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName time.Time `db:\"column_name\"`\n}",
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
+			settings:      settings.New(),
+			expected:      "package dto\n\nimport (\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName time.Time `db:\"column_name\"`\n}",
 		},
 		{
 			desc: "temporal column with gorm model",
 			columnType: func(db database.Database) []string {
 				return db.GetTemporalDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -251,8 +264,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetTemporalDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -266,18 +281,22 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   false,
-			settings:   settings.New(),
-			expected:   "package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\n}",
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      false,
+			settings:      settings.New(),
+			expected:      "package dto\n\nimport (\n\t\"database/sql\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\n}",
 		},
 		{
 			desc: "nullable string column with structable recorder",
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsMastermindStructableRecorder = true
@@ -290,8 +309,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -304,8 +325,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -319,18 +342,22 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   true,
-			settings:   settings.New(),
-			expected:   "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      true,
+			settings:      settings.New(),
+			expected:      "package dto\n\nimport (\n\t\"database/sql\"\n\t\"time\"\n)\n\ntype TestTable struct {\nColumnName sql.NullString `db:\"column_name\"`\nColumnName2 time.Time `db:\"column_name_2\"`\n}",
 		},
 		{
 			desc: "nullable string and temporal columns with gorm model",
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   true,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      true,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -343,8 +370,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   true,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      true,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsMastermindStructableRecorder = true
@@ -357,8 +386,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "YES",
-			withTime:   true,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "YES",
+			withTime:      true,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.IsGormModel = true
@@ -372,18 +403,22 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(_ database.Database) []string {
 				return []string{"boolean"}
 			},
-			isNullable: "",
-			withTime:   false,
-			settings:   settings.New(),
-			expected:   "package dto\n\ntype TestTable struct {\nColumnName bool `db:\"column_name\"`\n}",
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
+			settings:      settings.New(),
+			expected:      "package dto\n\ntype TestTable struct {\nColumnName bool `db:\"column_name\"`\n}",
 		},
 		{
 			desc: "string column with generated header and version",
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.GenHeader = true
@@ -397,8 +432,10 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			isNullable: "",
-			withTime:   false,
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.GenHeader = true
@@ -412,9 +449,11 @@ func TestApp_Run(t *testing.T) {
 			columnType: func(db database.Database) []string {
 				return db.GetStringDatatypes()
 			},
-			tableName:  "test_table\n\r",
-			isNullable: "",
-			withTime:   false,
+			tableName:     "test_table\n\r",
+			tableComment:  "",
+			columnComment: "",
+			isNullable:    "",
+			withTime:      false,
 			settings: func() *settings.Settings {
 				s := settings.New()
 				s.GenHeader = true
@@ -422,6 +461,38 @@ func TestApp_Run(t *testing.T) {
 				return s
 			}(),
 			expected: "// Code generated by tables-to-go. DO NOT EDIT.\n// versions:\n// \ttables-to-go v2.12.2\n// source: test_table\\n\\r\n\npackage dto\n\ntype TestTable struct {\nColumnName string `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "string column with line comments mode",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			tableComment:  "This is a table comment",
+			columnComment: "This is a column comment",
+			isNullable:    "",
+			withTime:      false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.Comments = settings.CommentsModeLine
+				return s
+			}(),
+			expected: "package dto\n\n// This is a table comment\ntype TestTable struct {\n// This is a column comment\nColumnName string `db:\"column_name\"`\n}",
+		},
+		{
+			desc: "string column with inline comments mode",
+			columnType: func(db database.Database) []string {
+				return db.GetStringDatatypes()
+			},
+			tableComment:  "This is a table comment",
+			columnComment: "This is a column comment",
+			isNullable:    "",
+			withTime:      false,
+			settings: func() *settings.Settings {
+				s := settings.New()
+				s.Comments = settings.CommentsModeInline
+				return s
+			}(),
+			expected: "package dto\n\n// This is a table comment\ntype TestTable struct {\nColumnName string `db:\"column_name\"` // This is a column comment\n}",
 		},
 	}
 
@@ -444,6 +515,7 @@ func TestApp_Run(t *testing.T) {
 							OrdinalPosition: 1,
 							Name:            "column_name",
 							DataType:        columnType,
+							Comment:         test.columnComment,
 							IsNullable:      test.isNullable,
 						},
 					}
@@ -463,6 +535,7 @@ func TestApp_Run(t *testing.T) {
 
 					table := &database.Table{
 						Name:    "test_table",
+						Comment: test.tableComment,
 						Columns: columns,
 					}
 					if test.tableName != "" {
@@ -2679,6 +2752,89 @@ func TestApp_formatColumnName(t *testing.T) {
 			actual, err := tt.app.formatColumnName(tt.column, "MyTable")
 			tt.isErr(t, err)
 			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestGenerateInlineComment(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		input    string
+		expected string
+	}{
+		{
+			desc:     "empty comment returns empty",
+			input:    "",
+			expected: "",
+		},
+		{
+			desc:     "whitespace only comment returns empty",
+			input:    " \t\n ",
+			expected: "",
+		},
+		{
+			desc:     "single line comment remains unchanged",
+			input:    "hello world",
+			expected: "hello world",
+		},
+		{
+			desc:     "multiline comment is flattened",
+			input:    "line 1\nline\t2\r\nline   3",
+			expected: "line 1 line 2 line 3",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var actual strings.Builder
+			generateInlineComment(&actual, test.input)
+			assert.Equal(t, test.expected, strings.TrimPrefix(actual.String(), " // "))
+		})
+	}
+}
+
+func TestWriteLineComments(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		input    string
+		expected string
+	}{
+		{
+			desc:     "empty comment writes nothing",
+			input:    "",
+			expected: "",
+		},
+		{
+			desc:     "single line comment writes one line",
+			input:    "hello world",
+			expected: "// hello world\n",
+		},
+		{
+			desc:     "multiline comment writes trimmed lines",
+			input:    " line 1 \n\n\tline 2\r\n line 3 ",
+			expected: "// line 1 \n// \n// \tline 2\n//  line 3\n",
+		},
+		{
+			desc:     "blank lines are preserved",
+			input:    "line 1\n\nline 2",
+			expected: "// line 1\n// \n// line 2\n",
+		},
+		{
+			desc:     "whitespace only comment writes nothing",
+			input:    "\n\t\r\n ",
+			expected: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			var actual strings.Builder
+			generateLineComments(&actual, test.input)
+			assert.Equal(t, test.expected, actual.String())
 		})
 	}
 }

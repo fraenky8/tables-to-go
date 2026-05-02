@@ -115,6 +115,34 @@ func (of FileNameFormat) String() string {
 	return string(of)
 }
 
+// CommentsMode represents how database comments should be rendered.
+type CommentsMode string
+
+// These are the CommentsMode command line parameter values.
+const (
+	CommentsModeOff    CommentsMode = "off"
+	CommentsModeLine   CommentsMode = "line"
+	CommentsModeInline CommentsMode = "inline"
+)
+
+// Set sets the datatype for the custom type for the flag package.
+func (cm *CommentsMode) Set(s string) error {
+	value := strings.ToLower(strings.TrimSpace(s))
+
+	*cm = CommentsMode(value)
+	if !supportedCommentsModes[*cm] {
+		return fmt.Errorf("comments mode %q not supported", *cm)
+	}
+
+	return nil
+}
+
+// String is the implementation of the Stringer interface needed for
+// flag.Value interface.
+func (cm CommentsMode) String() string {
+	return string(cm)
+}
+
 // StringsFlag can be used to specify multiple occurrences of a flag and hence
 // multiple values without having to split anything by a delimiter.
 type StringsFlag []string

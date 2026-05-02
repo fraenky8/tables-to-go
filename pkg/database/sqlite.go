@@ -155,6 +155,7 @@ func (s *SQLite) GetColumnsOfTable(ctx context.Context, table *Table) error {
 			IsNullable:             isNullable,
 			CharacterMaximumLength: sql.NullInt64{},
 			NumericPrecision:       sql.NullInt64{},
+			Comment:                "",
 			// reuse mysql column_key as primary key indicator
 			ColumnKey:      isPrimaryKey,
 			ConstraintName: sql.NullString{},

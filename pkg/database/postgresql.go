@@ -98,7 +98,9 @@ func (pg *Postgresql) GetTables(ctx context.Context, tables ...string) ([]*Table
 
 	var dbTables []*Table
 	err := pg.SelectContext(ctx, &dbTables, `
-		SELECT table_name
+		SELECT
+			table_name,
+			COALESCE(obj_description((quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass, 'pg_class'), '') AS table_comment
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = $1
@@ -124,6 +126,7 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt(ctx context.Context) (err err
 		SELECT
 			ic.ordinal_position,
 			ic.column_name,
+			COALESCE(col_description(pc.oid, pa.attnum), '') AS column_comment,
 			LOWER(ic.data_type) AS data_type,
 			ic.column_default,
 			ic.is_nullable,
@@ -138,6 +141,13 @@ func (pg *Postgresql) PrepareGetColumnsOfTableStmt(ctx context.Context) (err err
 			LEFT JOIN information_schema.table_constraints AS itc ON ic.table_name = itc.table_name
 			AND ic.table_schema = itc.table_schema
 			AND ikcu.constraint_name = itc.constraint_name
+			LEFT JOIN pg_catalog.pg_namespace AS pn ON pn.nspname = ic.table_schema
+			LEFT JOIN pg_catalog.pg_class AS pc ON pc.relnamespace = pn.oid
+			AND pc.relname = ic.table_name
+			LEFT JOIN pg_catalog.pg_attribute AS pa ON pa.attrelid = pc.oid
+			AND pa.attname = ic.column_name
+			AND pa.attnum > 0
+			AND NOT pa.attisdropped
 		WHERE ic.table_name = $1
 		AND ic.table_schema = $2
 		ORDER BY ic.ordinal_position

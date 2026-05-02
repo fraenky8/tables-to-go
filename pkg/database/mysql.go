@@ -80,7 +80,9 @@ func (mysql *MySQL) GetTables(ctx context.Context, tables ...string) ([]*Table, 
 
 	var dbTables []*Table
 	err := mysql.SelectContext(ctx, &dbTables, `
-		SELECT table_name AS table_name
+		SELECT
+			table_name AS table_name,
+			table_comment AS table_comment
 		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = ?
@@ -106,6 +108,7 @@ func (mysql *MySQL) PrepareGetColumnsOfTableStmt(ctx context.Context) (err error
 		SELECT
 		  ordinal_position AS ordinal_position,
 		  column_name AS column_name,
+		  column_comment AS column_comment,
 		  LOWER(data_type) AS data_type,
 		  column_default AS column_default,
 		  is_nullable AS is_nullable,

@@ -59,6 +59,7 @@ type Database interface {
 // Table has a name and a set (slice) of columns.
 type Table struct {
 	Name    string `db:"table_name"`
+	Comment string `db:"table_comment"`
 	Columns []Column
 }
 
@@ -69,6 +70,7 @@ type Column struct {
 	IsNullable             string         `db:"is_nullable"`
 	ColumnKey              string         `db:"column_key"` // mysql specific
 	Extra                  string         `db:"extra"`      // mysql specific
+	Comment                string         `db:"column_comment"`
 	DefaultValue           sql.NullString `db:"column_default"`
 	ConstraintName         sql.NullString `db:"constraint_name"` // pg specific
 	ConstraintType         sql.NullString `db:"constraint_type"` // pg specific

@@ -159,6 +159,7 @@ func NewArgs(args []string, stderr io.Writer) (*Args, error) {
 	fs.StringVar(&a.Suffix, "suf", a.Suffix, "suffix for file- and struct names")
 	fs.StringVar(&a.PackageName, "pn", a.PackageName, "package name")
 	fs.Var(&a.Null, "null", "representation of NULL columns: sql.Null* (sql) or primitive pointers (native|primitive)")
+	fs.Var(&a.Comments, "comments", fmt.Sprintf("generate table and column comments in structs: %v", settings.SprintfSupportedCommentsMode()))
 
 	fs.BoolVar(&a.NoInitialism, "no-initialism", a.NoInitialism, "disable the conversion to upper-case words in column names")
 
