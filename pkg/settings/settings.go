@@ -41,6 +41,13 @@ var (
 		FileNameFormatCamelCase: true,
 		FileNameFormatSnakeCase: true,
 	}
+
+	// supportedCommentsModes represents the supported comment rendering modes
+	supportedCommentsModes = map[CommentsMode]bool{
+		CommentsModeOff:    true,
+		CommentsModeLine:   true,
+		CommentsModeInline: true,
+	}
 )
 
 // Settings stores the supported settings / command line arguments.
@@ -66,6 +73,7 @@ type Settings struct {
 	Prefix         string
 	Suffix         string
 	Null           NullType
+	Comments       CommentsMode
 
 	GeneratorVersion string
 
@@ -120,6 +128,7 @@ func New() *Settings {
 		Prefix:         "",
 		Suffix:         "",
 		Null:           NullTypeSQL,
+		Comments:       CommentsModeOff,
 
 		NoInitialism: false,
 
@@ -212,6 +221,15 @@ func SprintfSupportedNullTypes() string {
 	return fmt.Sprintf("%v", names)
 }
 
+// SprintfSupportedCommentsMode returns a slice of strings as names of the supported CommentsMode
+func SprintfSupportedCommentsMode() string {
+	names := make([]string, 0, len(supportedCommentsModes))
+	for name := range supportedCommentsModes {
+		names = append(names, string(name))
+	}
+	return fmt.Sprintf("%v", names)
+}
+
 // IsNullTypeSQL returns true if the type given by the command line args is of
 // null type SQL
 func (s *Settings) IsNullTypeSQL() bool {
@@ -234,4 +252,14 @@ func (s *Settings) IsOutputFormatCamelCase() bool {
 // is snake-case format.
 func (s *Settings) IsFileNameFormatSnakeCase() bool {
 	return s.FileNameFormat == FileNameFormatSnakeCase
+}
+
+// ShouldGenerateComments returns true if comments should be generated.
+func (s *Settings) ShouldGenerateComments() bool {
+	return s.Comments != CommentsModeOff
+}
+
+// ShouldInlineComments returns true if comments should be rendered inline.
+func (s *Settings) ShouldInlineComments() bool {
+	return s.Comments == CommentsModeInline
 }

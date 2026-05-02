@@ -446,6 +446,64 @@ func TestFileNameFormat_Set(t *testing.T) {
 	}
 }
 
+func TestSettings_Comments(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc             string
+		settings         func() *Settings
+		expectedGenerate bool
+		expectedInline   bool
+	}{
+		{
+			desc:             "default settings disable comments",
+			settings:         New,
+			expectedGenerate: false,
+			expectedInline:   false,
+		},
+		{
+			desc: "line mode enables non-inline comments",
+			settings: func() *Settings {
+				s := New()
+				s.Comments = CommentsModeLine
+				return s
+			},
+			expectedGenerate: true,
+			expectedInline:   false,
+		},
+		{
+			desc: "inline mode enables inline comments",
+			settings: func() *Settings {
+				s := New()
+				s.Comments = CommentsModeInline
+				return s
+			},
+			expectedGenerate: true,
+			expectedInline:   true,
+		},
+		{
+			desc: "off mode disables comments",
+			settings: func() *Settings {
+				s := New()
+				s.Comments = CommentsModeOff
+				return s
+			},
+			expectedGenerate: false,
+			expectedInline:   false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			settings := test.settings()
+			actualGenerate := settings.ShouldGenerateComments()
+			actualInline := settings.ShouldInlineComments()
+			assert.Equal(t, test.expectedGenerate, actualGenerate)
+			assert.Equal(t, test.expectedInline, actualInline)
+		})
+	}
+}
+
 func TestSprintfSupportedDbTypes(t *testing.T) {
 	t.Parallel()
 
@@ -484,6 +542,29 @@ func TestSprintfSupportedNullTypes(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			printed := SprintfSupportedNullTypes()
+			assert.NotEmpty(t, printed)
+
+			actual := strings.Split(printed, " ")
+			assert.Equal(t, test.expected, len(actual))
+		})
+	}
+}
+
+func TestSprintfSupportedCommentsMode(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc     string
+		expected int
+	}{
+		{
+			desc:     "print all supported comments modes",
+			expected: len(supportedCommentsModes),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			printed := SprintfSupportedCommentsMode()
 			assert.NotEmpty(t, printed)
 
 			actual := strings.Split(printed, " ")
